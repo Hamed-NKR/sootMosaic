@@ -30,6 +30,24 @@ end
 
 load(checkpoint_path);
 
+% Restore the random number generator so that the resumed run continues the
+% random sequence of the uninterrupted run. Checkpoints written before the
+% generator state was stored fall back to a seed derived from the configured
+% seed and the checkpoint iteration, which is reproducible but not identical
+% to the uninterrupted run. Without either, the run stays unseeded.
+if exist('rng_state', 'var') && ~isempty(rng_state) %#ok<NODEF> loaded from the checkpoint
+    rng(rng_state);
+elseif exist('cfg_sim', 'var') && isfield(cfg_sim, 'rng_seed') && ... %#ok<NODEF>
+        ~isempty(cfg_sim.rng_seed)
+    rng(mod(cfg_sim.rng_seed + k, 2^32));
+    warning('PFAL:ResumeLD2:NoRngState', ['Checkpoint has no stored ', ...
+        'generator state. Reseeded from simulation.rng_seed plus the ', ...
+        'checkpoint iteration.'])
+else
+    warning('PFAL:ResumeLD2:Unseeded', ['Checkpoint has no stored ', ...
+        'generator state and no seed. The resumed run is not reproducible.'])
+end
+
 k = k + 1;
 
 fprintf('\n');
@@ -92,6 +110,7 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     % save workspace once in a while (to recover iterations in case they...
     % ...are interrupted)
     if mod(k, checkpoint_interval) == 1
+        rng_state = rng; %#ok<NASGU> saved below, restored on the next resume
         dt = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss')); % current date and time
         save(fullfile(dir_wsp, strcat(cfg_results.checkpoint_prefix, '__', ...
             dt, '.mat')), '-v7.3')

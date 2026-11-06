@@ -213,6 +213,7 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     % save workspace once in a while (to recover iterations in case they...
     % ...are interrupted)
     if mod(k, checkpoint_interval) == 1
+        rng_state = rng; % generator state, saved below and restored by UTILS.RESUME_LD2_V3
         dt = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss')); % current date and time
         save(fullfile(dir_wsp, strcat(cfg_results.checkpoint_prefix, '__', ...
             dt, '.mat')), '-v7.3')
