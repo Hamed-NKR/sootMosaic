@@ -220,9 +220,10 @@ if ~isfield(src, 'rng_seed') || isempty(src.rng_seed)
     return
 end
 seed = double(src.rng_seed);
-if ~isscalar(seed) || ~isfinite(seed) || seed < 0 || round(seed) ~= seed
+if ~isscalar(seed) || ~isfinite(seed) || seed < 0 || seed >= 2^32 || ...
+        round(seed) ~= seed
     error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidRngSeed', ...
-        'simulation.rng_seed must be empty or a nonnegative integer scalar.');
+        'simulation.rng_seed must be empty or an integer scalar from 0 to 4294967295.');
 end
 end
 
