@@ -73,7 +73,8 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     % update mobility properties
     [pars_LD2, opts_mobil] = TRANSP.MOBIL(pars_LD2, fl, params_const, opts_mobil);
     
-    ensdata.t(k) = ensdata.t(k-1) + min(pars_LD2.delt);
+    % advance the clock by the step MARCH took, not by the next step
+    ensdata.t(k) = ensdata.t(k-1) + delt;
     ensdata.n_agg(k) = length(pars_LD2.pp);
     ensdata.tau(k,1:2) = [mean(pars_LD2.tau), std(pars_LD2.tau)];
     ensdata.kn_kin(k,1:2) = [mean(pars_LD2.kn_kin), std(pars_LD2.kn_kin)];

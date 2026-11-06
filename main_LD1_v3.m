@@ -117,7 +117,7 @@ for i = 1 : n_trial
             round(0.9 * length(cat(1, pars0.n)))) && ...
             (length(pars0.n) > 1)
 
-        pars0 = TRANSP.MARCH(pars0, fl0, params0_const);
+        [pars0, delt0] = TRANSP.MARCH(pars0, fl0, params0_const);
         pars0 = TRANSP.PBC(params0_ud.Value(2:4), pars0);
         pars0 = COL.GROW(pars0, opts0_grow);
         pars0 = PAR.SIZING(pars0);
@@ -133,7 +133,7 @@ for i = 1 : n_trial
             jj = jj + 1;
         end
 
-        ensdata0 = record_ensemble(ensdata0, j, i, pars0, opts0_mobil);
+        ensdata0 = record_ensemble(ensdata0, j, i, pars0, opts0_mobil, delt0);
 
         UTILS.TEXTBAR([j, j_max]);
         j = j + 1;
@@ -198,12 +198,14 @@ fprintf('Saved LD1 aggregate library: %s\n', metadata.output_file)
 
 %% Local functions %%
 
-function ensdata0 = record_ensemble(ensdata0, row_idx, trial_idx, pars0, opts0_mobil)
+function ensdata0 = record_ensemble(ensdata0, row_idx, trial_idx, pars0, opts0_mobil, delt_step)
+% The clock starts at zero and advances by delt_step, the step MARCH took.
 col = 2 * (trial_idx - 1) + (1:2);
-ensdata0.t(row_idx, trial_idx) = min(pars0.delt);
-if row_idx > 1
+if row_idx == 1
+    ensdata0.t(row_idx, trial_idx) = 0;
+else
     ensdata0.t(row_idx, trial_idx) = ...
-        ensdata0.t(row_idx - 1, trial_idx) + min(pars0.delt);
+        ensdata0.t(row_idx - 1, trial_idx) + delt_step;
 end
 ensdata0.n_agg(row_idx, trial_idx) = length(pars0.n);
 ensdata0.tau(row_idx, col) = [mean(pars0.tau), std(pars0.tau)];
