@@ -1681,20 +1681,53 @@ C.scenario5.crossOverlapAfter = cross_overlap_report(C.scenario5.ppAfter);
 C.scenario5.missedFlaggedMerge = C.scenario5.nAggAfter > 3 && ...
     C.scenario5.crossOverlapAfter.nPairs > 0;
 
+% Scenario 6. Validate COL.UNITE's returned map for every ordered pair of
+% five cells, which includes reversed pairs with index gaps of two to four.
+[ii, jj] = ndgrid(1:5, 1:5);
+iCols = [ii(ii ~= jj), jj(ii ~= jj)];
+C.scenario6 = struct('iCols', iCols, 'corrupt', false(size(iCols, 1), 1));
+for q = 1:size(iCols, 1)
+    Sq = test_unite_reversed_pair(iCols(q, :));
+    C.scenario6.corrupt(q) = Sq.corrupt || startsWith(Sq.summary, 'error');
+end
+C.scenario6.nCorrupt = nnz(C.scenario6.corrupt);
+
+% Scenario 7. A reversed pair with an index gap of three followed by a
+% further pending pair. Candidates (1,6), (4,6), and (4,7) turn the pending
+% pair (4,6) into (4,1) after UNITE(1,6). The remapped final candidate must
+% then join A7 to the {A1,A6,A4} cluster.
+pp = {mk_pp(1, 1, [0, 0, 0], 1); mk_pp(2, 1, [10, 0, 0], 2); ...
+    mk_pp(3, 1, [20, 0, 0], 3); mk_pp(4, 1, [1.6, 0, 0], 4); ...
+    mk_pp(5, 1, [30, 0, 0], 5); mk_pp(6, 1, [0.8, 0, 0], 6); ...
+    mk_pp(7, 1, [2.4, 0, 0], 7)};
+C.scenario7 = run_grow_fixture(pp, og);
+C.scenario7.expectedAggIfMapCorrect = 4;
+C.scenario7.crossOverlapAfter = cross_overlap_report(C.scenario7.ppAfter);
+C.scenario7.missedFlaggedMerge = C.scenario7.nAggAfter > 4 && ...
+    C.scenario7.crossOverlapAfter.nPairs > 0;
+
 C.summary = sprintf(['s1: %s | s2: %s (residual overlap %d, maxRelPen %.3g) | ', ...
     's3: %s | s4(reversed UNITE map): %s | s5(GROW misremap): nAgg=%d ', ...
-    '(expected 3), unresolved flagged overlap pairs=%d'], ...
+    '(expected 3), unresolved flagged overlap pairs=%d | ', ...
+    's6(UNITE map sweep) %d of %d pairs misremapped | ', ...
+    's7(GROW gap 3) nAgg=%d (expected 4), unresolved flagged overlap pairs=%d'], ...
     C.scenario1.outcome{1}, C.scenario2.outcome{1}, ...
     C.scenario2.internalOverlapPairs, C.scenario2.maxRelPen, ...
     C.scenario3.outcome{1}, C.scenario4.summary, C.scenario5.nAggAfter, ...
-    C.scenario5.crossOverlapAfter.nPairs);
+    C.scenario5.crossOverlapAfter.nPairs, C.scenario6.nCorrupt, ...
+    size(iCols, 1), C.scenario7.nAggAfter, ...
+    C.scenario7.crossOverlapAfter.nPairs);
 logv(opts, '  %s\n', C.summary);
 end
 
-function S = test_unite_reversed_pair()
-%TEST_UNITE_REVERSED_PAIR Validate COL.UNITE mapping for i_col = [3,1].
-%   Unique primary IDs identify the physical destination of each original
-%   cell, allowing direct comparison with the returned i_list mapping.
+function S = test_unite_reversed_pair(iCol)
+%TEST_UNITE_REVERSED_PAIR Validate COL.UNITE mapping for one pair i_col.
+%   The default pair is [3,1]. Unique primary IDs identify the physical
+%   destination of each original cell, allowing direct comparison with the
+%   returned i_list mapping.
+if nargin < 1
+    iCol = [3, 1];
+end
 pp = cell(5, 1);
 for i = 1:5
     pp{i} = mk_pp(100 + i, 1, [10 * i, 0, 0], i);
@@ -1707,7 +1740,7 @@ end
 S = struct('summary', '', 'iList', [], 'trueMap', [], 'corrupt', false, ...
     'wrongOldIndices', []);
 try
-    [pars2, iList] = COL.UNITE(pars, [3, 1], 'agg');
+    [pars2, iList] = COL.UNITE(pars, iCol, 'agg');
 catch err
     S.summary = ['error: ', err.identifier];
     return
