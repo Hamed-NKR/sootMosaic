@@ -83,7 +83,7 @@ opts_fl = cfg_transport.fluid_options;
 
 % calculate initial mobility properties
 opts_mobil = cfg_transport.mobility_options;
-pars_LD2 = TRANSP.MOBIL(pars_LD2, fl, params_const, opts_mobil);
+[pars_LD2, opts_mobil] = TRANSP.MOBIL(pars_LD2, fl, params_const, opts_mobil);
 
 % Assign random initial locations and velocities to aggregates
 opts_loc = cfg_transport.location_options;
@@ -174,7 +174,7 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     pars_LD2 = PAR.SIZING(pars_LD2);
     
     % update mobility properties
-    pars_LD2 = TRANSP.MOBIL(pars_LD2, fl, params_const, opts_mobil);
+    [pars_LD2, opts_mobil] = TRANSP.MOBIL(pars_LD2, fl, params_const, opts_mobil);
     
     ensdata.t(k) = ensdata.t(k-1) + min(pars_LD2.delt);
     ensdata.n_agg(k) = length(pars_LD2.pp);

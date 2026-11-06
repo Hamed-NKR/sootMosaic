@@ -99,7 +99,7 @@ for i = 1 : n_trial
     fl0.size = params0_ud.Value(2:4);
 
     pars0 = PAR.SIZING(pars0);
-    pars0 = TRANSP.MOBIL(pars0, fl0, params0_const, opts0_mobil);
+    [pars0, opts0_mobil] = TRANSP.MOBIL(pars0, fl0, params0_const, opts0_mobil);
     ensdata0 = record_ensemble(ensdata0, 1, i, pars0, opts0_mobil);
 
     pars0.v = PAR.INIT_VEL(pars0.pp, pars0.n, fl0.temp, params0_const);
@@ -121,7 +121,7 @@ for i = 1 : n_trial
         pars0 = TRANSP.PBC(params0_ud.Value(2:4), pars0);
         pars0 = COL.GROW(pars0, opts0_grow);
         pars0 = PAR.SIZING(pars0);
-        pars0 = TRANSP.MOBIL(pars0, fl0, params0_const, opts0_mobil);
+        [pars0, opts0_mobil] = TRANSP.MOBIL(pars0, fl0, params0_const, opts0_mobil);
 
         if (jj <= n_temporal) && ...
                 (sum(cat(1, pars0.n) >= npp0_temporal(jj)) >= ...
