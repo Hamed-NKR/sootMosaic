@@ -1829,9 +1829,44 @@ D.crossFace = run_grow_fixture(ppX, og);
 D.interiorMerged = D.interior.nAggAfter == 1;
 D.crossFaceMerged = D.crossFace.nAggAfter == 1;
 D.missedPeriodicCollision = D.interiorMerged && ~D.crossFaceMerged;
-D.summary = sprintf('interior merged: %d | cross-face merged: %d (minimum-image separation identical)', ...
-    D.interiorMerged, D.crossFaceMerged);
+% Exits through the positive and negative faces of one axis in one step.
+D.twoFace = test_pbc_two_face(L, d);
+D.summary = sprintf(['interior merged = %d | cross-face merged = %d (minimum-image separation identical) | ', ...
+    'two-face TRANSP.PBC wrapped on x y z = %d %d %d'], ...
+    D.interiorMerged, D.crossFaceMerged, D.twoFace.wrapped);
 logv(opts, '  %s\n', D.summary);
+end
+
+function S = test_pbc_two_face(L, d)
+%TEST_PBC_TWO_FACE Apply TRANSP.PBC after exits through both faces of an axis.
+%   For each axis, one cell leaves through the positive face and another
+%   through the negative face in the same step, while a third stays inside.
+%   All cell centers and primary positions must end inside the domain at
+%   the periodic images of their positions before the call.
+S = struct('wrapped', false(1, 3), 'rAfter', nan(3, 3), 'errId', {{''}});
+for ax = 1:3
+    r = repmat(L / 2, 3, 1);
+    r(1, ax) = 1.05 * L(ax);
+    r(2, ax) = -0.05 * L(ax);
+    pars = struct('pp', {{mk_pp(1, d, r(1, :), 1); mk_pp(2, d, r(2, :), 2); ...
+        mk_pp(3, d, r(3, :), 3)}}, 'n', ones(3, 1), 'r', r);
+    try
+        pars2 = TRANSP.PBC(L(:), pars);
+    catch err
+        S.errId = {err.identifier};
+        continue
+    end
+    % Full expected positions, so a wrong coordinate on any axis fails.
+    expected = repmat(L / 2, 3, 1);
+    expected(1, ax) = 0.05 * L(ax);
+    expected(2, ax) = 0.95 * L(ax);
+    rpp = cell2mat(cellfun(@(x) x(:, 3:5), pars2.pp, 'UniformOutput', false));
+    tol = 1e-9 * max(L);
+    S.rAfter(:, ax) = pars2.r(:, ax);
+    S.wrapped(ax) = isequal(size(pars2.r), [3, 3]) && isequal(size(rpp), [3, 3]) && ...
+        all(abs(pars2.r - expected) <= tol, 'all') && ...
+        all(abs(rpp - expected) <= tol, 'all');
+end
 end
 
 % ======================================================================= %
