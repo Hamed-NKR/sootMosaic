@@ -35,3 +35,5 @@ data/main_valid_webtest/*
 !data/main_valid_webtest/.gitkeep
 .pfal-cache/
 data_publication_staging/
+# Local reviewer exchange logs
+exchanges/
