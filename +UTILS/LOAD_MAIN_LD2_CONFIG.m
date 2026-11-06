@@ -103,8 +103,14 @@ cfg.transport.growth_options = require_struct_field(cfg.transport, ...
 
 cfg.transport.fluid_options.amb = require_text_field(cfg.transport.fluid_options, ...
     'amb', 'transport.fluid_options.amb');
-cfg.transport.mobility_options.c_dt = require_scalar_field( ...
+cfg.transport.mobility_options.c_dt = require_positive_scalar_field( ...
     cfg.transport.mobility_options, 'c_dt', 'transport.mobility_options.c_dt');
+cfg.transport.mobility_options.step_frac = optional_positive_scalar_field( ...
+    cfg.transport.mobility_options, 'step_frac', 0.5, ...
+    'transport.mobility_options.step_frac');
+cfg.transport.mobility_options.step_policy = optional_choice_field( ...
+    cfg.transport.mobility_options, 'step_policy', 'warn', {'warn', 'cap'}, ...
+    'transport.mobility_options.step_policy');
 cfg.transport.mobility_options.mtd = require_text_field( ...
     cfg.transport.mobility_options, 'mtd', 'transport.mobility_options.mtd');
 cfg.transport.location_options.vf = require_text_field( ...
@@ -156,11 +162,56 @@ if ~isfield(src, field_name) || isempty(src.(field_name))
         'The LD2 config is missing %s.', label);
 end
 
-out = double(src.(field_name));
+value = src.(field_name);
+% Check the type before conversion, since double() turns text into...
+    % ...character codes and logical values into 0 or 1
+if ~isnumeric(value) || ~isreal(value)
+    error('PFAL:LOAD_MAIN_LD2_CONFIG:InvalidScalar', ...
+        'The LD2 config field %s must be a finite numeric scalar.', label);
+end
+out = double(value);
 if ~isscalar(out) || ~isfinite(out)
     error('PFAL:LOAD_MAIN_LD2_CONFIG:InvalidScalar', ...
         'The LD2 config field %s must be a finite numeric scalar.', label);
 end
+
+end
+
+function out = require_positive_scalar_field(src, field_name, label)
+%REQUIRE_POSITIVE_SCALAR_FIELD Read and validate a positive numeric scalar field.
+
+out = require_scalar_field(src, field_name, label);
+if out <= 0
+    error('PFAL:LOAD_MAIN_LD2_CONFIG:InvalidPositiveScalar', ...
+        'The LD2 config field %s must be positive.', label);
+end
+
+end
+
+function out = optional_positive_scalar_field(src, field_name, default_value, label)
+%OPTIONAL_POSITIVE_SCALAR_FIELD Read an optional positive scalar, empty means the default.
+
+out = default_value;
+if isfield(src, field_name) && ~isempty(src.(field_name))
+    out = require_positive_scalar_field(src, field_name, label);
+end
+
+end
+
+function out = optional_choice_field(src, field_name, default_value, choices, label)
+%OPTIONAL_CHOICE_FIELD Read an optional text field restricted to a list, empty means the default.
+
+out = default_value;
+if ~isfield(src, field_name) || isempty(src.(field_name))
+    return
+end
+if ~(ischar(src.(field_name)) || isStringScalar(src.(field_name))) || ...
+        ~any(strcmp(char(src.(field_name)), choices))
+    error('PFAL:LOAD_MAIN_LD2_CONFIG:InvalidChoice', ...
+        'The LD2 config field %s must be one of %s.', label, ...
+        strjoin(choices, ', '));
+end
+out = char(src.(field_name));
 
 end
 

@@ -43,7 +43,9 @@
     },
     "mobility_options": {
       "mtd": "continuum",
-      "c_dt": 1000
+      "c_dt": 1000,
+      "step_frac": 0.5,
+      "step_policy": "warn"
     },
     "location_options": {
       "vf": "off",
