@@ -30,10 +30,13 @@ v = cat(1, pars.v);
 f = cat(1, pars.f);
 delt = cat(1, pars.delt);
 
-delt_base = min(delt); % The baseline time step chosen as the one...
-    % ...for the largest particle
-z_par = round(delt ./ delt_base); % Integer marching coefficients
-delt = delt_base .* z_par; % Adjusting timesteps
+% All particles march over the smallest per-particle time step,
+% which belongs to the particle with the smallest mobility diameter.
+% The Langevin solution uses this common step without displacement
+% rescaling, preserving each particle's long-time diffusivity.
+% The returned delt_base is the elapsed time for this call.
+delt_base = min(delt); % Baseline time step
+delt = repmat(delt_base, n_par, 1); % Common time step for all particles
 
 % Solving the equation of motion
 var_march = exp(f .* delt ./ m);
@@ -55,12 +58,11 @@ if isa(pars, 'AGG')
     for i = 1 : n_par
         pars(i).v = par_v_new(i, :);
     end
-    pars = pars.TRANSLATE(dr ./ z_par);
+    pars = pars.TRANSLATE(dr);
     
 else
     % Moving the primary particles and their center of mass
-    [pars.pp, pars.r] = PAR.TRANSLATE(pars.pp, pars.r, pars.n, dr ./ z_par);
-        % The displacements are interpoldated for the baseline timestep
+    [pars.pp, pars.r] = PAR.TRANSLATE(pars.pp, pars.r, pars.n, dr);
     pars.v = par_v_new; % Renewing the velocities
 end
 
