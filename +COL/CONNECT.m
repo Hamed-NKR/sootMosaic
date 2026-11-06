@@ -35,6 +35,37 @@ if dist_pp(ind_cnt) <= max(pp1_temp(ind_cnt,2), pp2_temp(ind_cnt,2))
     dr2 = - dr ./ 2 + pp2(ind_cnt(5), 2) .* dr ./ (2 .* norm_dr);
     pp1(:, 3:5) = pp1(:, 3:5) + repmat(dr1, n_pp1, 1);
     pp2(:, 3:5) = pp2(:, 3:5) + repmat(dr2, n_pp2, 1);
+
+    % Backing off along the contact axis while other primary pairs still...
+        % ...overlap, which only happens for an interpenetrating start, so...
+        % ...a start with no overlap is left exactly as before. Pair (i,j)...
+        % ...overlaps for relative translations t in (t_lo, t_hi), the...
+        % ...roots of |s_ij + t e| = (d_i + d_j) / 2, and the smallest...
+        % ...t >= 0 outside all these intervals, within the round-off...
+        % ...margin, is reached by jumping to the largest t_hi among the...
+        % ...intervals that contain t. As in the move above, the selected...
+        % ...pair must not have coincident centers.
+    if dist_pp(ind_cnt(1)) < 0
+        e_dr = dr ./ norm_dr; % Unit vector of the contact axis
+        s_pp = repmat(pp2(:,3:5), n_pp1, 1) - repelem(pp1(:,3:5), n_pp2, 1);
+            % Center-to-center vectors of all cross pairs after the move
+        b_pp = s_pp * e_dr';
+        sq_pp = sqrt(max(b_pp.^2 - sum(s_pp.^2, 2) +...
+            ((pp1_temp(:,2) + pp2_temp(:,2)) ./ 2).^2, 0));
+        t_lo = - b_pp - sq_pp;
+        t_hi = - b_pp + sq_pp;
+        tol_t = 1e-13 * max(pp1_temp(:,2) + pp2_temp(:,2)); % Round-off margin
+        t_bo = 0;
+        ind_ovr = (t_lo < t_bo - tol_t) & (t_hi > t_bo + tol_t);
+        while any(ind_ovr)
+            t_bo = max(t_hi(ind_ovr));
+            ind_ovr = (t_lo < t_bo - tol_t) & (t_hi > t_bo + tol_t);
+        end
+        if t_bo > 0
+            pp1(:, 3:5) = pp1(:, 3:5) - repmat(t_bo .* e_dr ./ 2, n_pp1, 1);
+            pp2(:, 3:5) = pp2(:, 3:5) + repmat(t_bo .* e_dr ./ 2, n_pp2, 1);
+        end
+    end
 else
     colstat = 0;
 end
