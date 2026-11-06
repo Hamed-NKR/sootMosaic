@@ -15,6 +15,13 @@ cfg_sim = cfg_ld2.simulation;
 cfg_projection = cfg_ld2.projection;
 cfg_transport = cfg_ld2.transport;
 
+% Seed the random number generator only when simulation.rng_seed is set. An
+% empty value leaves the generator untouched, as before. The seed is applied
+% before any random draw and the loaded dataset does not reset it.
+if ~isempty(cfg_sim.rng_seed)
+    rng(cfg_sim.rng_seed);
+end
+
 % Load previously scaled first-stage aggregates using the variable declared
 % in the source-specific LD2 config. main_scatter_v8 and main_scale_v2 both
 % write this payload as pars_out.

@@ -88,6 +88,7 @@ cfg.projection.n_ang = require_scalar_field(cfg.projection, ...
     'n_ang', 'projection.n_ang');
 
 cfg.options = require_struct_field(cfg, 'options', 'options section');
+cfg.options.rng_seed = optional_rng_seed(cfg.options);
 cfg.options.opt_scale = optional_text_field(cfg.options, ...
     'opt_scale', 'bivariate');
 valid_scale_modes = {'bivariate', 'sequential', 'ideal'};
@@ -156,6 +157,22 @@ out = double(src.(field_name));
 if ~isscalar(out) || ~isfinite(out)
     error('PFAL:LOAD_MAIN_SCATTER_CONFIG:InvalidScalar', ...
         'The scatter config field %s must be a finite numeric scalar.', label);
+end
+
+end
+
+function seed = optional_rng_seed(src)
+%OPTIONAL_RNG_SEED Read an optional random-number seed (empty means unseeded).
+
+seed = [];
+if ~isfield(src, 'rng_seed') || isempty(src.rng_seed)
+    return
+end
+seed = double(src.rng_seed);
+if ~isscalar(seed) || ~isfinite(seed) || seed < 0 || seed >= 2^32 || ...
+        round(seed) ~= seed
+    error('PFAL:LOAD_MAIN_SCATTER_CONFIG:InvalidRngSeed', ...
+        'options.rng_seed must be empty or an integer scalar from 0 to 4294967295.');
 end
 
 end

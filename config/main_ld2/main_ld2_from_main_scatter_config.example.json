@@ -19,7 +19,8 @@
                                        0.1,
                                        0.05
                                    ],
-                       "checkpoint_interval":  1000
+                       "checkpoint_interval":  1000,
+                       "rng_seed":  []
                    },
     "projection":  {
                        "n_mc":  100,

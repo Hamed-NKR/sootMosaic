@@ -25,6 +25,12 @@ cfg_sampling = cfg_scatter.sampling;
 cfg_projection = cfg_scatter.projection;
 cfg_options = cfg_scatter.options;
 
+% Seed the random number generator only when options.rng_seed is set. An empty
+% value leaves the generator untouched, as before.
+if ~isempty(cfg_options.rng_seed)
+    rng(cfg_options.rng_seed);
+end
+
 % Olfert and Rogak (2019)'s universal correlation
 D_TEM = cfg_uc.D_TEM; % exponent
 dpp100 = cfg_uc.dpp100; % prefactor
@@ -612,6 +618,7 @@ scatter_metadata.universal = cfg_uc;
 scatter_metadata.brasil = cfg_bc;
 scatter_metadata.distribution = cfg_dist;
 scatter_metadata.projection = cfg_projection;
+scatter_metadata.rng_seed = cfg_options.rng_seed; % empty when unseeded
 scatter_metadata.rho_log_space = rho;
 scatter_metadata.sigma_cov_log_space = sigma_cov;
 scatter_metadata.method_note = ['bivariate: draws [log(da), log(dpp)] ', ...

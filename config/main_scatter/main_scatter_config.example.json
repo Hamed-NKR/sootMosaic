@@ -36,6 +36,7 @@
   },
   "options": {
     "opt_scale": "bivariate",
-    "opts_nppcor": "off"
+    "opts_nppcor": "off",
+    "rng_seed": []
   }
 }

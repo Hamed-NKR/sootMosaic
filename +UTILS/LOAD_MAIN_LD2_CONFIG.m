@@ -63,6 +63,7 @@ cfg.simulation.r_n_agg = require_vector_field(cfg.simulation, ...
     'r_n_agg', 'simulation.r_n_agg');
 cfg.simulation.checkpoint_interval = require_positive_integer_field(cfg.simulation, ...
     'checkpoint_interval', 'simulation.checkpoint_interval');
+cfg.simulation.rng_seed = optional_rng_seed(cfg.simulation);
 
 cfg.projection = require_struct_field(cfg, 'projection', 'projection section');
 cfg.projection.n_mc = require_positive_integer_field(cfg.projection, ...
@@ -170,6 +171,22 @@ out = require_scalar_field(src, field_name, label);
 if out <= 0 || round(out) ~= out
     error('PFAL:LOAD_MAIN_LD2_CONFIG:InvalidInteger', ...
         'The LD2 config field %s must be a positive integer.', label);
+end
+
+end
+
+function seed = optional_rng_seed(src)
+%OPTIONAL_RNG_SEED Read an optional random-number seed (empty means unseeded).
+
+seed = [];
+if ~isfield(src, 'rng_seed') || isempty(src.rng_seed)
+    return
+end
+seed = double(src.rng_seed);
+if ~isscalar(seed) || ~isfinite(seed) || seed < 0 || seed >= 2^32 || ...
+        round(seed) ~= seed
+    error('PFAL:LOAD_MAIN_LD2_CONFIG:InvalidRngSeed', ...
+        'simulation.rng_seed must be empty or an integer scalar from 0 to 4294967295.');
 end
 
 end
