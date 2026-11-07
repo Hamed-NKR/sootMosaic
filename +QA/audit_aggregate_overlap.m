@@ -1813,7 +1813,7 @@ pars.m = pars.n; % Use count-proportional placeholder masses for the fixture.
 idsBefore = sort(cell2mat(cellfun(@(x) x(:, 1), pars.pp, 'UniformOutput', false)));
 out = struct('outcome', {{'ok'}}, 'nAggAfter', NaN, 'idsPreserved', false, ...
     'aligned', false, 'internalOverlapPairs', 0, 'maxRelPen', 0, ...
-    'errId', {{''}}, 'ppAfter', {{}});
+    'errId', {{''}}, 'ppAfter', {{}}, 'rBefore', pars.r, 'rAfter', []);
 try
     pars2 = COL.GROW(pars, og);
 catch err
@@ -1823,6 +1823,7 @@ catch err
 end
 out.nAggAfter = numel(pars2.pp);
 out.ppAfter = pars2.pp(:);
+out.rAfter = pars2.r;
 idsAfter = sort(cell2mat(cellfun(@(x) x(:, 1), pars2.pp(:), 'UniformOutput', false)));
 out.idsPreserved = isequal(idsBefore, idsAfter);
 out.aligned = numel(pars2.pp) == numel(pars2.n) && ...
@@ -1848,9 +1849,9 @@ function D = test_periodic(domSize, opts)
 %   Both fixtures have the same minimum-image separation. Different merge
 %   outcomes therefore identify inconsistent periodic collision handling.
 logv(opts, '\n--- Property test D: periodic boundary handling in COL.GROW ---\n');
-og = struct('indupdate', 'off', 'col', 'agg');
 d = 1e-7;
 L = domSize(:)';
+og = struct('indupdate', 'off', 'col', 'agg', 'dom_size', L(:));
 % Place the interior pair at a center separation of 0.9d.
 ppI = {mk_pp(1, d, [L(1)/2, L(2)/2, L(3)/2], 1); ...
     mk_pp(2, d, [L(1)/2 + 0.9*d, L(2)/2, L(3)/2], 2)};
@@ -1864,10 +1865,147 @@ D.crossFaceMerged = D.crossFace.nAggAfter == 1;
 D.missedPeriodicCollision = D.interiorMerged && ~D.crossFaceMerged;
 % Exits through the positive and negative faces of one axis in one step.
 D.twoFace = test_pbc_two_face(L, d);
+% Contacts across each face and a corner, and pairs near a face that do not touch.
+D.growCrossFace = test_grow_cross_face(L, d, og);
 D.summary = sprintf(['interior merged = %d | cross-face merged = %d (minimum-image separation identical) | ', ...
-    'two-face TRANSP.PBC wrapped on x y z = %d %d %d'], ...
-    D.interiorMerged, D.crossFaceMerged, D.twoFace.wrapped);
+    'two-face TRANSP.PBC wrapped on x y z = %d %d %d | ', ...
+    'cross-face GROW passed on x y z corner = %d %d %d %d | ', ...
+    'near-face pairs kept apart on face corner = %d %d | ', ...
+    'wide aggregates merged in nearest and direct image = %d %d | ', ...
+    'noncapture candidate left unchanged = %d | ', ...
+    'chain reaching beyond the next images merged = %d'], ...
+    D.interiorMerged, D.crossFaceMerged, D.twoFace.wrapped, ...
+    D.growCrossFace.passed);
 logv(opts, '  %s\n', D.summary);
+end
+
+function S = test_grow_cross_face(L, d, og)
+%TEST_GROW_CROSS_FACE Merge single primaries that touch across a face.
+%   Four pairs overlap across the x, y and z faces and across a corner of the
+%   domain at a minimum-image center separation below d. Each must merge
+%   into one contiguous aggregate in point contact, with its center inside
+%   the domain. Two further pairs sit near a face and near a corner at
+%   minimum-image separations of 3d and 3 sqrt(3) d and must be left
+%   unchanged.
+%   The touching pairs are placed off center so the merged center lies
+%   outside the domain before it is wrapped.
+S = struct('cases', {{'x', 'y', 'z', 'corner', 'nearFace', 'nearCorner'}}, ...
+    'passed', false(1, 6), 'nAggAfter', nan(1, 6), 'contactGap', nan(1, 6), ...
+    'errId', {repmat({''}, 1, 6)});
+c = L / 2;
+r1 = [0.35*d, c(2), c(3); c(1), 0.35*d, c(3); c(1), c(2), 0.35*d; ...
+    0.2*d, 0.2*d, 0.2*d; 1.5*d, c(2), c(3); 1.5*d, 1.5*d, 1.5*d];
+r2 = [L(1) - 0.55*d, c(2), c(3); c(1), L(2) - 0.55*d, c(3); ...
+    c(1), c(2), L(3) - 0.55*d; L - 0.3*d; L(1) - 1.5*d, c(2), c(3); ...
+    L - 1.5*d];
+nExpected = [1, 1, 1, 1, 2, 2];
+tol = 1e-9 * d;
+for q = 1:6
+    pp = {mk_pp(1, d, r1(q, :), 1); mk_pp(2, d, r2(q, :), 2)};
+    out = run_grow_fixture(pp, og);
+    S.nAggAfter(q) = out.nAggAfter;
+    S.errId{q} = out.errId{1};
+    ok = strcmp(out.outcome{1}, 'ok') && out.nAggAfter == nExpected(q);
+    if ok && nExpected(q) == 1
+        % Contiguous merge in point contact with the center in the domain.
+        P = out.ppAfter{1};
+        S.contactGap(q) = norm(P(1, 3:5) - P(2, 3:5)) - d;
+        w = P(:, 2).^3;
+        com = sum(w .* P(:, 3:5), 1) ./ sum(w);
+        ok = abs(S.contactGap(q)) <= tol && all(com >= 0 & com <= L);
+    elseif ok
+        % Pairs that do not touch keep their positions exactly.
+        ok = isequal(out.ppAfter, pp);
+    end
+    S.passed(q) = ok;
+end
+% Aggregates wider than half of a box of 10d. A chain of primaries along x
+% with a side column at its first primary meets one primary B near the
+% positive x face. In the first case B is captured in the nearest image of
+% the centers, in the second case only in the direct image, which lies
+% farther than half the box from the chain center.
+Lb = 10 * d * [1, 1, 1];
+ogb = og;
+ogb.dom_size = Lb(:);
+zc = [1, 2, 3, 4, 6, 7, 8, 9]' * d;
+x0 = [0.5, 1.5] * d;
+nChain = [9, 8];
+S.cases = [S.cases, {'wideNearest', 'wideDirect'}];
+S.passed = [S.passed, false(1, 2)];
+S.nAggAfter = [S.nAggAfter, nan(1, 2)];
+S.contactGap = [S.contactGap, nan(1, 2)];
+S.errId = [S.errId, {'', ''}];
+for q = 1:2
+    xc = x0(q) + (0:nChain(q) - 1)' * d;
+    A = [(1:nChain(q))', d * ones(nChain(q), 1), xc, 5 * d * ones(nChain(q), 2), ...
+        ones(nChain(q), 1); (11:18)', d * ones(8, 1), x0(q) * ones(8, 1), ...
+        5 * d * ones(8, 1), zc, ones(8, 1)];
+    out = run_grow_fixture({A; mk_pp(100, d, [9.3*d, 5*d, 5*d], 2)}, ogb);
+    S.nAggAfter(6 + q) = out.nAggAfter;
+    S.errId{6 + q} = out.errId{1};
+    ok = strcmp(out.outcome{1}, 'ok') && out.nAggAfter == 1 && ...
+        out.internalOverlapPairs == 0;
+    if ok
+        % Point contact of B with the chain, no overlap with the six face
+        % images of the merged aggregate, and its center in the box.
+        P = out.ppAfter{1};
+        b = P(:, 1) == 100;
+        gB = sqrt(sum((P(~b, 3:5) - P(b, 3:5)).^2, 2)) - d;
+        S.contactGap(6 + q) = min(gB);
+        nSelf = 0;
+        for sh = [eye(3); -eye(3)]'
+            X = P(:, 3:5) + sh' .* Lb;
+            g = sqrt((P(:, 3) - X(:, 1)').^2 + (P(:, 4) - X(:, 2)').^2 + ...
+                (P(:, 5) - X(:, 3)').^2) - d;
+            nSelf = nSelf + nnz(g < -tol);
+        end
+        w = P(:, 2).^3;
+        com = sum(w .* P(:, 3:5), 1) ./ sum(w);
+        ok = abs(S.contactGap(6 + q)) <= tol && nSelf == 0 && ...
+            all(com >= 0 & com <= Lb);
+    end
+    S.passed(6 + q) = ok;
+end
+% Two parallel chains across the x face whose bounding spheres overlap in
+% the nearest image (bounding diameter 5d, center separation 3.02655d)
+% while the smallest surface gap of 2.02655d is outside the capture window
+% of one primary diameter. Primaries and cached centers must stay unchanged.
+zs = (3:7)' * d;
+A = [(1:5)', d * ones(5, 1), 0.2 * d * ones(5, 1), 3 * d * ones(5, 1), zs, ones(5, 1)];
+B = [(11:15)', d * ones(5, 1), 9.8 * d * ones(5, 1), 6 * d * ones(5, 1), zs, 2 * ones(5, 1)];
+out = run_grow_fixture({A; B}, ogb);
+S.cases = [S.cases, {'noCapture'}];
+S.nAggAfter = [S.nAggAfter, out.nAggAfter];
+S.contactGap = [S.contactGap, NaN];
+S.errId = [S.errId, out.errId(1)];
+S.passed = [S.passed, strcmp(out.outcome{1}, 'ok') && out.nAggAfter == 2 && ...
+    isequal(out.ppAfter, {A; B}) && isequal(out.rAfter, out.rBefore)];
+% A straight chain of 41 touching primaries much longer than the box of 10d
+% and one primary that it reaches only through an image two box lengths
+% away along x and one along y, beyond the 27 images next to the box.
+dc = sqrt(1.145) * d;
+jc = (-20:20)';
+A = [(1:41)', dc * ones(41, 1), 5 * d + jc .* [1, 0.35, 0.15] * d, ones(41, 1)];
+B = [100, dc, 6.5 * d, 2 * d, 8 * d, 2];
+out = run_grow_fixture({A; B}, ogb);
+ok = strcmp(out.outcome{1}, 'ok') && out.nAggAfter == 1 && ...
+    out.internalOverlapPairs == 0;
+gChain = NaN;
+if ok
+    % Point contact of the single primary with the chain and the merged
+    % center in the box.
+    P = out.ppAfter{1};
+    b = P(:, 1) == 100;
+    gChain = min(sqrt(sum((P(~b, 3:5) - P(b, 3:5)).^2, 2)) - dc);
+    w = P(:, 2).^3;
+    com = sum(w .* P(:, 3:5), 1) ./ sum(w);
+    ok = abs(gChain) <= tol && all(com >= 0 & com <= Lb);
+end
+S.cases = [S.cases, {'longChain'}];
+S.nAggAfter = [S.nAggAfter, out.nAggAfter];
+S.contactGap = [S.contactGap, gChain];
+S.errId = [S.errId, out.errId(1)];
+S.passed = [S.passed, ok];
 end
 
 function S = test_pbc_two_face(L, d)

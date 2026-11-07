@@ -48,6 +48,10 @@ else
         'generator state and no seed. The resumed run is not reproducible.'])
 end
 
+% Checkpoints written before the periodic collision search carry no domain
+% size in the growth options, so it is set from the saved domain table.
+opts_grow.dom_size = params_domain.Value(2:4);
+
 k = k + 1;
 
 fprintf('\n');

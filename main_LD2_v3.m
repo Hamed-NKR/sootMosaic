@@ -94,6 +94,7 @@ fprintf('LD2 effective domain size after volume-fraction adjustment: [%.6g %.6g 
 pars_LD2.v = PAR.INIT_VEL(pars_LD2.pp, pars_LD2.n, fl.temp, params_const);
 
 opts_grow = cfg_transport.growth_options;
+opts_grow.dom_size = params_domain.Value(2:4); % periodic collision search
 
 % make a placeholder for temporal ensemble data
 ensdata.t = zeros(k_max, 1);

@@ -97,6 +97,7 @@ for i = 1 : n_trial
 
     [pars0, params0_ud] = PAR.INIT_LOC(pars0, params0_ud, [], opts0_loc);
     fl0.size = params0_ud.Value(2:4);
+    opts0_grow.dom_size = params0_ud.Value(2:4); % periodic collision search
 
     pars0 = PAR.SIZING(pars0);
     [pars0, opts0_mobil] = TRANSP.MOBIL(pars0, fl0, params0_const, opts0_mobil);
