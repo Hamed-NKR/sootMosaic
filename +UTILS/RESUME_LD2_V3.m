@@ -104,9 +104,12 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
         parsdata(ind_dat).dpp = pars_LD2.dpp_g(:,1);
         parsdata(ind_dat).sigmapp = pars_LD2.dpp_g(:,2);
         parsdata(ind_dat).da = pars_LD2.da;
-        parsdata(ind_dat).dm = pars_LD2.da;
+        parsdata(ind_dat).dm = pars_LD2.dm;
         parsdata(ind_dat).dg = pars_LD2.dg;
         parsdata(ind_dat).n_hyb = pars_LD2.n_hyb;
+
+        % saved mobility diameters must match the current population
+        UTILS.CHECK_SAVED_DM(parsdata(ind_dat).dm, pars_LD2.dm);
 
         ind_dat = ind_dat + 1; % update data saving index
 
