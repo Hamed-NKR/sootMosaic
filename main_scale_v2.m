@@ -85,7 +85,7 @@ if iscell(pars_raw.pp)
     end
 
 else
-    error('PFAL:main_scale_v2:InvalidDatasetShape', ...
+    error('sootMosaic:main_scale_v2:InvalidDatasetShape', ...
         'Scale dataset variable must be a cell array of aggregate primary-particle matrices.')
 end
 

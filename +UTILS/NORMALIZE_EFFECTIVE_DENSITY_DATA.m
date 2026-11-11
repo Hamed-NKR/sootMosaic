@@ -10,7 +10,7 @@ function [effective_density_data, metadata] = NORMALIZE_EFFECTIVE_DENSITY_DATA( 
 
 expected_hash = '';
 if mod(numel(varargin), 2) ~= 0
-    error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:BadOptions', ...
+    error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:BadOptions', ...
         'Optional inputs must be supplied as name-value pairs.');
 end
 for i = 1:2:numel(varargin)
@@ -18,7 +18,7 @@ for i = 1:2:numel(varargin)
         case 'expectedsourcesha256'
             expected_hash = lower(char(varargin{i + 1}));
         otherwise
-            error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:UnknownOption', ...
+            error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:UnknownOption', ...
                 'Unknown option: %s', char(varargin{i}));
     end
 end
@@ -26,13 +26,13 @@ end
 source_file = char(source_file);
 output_file = char(output_file);
 if ~isfile(source_file)
-    error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:MissingSource', ...
+    error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:MissingSource', ...
         'Effective-density source MAT was not found: %s', source_file);
 end
 
 source_hash_before = UTILS.FILE_SHA256(source_file);
 if ~isempty(expected_hash) && ~strcmpi(source_hash_before, expected_hash)
-    error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:SourceChecksumMismatch', ...
+    error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:SourceChecksumMismatch', ...
         ['The source MAT does not match the expected SHA-256.\n' ...
          'Expected: %s\nActual:   %s'], expected_hash, source_hash_before);
 end
@@ -41,7 +41,7 @@ end
 % and saved graphics objects into the validation preparation step.
 source = load(source_file, 'dist_grp', 'test_condition');
 if ~isfield(source, 'dist_grp') || ~isstruct(source.dist_grp)
-    error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:MissingLegacyData', ...
+    error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:MissingLegacyData', ...
         'The source MAT does not contain the expected dist_grp struct.');
 end
 
@@ -51,7 +51,7 @@ condition_ids = ["low_agglomeration"; "moderate_collapse"; ...
 default_labels = ["Low agglomeration"; "Moderate collapse"; ...
     "High agglomeration"; "Extensive collapse"];
 if numel(legacy_groups) ~= numel(condition_ids)
-    error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:UnexpectedGroupCount', ...
+    error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:UnexpectedGroupCount', ...
         'Expected four ODIAS condition groups but found %d.', numel(legacy_groups));
 end
 
@@ -63,7 +63,7 @@ for group_index = 1:numel(legacy_groups)
     group = legacy_groups(group_index);
     for field_index = 1:numel(required_fields)
         if ~isfield(group, required_fields{field_index})
-            error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:MissingField', ...
+            error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:MissingField', ...
                 'dist_grp(%d) is missing field "%s".', ...
                 group_index, required_fields{field_index});
         end
@@ -72,7 +72,7 @@ for group_index = 1:numel(legacy_groups)
     n_points = numel(group.da);
     lengths = cellfun(@(name) numel(group.(name)), required_fields);
     if any(lengths ~= n_points)
-        error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:LengthMismatch', ...
+        error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:LengthMismatch', ...
             'The numeric fields in dist_grp(%d) do not have equal lengths.', ...
             group_index);
     end
@@ -145,7 +145,7 @@ verify_round_trip(candidate.effective_density_data, legacy_groups);
 
 source_hash_after = UTILS.FILE_SHA256(source_file);
 if ~strcmpi(source_hash_before, source_hash_after)
-    error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:SourceChanged', ...
+    error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:SourceChanged', ...
         'The source MAT changed while the companion file was being prepared.');
 end
 metadata.numerical_verification.source_hash_unchanged = true;
@@ -153,7 +153,7 @@ save(temporary_file, 'effective_density_data', 'metadata', '-v7.3');
 
 [moved, message] = movefile(temporary_file, output_file, 'f');
 if ~moved
-    error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:MoveFailed', ...
+    error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:MoveFailed', ...
         'Could not place the normalized MAT at %s: %s', output_file, message);
 end
 clear temporary_cleanup
@@ -217,7 +217,7 @@ for group_index = 1:numel(legacy_groups)
         reconstructed = reshape(group_rows.(tidy_name), size(original));
         if ~strcmp(class(original), class(reconstructed)) || ...
                 ~isequaln(original, reconstructed)
-            error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:RoundTripFailed', ...
+            error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:RoundTripFailed', ...
                 'Exact round-trip verification failed for dist_grp(%d).%s.', ...
                 group_index, legacy_name);
         end
@@ -232,7 +232,7 @@ function write_hash_sidecar(output_file, hash_text)
 sidecar = [output_file, '.sha256'];
 fid = fopen(sidecar, 'w');
 if fid < 0
-    error('PFAL:NORMALIZE_EFFECTIVE_DENSITY_DATA:SidecarWriteFailed', ...
+    error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:SidecarWriteFailed', ...
         'Could not write checksum sidecar: %s', sidecar);
 end
 cleanup = onCleanup(@() fclose(fid));

@@ -34,6 +34,7 @@ data/experimental_effective_density/*
 data/main_valid_webtest/*
 !data/main_valid_webtest/.gitkeep
 .pfal-cache/
+.sootmosaic-cache/
 data_publication_staging/
 # Local reviewer exchange logs
 exchanges/

@@ -75,8 +75,8 @@ n_ang = cfg_projection.n_ang; % number of viewing angles used for projection ave
 
 opt_scale = cfg_options.opt_scale; % 'bivariate', 'sequential', or 'ideal'
 if strcmp(opt_scale, 'sequential')
-    warning('on', 'PFAL:main_scatter_v8:SequentialScaleMode')
-    warning('PFAL:main_scatter_v8:SequentialScaleMode', ...
+    warning('on', 'sootMosaic:main_scatter_v8:SequentialScaleMode')
+    warning('sootMosaic:main_scatter_v8:SequentialScaleMode', ...
         ['Scatter scaling is running in sequential mode. This is not ', ...
         'the thesis/paper bivariate initialization method.'])
 end
@@ -235,7 +235,7 @@ switch(opt_scale)
         dpp0_scat = uc(da_scat) * gm_dpp / uc(gm_da);
         
     otherwise
-        error('PFAL:main_scatter_v8:InvalidScaleMode', ...
+        error('sootMosaic:main_scatter_v8:InvalidScaleMode', ...
             'Invalid input for scaling method: %s', opt_scale)
 
 end
@@ -250,7 +250,7 @@ switch(opts_nppcor)
         npp_scat = npp0_scat;
         dpp_scat = dpp0_scat;
     otherwise
-        error('PFAL:main_scatter_v8:InvalidNppCorrectionMode', ...
+        error('sootMosaic:main_scatter_v8:InvalidNppCorrectionMode', ...
             'Invalid input for primary-particle-count correction: %s', ...
             opts_nppcor)
 end

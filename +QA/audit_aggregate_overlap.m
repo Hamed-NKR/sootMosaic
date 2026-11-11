@@ -1,6 +1,6 @@
 function report = audit_aggregate_overlap(repoRoot, varargin)
 % AUDIT_AGGREGATE_OVERLAP  Geometry and index-integrity audit of the
-%   PFAL two-stage (scatter -> LD2) workflow.
+%   sootMosaic two-stage (scatter -> LD2) workflow.
 %
 %   report = QA.AUDIT_AGGREGATE_OVERLAP(repoRoot, Name, Value, ...)
 %
@@ -41,7 +41,7 @@ function report = audit_aggregate_overlap(repoRoot, varargin)
 %     'Verbose'              true
 %
 %   Example:
-%     repoRoot = 'C:\path\to\PFAL';
+%     repoRoot = 'C:\path\to\sootMosaic';
 %     addpath(repoRoot);
 %     report = QA.audit_aggregate_overlap(repoRoot, 'AnalyzeInteraggregate', true);
 %
@@ -66,7 +66,7 @@ report.metadata = struct( ...
     'matlab_version', version);
 report.options = opts;
 
-logv(opts, '=== PFAL aggregate overlap / index-integrity audit ===\n');
+logv(opts, '=== sootMosaic aggregate overlap / index-integrity audit ===\n');
 
 % ------------------------------------------------------------------- %
 % 0. Validate the independent overlap detector
@@ -183,7 +183,7 @@ report.temporalTrace = trace_pairs(stages, pairRows, idmaps, ...
 % 4. Deterministic collision-function property tests
 % ------------------------------------------------------------------- %
 if opts.RunPropertyTests
-    addpath(repoRoot); % Make PFAL packages available to property-test calls.
+    addpath(repoRoot); % Make sootMosaic packages available to property-test calls.
     rs = RandStream('twister', 'Seed', opts.Seed);
     report.propertyTests.testA_connect_invariant = test_connect_invariant(postScatterPP, rs, opts);
     report.propertyTests.testB_duplicate_ids = test_duplicate_ids(postScatterPP, opts);

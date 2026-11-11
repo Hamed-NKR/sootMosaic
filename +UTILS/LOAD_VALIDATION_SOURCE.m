@@ -5,7 +5,7 @@ function [loaded, source] = LOAD_VALIDATION_SOURCE(source_cfg)
 %   loaded, which keeps the effective-density workspace out of memory.
 
 if nargin < 1 || ~isstruct(source_cfg)
-    error('PFAL:LOAD_VALIDATION_SOURCE:MissingConfig', ...
+    error('sootMosaic:LOAD_VALIDATION_SOURCE:MissingConfig', ...
         'A validation source configuration struct is required.');
 end
 
@@ -14,7 +14,7 @@ required_fields = {'id', 'file', 'variables'};
 for i = 1:numel(required_fields)
     field_name = required_fields{i};
     if ~isfield(source, field_name) || isempty(source.(field_name))
-        error('PFAL:LOAD_VALIDATION_SOURCE:MissingField', ...
+        error('sootMosaic:LOAD_VALIDATION_SOURCE:MissingField', ...
             'Validation source config is missing "%s".', field_name);
     end
 end
@@ -28,9 +28,17 @@ source.cache_file = optional_text(source, 'cache_file');
 source.variables = normalize_variable_names(source.variables);
 
 resolved_file = source.file;
-if ~isfile(resolved_file) && ~isempty(source.cache_file) && ...
-        isfile(source.cache_file)
-    resolved_file = source.cache_file;
+if ~isfile(resolved_file) && ~isempty(source.cache_file)
+    if isfile(source.cache_file)
+        resolved_file = source.cache_file;
+    else
+        % same file under the earlier cache folder name
+        earlier_cache = regexprep(source.cache_file, ...
+            '(^|[\\/])\.sootmosaic-cache([\\/])', '$1.pfal-cache$2');
+        if isfile(earlier_cache)
+            resolved_file = earlier_cache;
+        end
+    end
 end
 
 if ~isfile(resolved_file)
@@ -40,7 +48,7 @@ end
 if ~isempty(source.sha256)
     actual_hash = UTILS.FILE_SHA256(resolved_file);
     if ~strcmpi(actual_hash, source.sha256)
-        error('PFAL:LOAD_VALIDATION_SOURCE:ChecksumMismatch', ...
+        error('sootMosaic:LOAD_VALIDATION_SOURCE:ChecksumMismatch', ...
             ['SHA-256 mismatch for validation source "%s".\n' ...
              'Expected: %s\nActual:   %s'], ...
             source.id, source.sha256, actual_hash);
@@ -51,7 +59,7 @@ loaded = load(resolved_file, source.variables{:});
 for i = 1:numel(source.variables)
     variable_name = source.variables{i};
     if ~isfield(loaded, variable_name)
-        error('PFAL:LOAD_VALIDATION_SOURCE:MissingVariable', ...
+        error('sootMosaic:LOAD_VALIDATION_SOURCE:MissingVariable', ...
             'Variable "%s" was not found in validation source "%s": %s', ...
             variable_name, source.id, resolved_file);
     end
@@ -72,7 +80,7 @@ elseif isstring(value)
 elseif iscell(value)
     variable_names = cellfun(@char, value(:), 'UniformOutput', false);
 else
-    error('PFAL:LOAD_VALIDATION_SOURCE:InvalidVariables', ...
+    error('sootMosaic:LOAD_VALIDATION_SOURCE:InvalidVariables', ...
         'source.variables must be text or an array of text values.');
 end
 
@@ -82,7 +90,7 @@ function resolved_file = download_source(source)
 %DOWNLOAD_SOURCE Fetch a missing source into its configured cache location.
 
 if isempty(source.url)
-    error('PFAL:LOAD_VALIDATION_SOURCE:MissingFile', ...
+    error('sootMosaic:LOAD_VALIDATION_SOURCE:MissingFile', ...
         ['Validation source "%s" was not found locally: %s\n' ...
          'Provide the file or configure a URL and cache_file.'], ...
         source.id, source.file);
@@ -102,7 +110,7 @@ end
 try
     websave(resolved_file, source.url);
 catch err
-    error('PFAL:LOAD_VALIDATION_SOURCE:DownloadFailed', ...
+    error('sootMosaic:LOAD_VALIDATION_SOURCE:DownloadFailed', ...
         'Could not download validation source "%s" from %s: %s', ...
         source.id, source.url, err.message);
 end

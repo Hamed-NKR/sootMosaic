@@ -5,11 +5,11 @@ function [params_domain, params_const, fl] = LD2_PARAMS_FROM_CONFIG(domain_cfg, 
 %   PAR.INIT_LOC, TRANSP.PBC, TRANSP.MOBIL, and TRANSP.MARCH.
 
 if nargin < 1 || ~isstruct(domain_cfg)
-    error('PFAL:LD2_PARAMS_FROM_CONFIG:MissingDomain', ...
+    error('sootMosaic:LD2_PARAMS_FROM_CONFIG:MissingDomain', ...
         'transport.domain must be a struct.');
 end
 if nargin < 2 || ~isstruct(fluid_cfg)
-    error('PFAL:LD2_PARAMS_FROM_CONFIG:MissingFluid', ...
+    error('sootMosaic:LD2_PARAMS_FROM_CONFIG:MissingFluid', ...
         'transport.fluid must be a struct.');
 end
 
@@ -43,13 +43,13 @@ function out = require_scalar_field(src, field_name, label)
 %REQUIRE_SCALAR_FIELD Read and validate a numeric scalar field.
 
 if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('PFAL:LD2_PARAMS_FROM_CONFIG:MissingScalar', ...
+    error('sootMosaic:LD2_PARAMS_FROM_CONFIG:MissingScalar', ...
         'The LD2 config is missing %s.', label);
 end
 
 out = double(src.(field_name));
 if ~isscalar(out) || ~isfinite(out)
-    error('PFAL:LD2_PARAMS_FROM_CONFIG:InvalidScalar', ...
+    error('sootMosaic:LD2_PARAMS_FROM_CONFIG:InvalidScalar', ...
         'The LD2 config field %s must be a finite numeric scalar.', label);
 end
 
@@ -59,14 +59,14 @@ function out = require_vector_field(src, field_name, expected_len, label)
 %REQUIRE_VECTOR_FIELD Read and validate a numeric vector field.
 
 if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('PFAL:LD2_PARAMS_FROM_CONFIG:MissingVector', ...
+    error('sootMosaic:LD2_PARAMS_FROM_CONFIG:MissingVector', ...
         'The LD2 config is missing %s.', label);
 end
 
 out = double(src.(field_name));
 out = reshape(out, 1, []);
 if numel(out) ~= expected_len || any(~isfinite(out))
-    error('PFAL:LD2_PARAMS_FROM_CONFIG:InvalidVector', ...
+    error('sootMosaic:LD2_PARAMS_FROM_CONFIG:InvalidVector', ...
         'The LD2 config field %s must be a finite numeric vector of length %d.', ...
         label, expected_len);
 end

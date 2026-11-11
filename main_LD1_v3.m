@@ -162,7 +162,7 @@ pp0 = flatten_saved_pp(pp0_nested);
 pp0_n = flatten_saved_counts(pp0_n_nested);
 
 if isempty(pp0)
-    error('PFAL:main_LD1_v3:EmptyLibrary', ...
+    error('sootMosaic:main_LD1_v3:EmptyLibrary', ...
         'LD1 produced no aggregate snapshots. Increase j_max or inspect the config.')
 end
 

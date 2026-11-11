@@ -1,13 +1,17 @@
 function cfg = LOAD_MAIN_LD1_CONFIG(config_path)
 %LOAD_MAIN_LD1_CONFIG Load and validate the main_LD1 JSON config.
-%   CFG = UTILS.LOAD_MAIN_LD1_CONFIG reads PFAL_MAIN_LD1_CONFIG when set;
-%   otherwise it reads config/main_ld1/main_ld1_config.local.json.
+%   CFG = UTILS.LOAD_MAIN_LD1_CONFIG reads SOOTMOSAIC_MAIN_LD1_CONFIG.
+%   If empty, it reads PFAL_MAIN_LD1_CONFIG. If both are empty, it reads
+%   config/main_ld1/main_ld1_config.local.json.
 %
 %   CFG = UTILS.LOAD_MAIN_LD1_CONFIG(CONFIG_PATH) reads a specific config
 %   file instead of the environment/default-selected file.
 
 if nargin < 1 || isempty(config_path)
-    config_path = getenv('PFAL_MAIN_LD1_CONFIG');
+    config_path = getenv('SOOTMOSAIC_MAIN_LD1_CONFIG');
+    if isempty(config_path)
+        config_path = getenv('PFAL_MAIN_LD1_CONFIG'); % earlier name
+    end
     if isempty(config_path)
         config_path = fullfile(repo_root(), 'config', 'main_ld1', ...
             'main_ld1_config.local.json');
@@ -17,17 +21,17 @@ end
 config_path = char(config_path);
 
 if ~isfile(config_path)
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:MissingConfig', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:MissingConfig', ...
         ['LD1 config not found: %s\n' ...
         'Create it from config/main_ld1/main_ld1_config.example.json, ' ...
-        'or set PFAL_MAIN_LD1_CONFIG to an explicit config path.'], ...
+        'or set SOOTMOSAIC_MAIN_LD1_CONFIG to an explicit config path.'], ...
         config_path);
 end
 
 try
     cfg = jsondecode(fileread(config_path));
 catch err
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidConfig', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidConfig', ...
         'Could not parse LD1 config "%s": %s', config_path, err.message);
 end
 
@@ -59,11 +63,11 @@ cfg.simulation.j_max = require_positive_integer_field(cfg.simulation, ...
 cfg.simulation.rng_seed = optional_rng_seed(cfg.simulation);
 
 if cfg.simulation.n_temporal < 2
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidStorageCount', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidStorageCount', ...
         'simulation.n_temporal must be at least 2.');
 end
 if cfg.simulation.npp_max < cfg.simulation.npp_min
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidNppRange', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidNppRange', ...
         'simulation.npp_max must be greater than or equal to simulation.npp_min.');
 end
 
@@ -149,7 +153,7 @@ end
 
 function out = require_struct_field(src, field_name, label)
 if ~isfield(src, field_name) || ~isstruct(src.(field_name))
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:MissingSection', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:MissingSection', ...
         'The LD1 config is missing the %s.', label);
 end
 out = src.(field_name);
@@ -157,7 +161,7 @@ end
 
 function out = require_text_field(src, field_name, label)
 if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:MissingText', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:MissingText', ...
         'The LD1 config is missing %s.', label);
 end
 out = char(src.(field_name));
@@ -172,19 +176,19 @@ end
 
 function out = require_scalar_field(src, field_name, label)
 if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:MissingScalar', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:MissingScalar', ...
         'The LD1 config is missing %s.', label);
 end
 value = src.(field_name);
 % Check the type before conversion, since double() turns text into...
     % ...character codes and logical values into 0 or 1
 if ~isnumeric(value) || ~isreal(value)
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidScalar', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidScalar', ...
         'The LD1 config field %s must be a finite numeric scalar.', label);
 end
 out = double(value);
 if ~isscalar(out) || ~isfinite(out)
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidScalar', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidScalar', ...
         'The LD1 config field %s must be a finite numeric scalar.', label);
 end
 end
@@ -192,7 +196,7 @@ end
 function out = require_positive_scalar_field(src, field_name, label)
 out = require_scalar_field(src, field_name, label);
 if out <= 0
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidPositiveScalar', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidPositiveScalar', ...
         'The LD1 config field %s must be positive.', label);
 end
 end
@@ -211,7 +215,7 @@ if ~isfield(src, field_name) || isempty(src.(field_name))
 end
 if ~(ischar(src.(field_name)) || isStringScalar(src.(field_name))) || ...
         ~any(strcmp(char(src.(field_name)), choices))
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidChoice', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidChoice', ...
         'The LD1 config field %s must be one of %s.', label, ...
         strjoin(choices, ', '));
 end
@@ -221,7 +225,7 @@ end
 function out = require_nonnegative_scalar_field(src, field_name, label)
 out = require_scalar_field(src, field_name, label);
 if out < 0
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidNonnegativeScalar', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidNonnegativeScalar', ...
         'The LD1 config field %s must be nonnegative.', label);
 end
 end
@@ -229,20 +233,20 @@ end
 function out = require_positive_integer_field(src, field_name, label)
 out = require_positive_scalar_field(src, field_name, label);
 if round(out) ~= out
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidInteger', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidInteger', ...
         'The LD1 config field %s must be a positive integer.', label);
 end
 end
 
 function out = require_vector_field(src, field_name, expected_len, label)
 if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:MissingVector', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:MissingVector', ...
         'The LD1 config is missing %s.', label);
 end
 out = double(src.(field_name));
 out = reshape(out, 1, []);
 if numel(out) ~= expected_len || any(~isfinite(out))
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidVector', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidVector', ...
         'The LD1 config field %s must be a finite numeric vector of length %d.', ...
         label, expected_len);
 end
@@ -256,7 +260,7 @@ end
 seed = double(src.rng_seed);
 if ~isscalar(seed) || ~isfinite(seed) || seed < 0 || seed >= 2^32 || ...
         round(seed) ~= seed
-    error('PFAL:LOAD_MAIN_LD1_CONFIG:InvalidRngSeed', ...
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidRngSeed', ...
         'simulation.rng_seed must be empty or an integer scalar from 0 to 4294967295.');
 end
 end

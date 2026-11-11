@@ -8,11 +8,12 @@ function CHECK_SAVED_DM(dm_saved, dm_now)
 %   - dm_now, mobility diameters of the population at save time (m)
 %
 %   Entries that are undefined in both inputs count as equal. A size or...
-%   ...value difference stops with the identifier PFAL:LD2:SavedDmMismatch.
+%   ...value difference stops with the identifier...
+%   ...sootMosaic:LD2:SavedDmMismatch.
 % ----------------------------------------------------------------------- %
 
 if ~isequaln(dm_saved, dm_now)
-    error('PFAL:LD2:SavedDmMismatch', ...
+    error('sootMosaic:LD2:SavedDmMismatch', ...
         'Saved mobility diameters differ from the population at save time.')
 end
 

@@ -6,7 +6,7 @@ function report = test_ld2_saved_dm(repoRoot)
 %   report = QA.TEST_LD2_SAVED_DM(repoRoot)
 %
 %   Input
-%   - repoRoot, PFAL root folder (default, the folder above +QA)
+%   - repoRoot, sootMosaic root folder (default, the folder above +QA)
 %
 %   Output
 %   - report, struct array with fields name and pass, one entry per case
@@ -15,7 +15,7 @@ function report = test_ld2_saved_dm(repoRoot)
 %   ...8 and 9 read the two LD2 save sites and test that each one stores...
 %   ...pars_LD2.dm, calls the check on that field after the store, and...
 %   ...never stores pars_LD2.da in dm. Any failed case stops with the...
-%   ...identifier PFAL:QA:LD2SavedDmFailed.
+%   ...identifier sootMosaic:QA:LD2SavedDmFailed.
 % ----------------------------------------------------------------------- %
 
 if nargin < 1 || isempty(repoRoot)
@@ -80,7 +80,7 @@ for i = 1 : numel(pass)
     end
 end
 if ~all(pass)
-    error('PFAL:QA:LD2SavedDmFailed', '%d of %d cases failed.', ...
+    error('sootMosaic:QA:LD2SavedDmFailed', '%d of %d cases failed.', ...
         sum(~pass), numel(pass))
 end
 
@@ -100,6 +100,6 @@ ok = false;
 try
     UTILS.CHECK_SAVED_DM(dm_saved, dm_now);
 catch err
-    ok = strcmp(err.identifier, 'PFAL:LD2:SavedDmMismatch');
+    ok = strcmp(err.identifier, 'sootMosaic:LD2:SavedDmMismatch');
 end
 end

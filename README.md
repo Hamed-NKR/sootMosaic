@@ -1,8 +1,9 @@
-Post-Flame Agglomeration Algorithm (PFAL)
-===
+sootMosaic
+==========
 
-PFAL generates soot-like fractal aggregates with a staged Langevin dynamics
-workflow. The core simulation pipeline has three stages:
+sootMosaic (formerly PFAL, the Post-Flame Agglomeration Algorithm) generates
+soot-like fractal aggregates with a staged Langevin dynamics workflow. The core
+simulation pipeline has three stages:
 
 1. `main_LD1_v3.m` generates a raw first-stage aggregate library.
 2. `main_scale_v2.m` or `main_scatter_v8.m` calibrates that library to target
@@ -27,6 +28,25 @@ soot structures with nonuniform primary-particle sizes.
 Examples of hybrid soot imaged under transmission electron microscopy:
 
 ![Hybrid soot TEM examples](https://github.com/user-attachments/assets/db858f62-1e22-471c-90ad-dc06329de681)
+
+## Soot as a mosaic
+
+In a flame, soot aggregates can grow with primary particles of nearly uniform
+size inside each aggregate, while that size differs from one aggregate to the
+next. Downstream, as the soot dilutes and cools, the aggregates keep colliding,
+and a collision can join aggregates of different primary size into one hybrid
+structure. The result reads like a mosaic, with each parent aggregate still
+visible as a patch of its own primary size. The TEM images above show such
+hybrid aggregates.
+
+The simulation is built in the same order. First-stage Langevin dynamics (LD1)
+builds a library of aggregates that stands for the soot leaving the flame, and
+a scaling or scatter step calibrates that library to measured primary-particle
+and projected-area distributions. Second-stage Langevin dynamics (LD2) then
+lets these pieces agglomerate after the flame, and every primary particle keeps
+the size it was given. The resulting aggregates are compared with TEM
+measurements of primary size against aggregate size and with tandem AAC-SMPS
+measurements of effective density.
 
 ## Main Workflow
 
@@ -142,10 +162,10 @@ aggregate population in a second domain, and performs post-flame Langevin
 dynamics. The LD2 config chooses whether the source is the scale output or the
 scatter output.
 
-Set `PFAL_MAIN_LD2_CONFIG` before running LD2, for example:
+Set `SOOTMOSAIC_MAIN_LD2_CONFIG` before running LD2, for example:
 
 ```matlab
-setenv('PFAL_MAIN_LD2_CONFIG', ...
+setenv('SOOTMOSAIC_MAIN_LD2_CONFIG', ...
     'config/main_ld2/main_ld2_from_main_scatter_config.local.json')
 main_LD2_v3
 ```
@@ -199,7 +219,7 @@ main_tem_analysis_v1
 Run a specific profile explicitly:
 
 ```matlab
-setenv('PFAL_MAIN_TEM_ANALYSIS_CONFIG', ...
+setenv('SOOTMOSAIC_MAIN_TEM_ANALYSIS_CONFIG', ...
     'config/main_tem_analysis/main_tem_analysis_config.local.file.json')
 main_tem_analysis_v1
 ```
@@ -208,7 +228,7 @@ The script name is not a PowerShell command. From PowerShell, launch MATLAB in
 batch mode instead:
 
 ```powershell
-matlab -batch "cd('<path to PFAL>'); main_tem_analysis_v1"
+matlab -batch "cd('<path to sootMosaic>'); main_tem_analysis_v1"
 ```
 
 The figure configuration controls output formats and resolution, typography,
@@ -282,7 +302,7 @@ The normalizer loads only `dist_grp` and `test_condition`, copies all four
 condition groups without rounding or recalculation, and proves exact numerical
 round-trip equality before replacing the companion. The original workspace is
 never modified. Its raw tandem distributions, saved figures, and fit objects
-are not required by PFAL.
+are not required by sootMosaic.
 
 The TEM input is the existing processed artifact:
 
@@ -294,7 +314,7 @@ data/main_tem_analysis/tem_analysis_results.mat
 and the optional `dbarpp_ci95_*` columns. Set the validation config and run:
 
 ```matlab
-setenv('PFAL_MAIN_VALID_CONFIG', ...
+setenv('SOOTMOSAIC_MAIN_VALID_CONFIG', ...
     'config/main_valid/main_valid_config.local.json')
 main_valid_v3
 ```
@@ -352,19 +372,22 @@ Config selection follows the script loaders:
 
 | Script | Config selection |
 | --- | --- |
-| `main_LD1_v3.m` | `PFAL_MAIN_LD1_CONFIG`, or `config/main_ld1/main_ld1_config.local.json` when the environment variable is unset |
+| `main_LD1_v3.m` | `SOOTMOSAIC_MAIN_LD1_CONFIG`, then `PFAL_MAIN_LD1_CONFIG`, then `config/main_ld1/main_ld1_config.local.json` |
 | `main_scale_v2.m` | `config/main_scale/main_scale_config.local.json` |
 | `main_scatter_v8.m` | `config/main_scatter/main_scatter_config.local.json` |
-| `main_LD2_v3.m` | `PFAL_MAIN_LD2_CONFIG` is required |
-| `main_tem_analysis_v1.m` | `PFAL_MAIN_TEM_ANALYSIS_CONFIG`, or `config/main_tem_analysis/main_tem_analysis_config.local.json` when the environment variable is unset |
-| `main_valid_v3.m` | `PFAL_MAIN_VALID_CONFIG`, or `config/main_valid/main_valid_config.local.json` when the environment variable is unset |
+| `main_LD2_v3.m` | `SOOTMOSAIC_MAIN_LD2_CONFIG`, then `PFAL_MAIN_LD2_CONFIG`, with no default file |
+| `main_tem_analysis_v1.m` | `SOOTMOSAIC_MAIN_TEM_ANALYSIS_CONFIG`, then `PFAL_MAIN_TEM_ANALYSIS_CONFIG`, then `config/main_tem_analysis/main_tem_analysis_config.local.json` |
+| `main_valid_v3.m` | `SOOTMOSAIC_MAIN_VALID_CONFIG`, then `PFAL_MAIN_VALID_CONFIG`, then `config/main_valid/main_valid_config.local.json` |
+
+Each loader uses the first nonempty environment variable in its row. A config
+path passed directly to a loader overrides both.
 
 Typical run order:
 
 ```matlab
 main_LD1_v3
 main_scatter_v8      % default bivariate calibration branch
-setenv('PFAL_MAIN_LD2_CONFIG', ...
+setenv('SOOTMOSAIC_MAIN_LD2_CONFIG', ...
     'config/main_ld2/main_ld2_from_main_scatter_config.local.json')
 main_LD2_v3
 ```
@@ -392,7 +415,7 @@ URL fallback without transferring the full experimental workspace.
 ## Repository Map
 
 ```text
-PFAL/
+sootMosaic/
 |-- main_LD1_v3.m          first-stage aggregate-library generation
 |-- main_scale_v2.m        correlation-based LD1 library scaling
 |-- main_scatter_v8.m      LD1 library sampling/scaling; bivariate by default
@@ -416,7 +439,7 @@ PFAL/
 
 ## Background
 
-Discrete element Langevin dynamics in PFAL follows these repeated operations:
+Discrete element Langevin dynamics in sootMosaic follows these repeated operations:
 
 1. Read physical, domain, transport, and output parameters.
 2. Initialize primary-particle sizes and aggregate morphology.

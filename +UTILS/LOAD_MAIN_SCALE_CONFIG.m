@@ -14,7 +14,7 @@ end
 config_path = char(config_path);
 
 if ~isfile(config_path)
-    error('PFAL:LOAD_MAIN_SCALE_CONFIG:MissingConfig', ...
+    error('sootMosaic:LOAD_MAIN_SCALE_CONFIG:MissingConfig', ...
         ['Scale config not found: %s\n' ...
         'Create it from config/main_scale/main_scale_config.example.json and fill in the local dataset path.'], ...
         config_path);
@@ -23,7 +23,7 @@ end
 try
     cfg = jsondecode(fileread(config_path));
 catch err
-    error('PFAL:LOAD_MAIN_SCALE_CONFIG:InvalidConfig', ...
+    error('sootMosaic:LOAD_MAIN_SCALE_CONFIG:InvalidConfig', ...
         'Could not parse scale config "%s": %s', config_path, err.message);
 end
 
@@ -89,7 +89,7 @@ function out = require_struct_field(src, field_name, label)
 %REQUIRE_STRUCT_FIELD Read and validate a nested struct field.
 
 if ~isfield(src, field_name) || ~isstruct(src.(field_name))
-    error('PFAL:LOAD_MAIN_SCALE_CONFIG:MissingSection', ...
+    error('sootMosaic:LOAD_MAIN_SCALE_CONFIG:MissingSection', ...
         'The scale config is missing the %s.', label);
 end
 
@@ -101,7 +101,7 @@ function out = require_text_field(src, field_name, label)
 %REQUIRE_TEXT_FIELD Read and validate a non-empty text field.
 
 if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('PFAL:LOAD_MAIN_SCALE_CONFIG:MissingText', ...
+    error('sootMosaic:LOAD_MAIN_SCALE_CONFIG:MissingText', ...
         'The scale config is missing %s.', label);
 end
 
@@ -113,13 +113,13 @@ function out = require_scalar_field(src, field_name, label)
 %REQUIRE_SCALAR_FIELD Read and validate a numeric scalar field.
 
 if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('PFAL:LOAD_MAIN_SCALE_CONFIG:MissingScalar', ...
+    error('sootMosaic:LOAD_MAIN_SCALE_CONFIG:MissingScalar', ...
         'The scale config is missing %s.', label);
 end
 
 out = double(src.(field_name));
 if ~isscalar(out) || ~isfinite(out)
-    error('PFAL:LOAD_MAIN_SCALE_CONFIG:InvalidScalar', ...
+    error('sootMosaic:LOAD_MAIN_SCALE_CONFIG:InvalidScalar', ...
         'The scale config field %s must be a finite numeric scalar.', label);
 end
 
@@ -130,7 +130,7 @@ function out = require_positive_integer_field(src, field_name, label)
 
 out = require_scalar_field(src, field_name, label);
 if out <= 0 || round(out) ~= out
-    error('PFAL:LOAD_MAIN_SCALE_CONFIG:InvalidInteger', ...
+    error('sootMosaic:LOAD_MAIN_SCALE_CONFIG:InvalidInteger', ...
         'The scale config field %s must be a positive integer.', label);
 end
 
@@ -140,14 +140,14 @@ function out = require_vector_field(src, field_name, expected_len, label)
 %REQUIRE_VECTOR_FIELD Read and validate a numeric vector field.
 
 if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('PFAL:LOAD_MAIN_SCALE_CONFIG:MissingVector', ...
+    error('sootMosaic:LOAD_MAIN_SCALE_CONFIG:MissingVector', ...
         'The scale config is missing %s.', label);
 end
 
 out = double(src.(field_name));
 out = reshape(out, 1, []);
 if numel(out) ~= expected_len || any(~isfinite(out))
-    error('PFAL:LOAD_MAIN_SCALE_CONFIG:InvalidVector', ...
+    error('sootMosaic:LOAD_MAIN_SCALE_CONFIG:InvalidVector', ...
         'The scale config field %s must be a finite numeric vector of length %d.', ...
         label, expected_len);
 end

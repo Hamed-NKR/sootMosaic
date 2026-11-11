@@ -6,7 +6,7 @@
       "url": "",
       "doi": "",
       "sha256": "",
-      "cache_file": "../../.pfal-cache/main_valid/ld2_results.mat",
+      "cache_file": "../../.sootmosaic-cache/main_valid/ld2_results.mat",
       "variables": ["parsdata", "fl", "r_n_agg"]
     },
     "tem": {
@@ -15,7 +15,7 @@
       "url": "",
       "doi": "",
       "sha256": "",
-      "cache_file": "../../.pfal-cache/main_valid/tem_analysis_results.mat",
+      "cache_file": "../../.sootmosaic-cache/main_valid/tem_analysis_results.mat",
       "variables": ["aggregate_table"]
     },
     "effective_density": {
@@ -24,7 +24,7 @@
       "url": "",
       "doi": "",
       "sha256": "",
-      "cache_file": "../../.pfal-cache/main_valid/effective_density_validation_data.mat",
+      "cache_file": "../../.sootmosaic-cache/main_valid/effective_density_validation_data.mat",
       "variables": ["effective_density_data", "metadata"]
     }
   },
