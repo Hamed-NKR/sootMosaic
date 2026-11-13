@@ -47,7 +47,9 @@
       "c_dt": 1000,
       "step_frac": 0.5,
       "step_policy": "warn",
-      "slip": "kim2005"
+      "slip": "kim2005",
+      "continuum_diameter": "sorensen_backbone",
+      "root_solve": "bracketed"
     },
     "location_options": {
       "vf": "off",

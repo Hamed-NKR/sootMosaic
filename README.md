@@ -427,6 +427,32 @@ the example configs keep `kim2005` and `sutherland` when only `model_profile`
 is changed. The results of 7658971 are reproduced when the resolved options
 match its settings.
 
+The mobility method is set under `transport.mobility_options.mtd`, with the
+profile default when the field is left out. `sorensen_eq17` (also accepted
+under its earlier name `continuum` and saved as `sorensen_eq17`) gives the
+continuum mobility diameter dm = 1.29 N^-0.13 dg of Eq. 17 in Sorensen (2011)
+at every number of primaries N. `sorensen_backbone` gives dm = dp for a single
+primary, Eq. 18a for a doublet (dm = 2^0.46 dp for two equal touching
+spheres), Eq. 17 for N from 3 to 74 and dm = 0.75 dg above, the ratio that
+Eq. 18b gives for fractal dimension 1.78 and prefactor 1.3. The crossover
+N = 74 is where Eqs. 18a and 18b meet, and dm steps up by 1.7 percent between
+N = 74 and 75 for the same gyration diameter. The ratio 0.75 is the large-N
+value for DLCA aggregates, so its use for aggregates of other morphology, like
+the doublet relation for unequal primaries, is an extrapolation. `interp`
+solves the adjusted sphere relation in the form given by Rogak et al. (1993)
+between the projected area
+diameter and the continuum diameter named by `continuum_diameter`,
+`fixed_075dg` (0.75 dg at every N) or `sorensen_backbone` (the relations
+above, so that a single primary has dm = dp at every Knudsen number).
+`root_solve` is `start_point_7658971` (fzero from one start point) or
+`bracketed` (fzero on the interval between the two limit diameters, which
+holds the root). `free_molecular` sets dm to the projected area diameter,
+the free molecular limit of Sorensen (2011) and Rogak et al. (1993).
+The `current` profile uses `interp` with `sorensen_backbone` and `bracketed`
+in both stages, `article1_7658971` uses `sorensen_eq17` in LD1 and `interp`
+with `fixed_075dg` and `start_point_7658971` in LD2. The example configs name
+the continuum diameter and the root solve explicitly.
+
 The TEM analysis runs separately with `main_tem_analysis_v1` after its local
 config and source datasets have been prepared. The four TEM profiles share the
 complete schema; `local.json` is the default low/high paper profile, and
@@ -506,3 +532,8 @@ Discrete element Langevin dynamics in sootMosaic follows these repeated operatio
    differential mobility analyzer (nano-DMA) for Knudsen number from 0.5 to
    83. Journal of Research of the National Institute of Standards and
    Technology, 110(1), 31-54.
+8. Sorensen, C. M. (2011). The mobility of fractal aggregates: A review.
+   Aerosol Science and Technology, 45(7), 765-779.
+9. Rogak, S. N., Flagan, R. C., & Nguyen, H. V. (1993). The mobility and
+   structure of aerosol agglomerates. Aerosol Science and Technology, 18(1),
+   25-47.

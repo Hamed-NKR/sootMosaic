@@ -7,7 +7,19 @@ function [pars, opts] = MOBIL(pars, fl, params_const, opts)
 %         ...geometrical and diffusive properties
 %     fl: Fluid info structure
 %     params_const: Problem's table of constant physical properties
-%     opts: Mobility calculation options. opts.slip names the slip...
+%     opts: Mobility calculation options. opts.mtd names the method,...
+%         ...'sorensen_eq17' (Eq. 17 of reference 8 of the README at...
+%         ...every N, the default, also named 'continuum'),...
+%         ...'sorensen_backbone' (TRANSP.CONTINUUM_DM 'backbone'),...
+%         ...'interp' (TRANSP.DIAMOBIL, the adjusted sphere of Rogak et...
+%         ...al. 1993, p. 28) or 'free_molecular' (dm = da, the free...
+%         ...molecular limit in which the drag follows the orientation...
+%         ...averaged projected area, Sorensen 2011, p. 771, and Rogak et...
+%         ...al. 1993, pp. 27 and 28, references 8 and 9 of the README)....
+%         ...opts.continuum_diameter and opts.root_solve are the...
+%         ...continuum diameter and root solve of TRANSP.DIAMOBIL...
+%         ...(defaults 'fixed_075dg' and 'start_point_7658971')....
+%         ...opts.slip names the slip...
 %         ...correction model of TRANSP.CUNNINGHAM (default...
 %         ...'per_caller_7658971'). The returned copy records in...
 %         ...step_warned whether the step-limit warning was shown, so...
@@ -20,6 +32,12 @@ if ~exist('opts', 'var')
 end
 if (~isfield(opts, 'mtd')) || isempty(opts.mtd)
     opts.mtd = 'continuum'; % use continuum regime approximation
+end
+if (~isfield(opts, 'continuum_diameter')) || isempty(opts.continuum_diameter)
+    opts.continuum_diameter = 'fixed_075dg'; % 0.75 dg in TRANSP.DIAMOBIL
+end
+if (~isfield(opts, 'root_solve')) || isempty(opts.root_solve)
+    opts.root_solve = 'start_point_7658971'; % fzero from one start point
 end
 
 % initialize slip correction model variable
@@ -68,13 +86,31 @@ end
 % Calculating mobility properties
 
 % Mobility size
-if strcmp(opts.mtd, 'continuum')
-    npp = cat(1, pars.n);
-    dm = 1.29 * npp.^(-0.13) .* cat(1, pars.dg);
-elseif strcmp(opts.mtd, 'interp')
-    opts_proj.tbar = 'off';
-    da = 2 * sqrt(PAR.PROJECTION(pars, [], 1e2, 5, [], opts_proj) / pi);
-    dm = TRANSP.DIAMOBIL(pars.dg, da, fl, opts.slip);
+npp = cat(1, pars.n);
+switch opts.mtd
+    case {'sorensen_eq17', 'continuum'} % 'continuum' is the earlier name
+        dm = TRANSP.CONTINUUM_DM(npp, cat(1, pars.dg), [], 'eq17');
+    case 'sorensen_backbone'
+        dm = TRANSP.CONTINUUM_DM(npp, cat(1, pars.dg), ...
+            single_primary_diameter(pars, npp), 'backbone');
+    case {'interp', 'free_molecular'}
+        opts_proj.tbar = 'off';
+        da = 2 * sqrt(PAR.PROJECTION(pars, [], 1e2, 5, [], opts_proj) / pi);
+        if strcmp(opts.mtd, 'interp')
+            opts_dia = struct('continuum', opts.continuum_diameter, ...
+                'root', opts.root_solve);
+            if strcmp(opts.continuum_diameter, 'sorensen_backbone')
+                opts_dia.npp = npp;
+                opts_dia.dpp1 = single_primary_diameter(pars, npp);
+            end
+            dm = TRANSP.DIAMOBIL(pars.dg, da, fl, opts.slip, opts_dia);
+        else
+            dm = da; % free molecular limit of the projected area
+        end
+    otherwise
+        error('sootMosaic:MOBIL:UnknownMethod', ['Unknown mobility ', ...
+            'method %s. Known methods are sorensen_eq17 (or continuum), ', ...
+            'sorensen_backbone, interp and free_molecular.'], opts.mtd)
 end
 
 % Cunningham correction factor (-)
@@ -158,7 +194,7 @@ else
     pars.rho = rho;
     pars.m = m;
     pars.dm = dm;
-    if strcmp(opts.mtd, 'interp'); pars.da = da; end
+    if any(strcmp(opts.mtd, {'interp', 'free_molecular'})); pars.da = da; end
     pars.tau = tau;
     pars.f = f;
     pars.delt = delt;
@@ -180,4 +216,17 @@ ind_s = x < 1e-2; % Series below 1e-2 avoids cancellation
 g(ind_s) = x(ind_s).^2 / 2 - x(ind_s).^3 / 6 + x(ind_s).^4 / 24 - ...
     x(ind_s).^5 / 120;
 s2 = sum(maxk(6 .* d_coef .* tau .* g, 2));
+end
+
+function dpp1 = single_primary_diameter(pars, npp)
+% "single_primary_diameter" returns the primary diameter of each...
+%   ...single-primary aggregate and NaN for the others.
+dpp1 = nan(size(npp));
+for i = find(npp(:)' == 1)
+    if isa(pars, 'AGG')
+        dpp1(i) = pars(i).pp.d(1);
+    else
+        dpp1(i) = pars.pp{i}(1, 2);
+    end
+end
 end

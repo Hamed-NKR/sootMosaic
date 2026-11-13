@@ -48,7 +48,9 @@
                                                "step_frac":  0.5,
                                                "step_policy":  "warn",
                                                "mtd":  "interp",
-                                               "slip":  "kim2005"
+                                               "slip":  "kim2005",
+                                               "continuum_diameter":  "sorensen_backbone",
+                                               "root_solve":  "bracketed"
                                            },
                       "location_options":  {
                                                "vf":  "on"

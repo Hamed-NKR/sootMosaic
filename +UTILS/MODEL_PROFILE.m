@@ -15,15 +15,24 @@ function [model, known] = MODEL_PROFILE(name, stage)
 %         profile: Profile name
 %         fluid_properties: Property model of TRANSP.FLPROPS
 %         slip_correction: Slip correction model of TRANSP.CUNNINGHAM
+%         mobility: Mobility method of TRANSP.MOBIL
+%         continuum_diameter: Continuum diameter of TRANSP.DIAMOBIL
+%         root_solve: Root solve of TRANSP.DIAMOBIL
 %     known: Lists of known model names
 %         fluid_properties: ~ property models of TRANSP.FLPROPS
-%         mobility: ~ mobility methods of TRANSP.MOBIL
+%         mobility: ~ mobility methods of TRANSP.MOBIL ('continuum' is...
+%             ...the earlier name of 'sorensen_eq17')
 %         slip_correction: ~ slip correction models of TRANSP.CUNNINGHAM
+%         continuum_diameter: ~ continuum diameters of TRANSP.DIAMOBIL
+%         root_solve: ~ root solves of TRANSP.DIAMOBIL
 % ----------------------------------------------------------------------- %
 
 known.fluid_properties = {'sutherland', 'flame', 'room'};
-known.mobility = {'continuum', 'interp'};
+known.mobility = {'sorensen_eq17', 'continuum', 'sorensen_backbone', ...
+    'interp', 'free_molecular'};
 known.slip_correction = {'kim2005', 'per_caller_7658971'};
+known.continuum_diameter = {'sorensen_backbone', 'fixed_075dg'};
+known.root_solve = {'bracketed', 'start_point_7658971'};
 
 if ~(ischar(name) || isStringScalar(name)) || isempty(name)
     error('sootMosaic:MODEL_PROFILE:UnknownProfile', ...
@@ -42,13 +51,20 @@ switch name
     case 'current'
         fluid_properties = 'sutherland'; % Properties at the fluid T and p
         slip_correction = 'kim2005'; % One slip correction in every caller
+        mobility = 'interp'; % Adjusted sphere in both stages
+        continuum_diameter = 'sorensen_backbone'; % Eqs. 17, 18a and 18b
+        root_solve = 'bracketed'; % Root between the two limits
     case 'article1_7658971'
         if strcmp(stage, 'LD1')
             fluid_properties = 'flame'; % Preset for 1700 K and 101325 Pa
+            mobility = 'sorensen_eq17'; % Eq. 17 at every N
         else
             fluid_properties = 'room'; % Preset for 293.15 K and 101325 Pa
+            mobility = 'interp'; % Adjusted sphere
         end
         slip_correction = 'per_caller_7658971'; % Constants of each caller
+        continuum_diameter = 'fixed_075dg'; % 0.75 dg at every N
+        root_solve = 'start_point_7658971'; % fzero from one start point
     otherwise
         error('sootMosaic:MODEL_PROFILE:UnknownProfile', ['Unknown model ', ...
             'profile %s. Known profiles are current and ', ...
@@ -56,6 +72,7 @@ switch name
 end
 
 model = struct('profile', name, 'fluid_properties', fluid_properties, ...
-    'slip_correction', slip_correction);
+    'slip_correction', slip_correction, 'mobility', mobility, ...
+    'continuum_diameter', continuum_diameter, 'root_solve', root_solve);
 
 end

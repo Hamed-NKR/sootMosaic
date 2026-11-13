@@ -59,6 +59,10 @@ if ~isfield(cfg_ld2, 'model') || isempty(cfg_ld2.model)
             ~isempty(opts_fl.amb)
         cfg_ld2.model.fluid_properties = char(opts_fl.amb);
     end
+    if exist('opts_mobil', 'var') && isfield(opts_mobil, 'mtd') && ...
+            ~isempty(opts_mobil.mtd) %#ok<NODEF>
+        cfg_ld2.model.mobility = method_name(opts_mobil.mtd);
+    end
     warning('sootMosaic:ResumeLD2:NoModelProfile', ['Checkpoint has no ', ...
         'model options. The run continues with the article1_7658971 ', ...
         'profile.'])
@@ -77,8 +81,34 @@ if ~isfield(cfg_ld2.model, 'slip_correction') || ...
         'per_caller_7658971.'])
 end
 if exist('opts_mobil', 'var') && (~isfield(opts_mobil, 'slip') || ...
-        isempty(opts_mobil.slip)) %#ok<NODEF>
+        isempty(opts_mobil.slip))
     opts_mobil.slip = cfg_ld2.model.slip_correction;
+end
+
+% Checkpoints with model options but no mobility options ran the method of
+% their mobility options with the continuum diameter 0.75 dg and fzero from
+% one start point, the settings of 7658971.
+if ~isfield(cfg_ld2.model, 'mobility') || isempty(cfg_ld2.model.mobility)
+    if exist('opts_mobil', 'var') && isfield(opts_mobil, 'mtd') && ...
+            ~isempty(opts_mobil.mtd)
+        cfg_ld2.model.mobility = method_name(opts_mobil.mtd);
+    else
+        cfg_ld2.model.mobility = 'sorensen_eq17'; % default of TRANSP.MOBIL
+    end
+    cfg_ld2.model.continuum_diameter = 'fixed_075dg';
+    cfg_ld2.model.root_solve = 'start_point_7658971';
+    warning('sootMosaic:ResumeLD2:NoMobilityModel', ['Checkpoint has no ', ...
+        'mobility options in its model. The run continues with ', ...
+        'fixed_075dg and start_point_7658971.'])
+end
+if exist('opts_mobil', 'var')
+    if ~isfield(opts_mobil, 'continuum_diameter') || ...
+            isempty(opts_mobil.continuum_diameter)
+        opts_mobil.continuum_diameter = cfg_ld2.model.continuum_diameter;
+    end
+    if ~isfield(opts_mobil, 'root_solve') || isempty(opts_mobil.root_solve)
+        opts_mobil.root_solve = cfg_ld2.model.root_solve;
+    end
 end
 
 % Checkpoints written before the periodic collision search carry no domain
@@ -119,14 +149,14 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     ensdata.dpp(k,1:2) = [geomean(pars_LD2.dpp_g(:,1)), UTILS.GEOSTD(pars_LD2.dpp_g(:,1))];
     ensdata.sigmapp(k,1:2) = [geomean(pars_LD2.dpp_g(:,2)), UTILS.GEOSTD(pars_LD2.dpp_g(:,2))];
     ensdata.dm(k,1:2) = [geomean(pars_LD2.dm), UTILS.GEOSTD(pars_LD2.dm)];
-    if strcmp(opts_mobil.mtd, 'interp')
+    if any(strcmp(opts_mobil.mtd, {'interp', 'free_molecular'}))
         ensdata.da(k,1:2) = [geomean(pars_LD2.da), UTILS.GEOSTD(pars_LD2.da)];
     end
     
     if ensdata.n_agg(k) <= (r_n_agg(ind_dat) * ensdata.n_agg(1))
 
         % update projected area sizes (if necessary)
-        if ~strcmp(opts_mobil.mtd, 'interp')
+        if ~any(strcmp(opts_mobil.mtd, {'interp', 'free_molecular'}))
             pars_LD2.da = 2 * sqrt(PAR.PROJECTION(pars_LD2, [], n_mc_prj,...
                 n_ang_prj, [], opts_prj) / pi);
         end
@@ -182,3 +212,11 @@ save(fullfile(dir_wsp, strcat(cfg_results.final_prefix, '__', ...
 
 end
 
+function name = method_name(mtd)
+% "method_name" returns the name of a mobility method, with 'continuum'...
+%   ...given as 'sorensen_eq17'.
+name = char(mtd);
+if strcmp(name, 'continuum')
+    name = 'sorensen_eq17';
+end
+end

@@ -186,14 +186,14 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     ensdata.dpp(k,1:2) = [geomean(pars_LD2.dpp_g(:,1)), UTILS.GEOSTD(pars_LD2.dpp_g(:,1))];
     ensdata.sigmapp(k,1:2) = [geomean(pars_LD2.dpp_g(:,2)), UTILS.GEOSTD(pars_LD2.dpp_g(:,2))];
     ensdata.dm(k,1:2) = [geomean(pars_LD2.dm), UTILS.GEOSTD(pars_LD2.dm)];
-    if strcmp(opts_mobil.mtd, 'interp')
+    if any(strcmp(opts_mobil.mtd, {'interp', 'free_molecular'}))
         ensdata.da(k,1:2) = [geomean(pars_LD2.da), UTILS.GEOSTD(pars_LD2.da)];
     end
     
     if ensdata.n_agg(k) <= (r_n_agg(ind_dat) * ensdata.n_agg(1))
 
         % update projected area sizes (if necessary)
-        if ~strcmp(opts_mobil.mtd, 'interp')
+        if ~any(strcmp(opts_mobil.mtd, {'interp', 'free_molecular'}))
             pars_LD2.da = 2 * sqrt(PAR.PROJECTION(pars_LD2, [], n_mc_prj,...
                 n_ang_prj, [], opts_prj) / pi);
         end
