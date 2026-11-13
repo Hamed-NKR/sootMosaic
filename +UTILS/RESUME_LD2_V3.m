@@ -48,6 +48,25 @@ else
         'generator state and no seed. The resumed run is not reproducible.'])
 end
 
+% Checkpoints without model options run with the article1_7658971 profile,
+% the ambient preset they hold and a fluid pressure of 101325 Pa.
+if ~exist('cfg_ld2', 'var')
+    cfg_ld2 = struct();
+end
+if ~isfield(cfg_ld2, 'model') || isempty(cfg_ld2.model)
+    cfg_ld2.model = UTILS.MODEL_PROFILE('article1_7658971', 'LD2');
+    if exist('opts_fl', 'var') && isfield(opts_fl, 'amb') && ...
+            ~isempty(opts_fl.amb)
+        cfg_ld2.model.fluid_properties = char(opts_fl.amb); %#ok<STRNU>
+    end
+    warning('sootMosaic:ResumeLD2:NoModelProfile', ['Checkpoint has no ', ...
+        'model options. The run continues with the article1_7658971 ', ...
+        'profile.'])
+end
+if ~isfield(fl, 'p') || isempty(fl.p) %#ok<NODEF>
+    fl.p = 101325;
+end
+
 % Checkpoints written before the periodic collision search carry no domain
 % size in the growth options, so it is set from the saved domain table.
 opts_grow.dom_size = params_domain.Value(2:4);

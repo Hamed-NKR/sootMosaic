@@ -22,10 +22,9 @@ end
 
 % Initialize particle and fluid structures using the same table contract as
 % the legacy PFA first-stage workflow.
-[pars0, fl0] = TRANSP.INIT_DOM(params0_ud, params0_const);
-
+% The configured property model sets the fluid viscosity and mean free path.
 opts0_fl = cfg_transport.fluid_options;
-[fl0.mu, fl0.lambda] = TRANSP.FLPROPS(fl0, params0_const, opts0_fl);
+[pars0, fl0] = TRANSP.INIT_DOM(params0_ud, params0_const, opts0_fl);
 
 %% Initialize simulation variables %%
 
@@ -191,9 +190,10 @@ if ~isfolder(cfg_results.root)
     mkdir(cfg_results.root);
 end
 
+% fl0 holds the gas temperature, pressure, viscosity and mean free path
 save(metadata.output_file, 'pp0', 'pp0_n', 'pars_ld1', 'ensdata0', ...
     'parsdata0', 'pp0_nested', 'pp0_n_nested', 'parsdata0_nested', ...
-    'cfg_ld1', 'metadata', '-v7.3')
+    'fl0', 'cfg_ld1', 'metadata', '-v7.3')
 
 fprintf('Saved LD1 aggregate library: %s\n', metadata.output_file)
 

@@ -19,6 +19,8 @@ domain_size = require_vector_field(domain_cfg, 'size', 3, ...
     'transport.domain.size');
 temperature = require_scalar_field(fluid_cfg, 'temperature', ...
     'transport.fluid.temperature');
+pressure = require_scalar_field(fluid_cfg, 'pressure', ...
+    'transport.fluid.pressure');
 
 Name = {'volf'; 'dom_size(1)'; 'dom_size(2)'; 'dom_size(3)'};
 Value = [volume_fraction; domain_size(:)];
@@ -34,8 +36,8 @@ Description = {'Black Carbon bulk density'; 'Air molar mass'; ...
     'Boltzmann constant'; 'Avogadro constant'; 'Universal gas constant'};
 params_const = table(Name, Value, Unit, Description);
 
-fl = struct('size', domain_size(:), 'temp', temperature, 'mu', [], ...
-    'lambda', []);
+fl = struct('size', domain_size(:), 'temp', temperature, 'p', pressure, ...
+    'mu', [], 'lambda', []);
 
 end
 

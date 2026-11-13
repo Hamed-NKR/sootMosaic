@@ -100,6 +100,8 @@ The file contains:
 - `pars_ld1`: structured version of the saved aggregate library.
 - `ensdata0`, `parsdata0`: real-time ensemble summaries and saved aggregate
   properties.
+- `fl0`: gas temperature (K), pressure (Pa), viscosity (Pa s) and mean free
+  path (m) of the run.
 - `cfg_ld1`, `metadata`: config and run provenance.
 
 ```text
@@ -396,6 +398,20 @@ To use correlation-based scaling instead, run `main_scale_v2` in place of
 `main_scatter_v8` and select
 `config/main_ld2/main_ld2_from_main_scale_config.local.json` for LD2.
 
+The LD1 and LD2 configs set the gas temperature and pressure under
+`transport.fluid` and the property model under `transport.fluid_options.amb`.
+The `sutherland` model gives the viscosity from 1.716e-5 Pa s at 273.15 K
+with the temperature law of reference 7 (constant 110.4 K) and the mean
+free path from 67.3 nm at 296.15 K and 101325 Pa, scaled with temperature and
+pressure as in Kim et al. (2005). The `flame` (1700 K) and `room` (293.15 K)
+presets hold fixed values at 101325 Pa and warn when the configured state
+differs by more than 1 K or 1 percent. The top-level `model_profile` names the
+default models, `current` or `article1_7658971` (the models of commit
+7658971). A config without `model_profile` runs with `article1_7658971`, and
+an LD2 config without `model_profile` and pressure runs at 101325 Pa. The
+resolved profile is saved as `cfg_ld1.model` or `cfg_ld2.model` with every
+result and checkpoint.
+
 The TEM analysis runs separately with `main_tem_analysis_v1` after its local
 config and source datasets have been prepared. The four TEM profiles share the
 complete schema; `local.json` is the default low/high paper profile, and
@@ -470,3 +486,8 @@ Discrete element Langevin dynamics in sootMosaic follows these repeated operatio
 6. Nikookar, H., Sipkens, T. A., & Rogak, S. N. (2025). Simulating the effect
    of post-flame agglomeration on the structure of soot. Aerosol Science and
    Technology, 59(1), 1-15.
+7. Kim, J. H., Mulholland, G. W., Kukuck, S. R., & Pui, D. Y. H. (2005). Slip
+   correction measurements of certified PSL nanoparticles using a nanometer
+   differential mobility analyzer (nano-DMA) for Knudsen number from 0.5 to
+   83. Journal of Research of the National Institute of Standards and
+   Technology, 110(1), 31-54.
