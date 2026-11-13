@@ -46,7 +46,8 @@
       "mtd": "continuum",
       "c_dt": 1000,
       "step_frac": 0.5,
-      "step_policy": "warn"
+      "step_policy": "warn",
+      "slip": "kim2005"
     },
     "location_options": {
       "vf": "off",

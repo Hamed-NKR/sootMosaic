@@ -389,8 +389,7 @@ if with_model
     [mu, lam] = props(298, 1e5, opts_fl);
     fl = struct('size', [1; 1; 1], 'temp', 298, 'p', 1e5, 'mu', mu, ...
         'lambda', lam);
-    cfg_ld2.model = struct('profile', 'current', ...
-        'fluid_properties', 'sutherland');
+    cfg_ld2.model = UTILS.MODEL_PROFILE('current', 'LD2');
 else
     opts_fl = struct('amb', 'room');
     fl = struct('size', [1; 1; 1], 'temp', 298, 'mu', 1.813e-5, ...

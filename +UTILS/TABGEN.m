@@ -1,12 +1,15 @@
-function tab = TABGEN(dpp, dm)
+function tab = TABGEN(dpp, dm, slip)
 % "TABGEN" generates a table of properties for typical fractal soot...
 %   ...according to the well-established literature correlations that...
 %   ...can be found in Sipkens et al. (2023)'s review on soot morphology.
 % ----------------------------------------------------------------------- %
 % 
 % Inputs:
-%   dpp: Mean primary particle diameter
-%   dm: Mobility diameter
+%   dpp: Mean primary particle diameter (nm)
+%   dm: Mobility diameter (nm)
+%   slip: Slip correction model of TRANSP.CUNNINGHAM. Only...
+%       ...'per_caller_7658971' (the default) is available, other models...
+%       ...stop until the mass and density units of the table are reviewed
 % ----------------------------------------------------------------------- %
 %
 % Outputs:
@@ -28,6 +31,15 @@ rho_0 = 1000; % normalized density for aerodynamic diameter
 magg_100 = 2.93e-6; % aggregate mass at 100 nm mobility diameter
 %%%%%%%%%%%%%%%%%%%%%%%%
 
+if ~exist('slip', 'var') || isempty(slip)
+    slip = 'per_caller_7658971'; % constants of each caller at 7658971
+end
+if ~(ischar(slip) || isStringScalar(slip)) || ...
+        ~strcmp(slip, 'per_caller_7658971')
+    error('sootMosaic:TABGEN:ModelUnavailable', ['UTILS.TABGEN runs ', ...
+        'with the slip model per_caller_7658971 only. Other models wait ', ...
+        'for a review of the mass and density units of the table.'])
+end
 
 da = exp(log(dpp/dpp_100) / D_TEM + log(100)); % projected area diameter (nm)
 
@@ -43,7 +55,8 @@ dve = 1e9 * (6 * (1e-18*magg2) / (rho_m * pi)).^(1/3); % volume equivalent diame
 
 rho_eff = (6 * (1e18*magg2)) ./ (pi * (1e-9*dm).^3); % effective density (kg/m3)
 
-x = (rho_m./rho_eff).^(1/3) .* (CUNNINGHAM(dve)./CUNNINGHAM(dm)); % shape factor
+x = (rho_m./rho_eff).^(1/3) .* (cunningham_nm(dve) ./ ...
+    cunningham_nm(dm)); % shape factor
 
 % trial and error for aerodynamic diameter
 dae_i = 2 * rand(length(dm),1) .* dm; % initial guess
@@ -52,7 +65,8 @@ ind = 0;
 while any(abs((dae - dae_i) ./ dae_i) > 0.01) && (ind < 1e3)
     if ind~=0; dae_i = dae; end
     
-    dae = dm.^((D_m - 1) / 2) .* sqrt((CUNNINGHAM(dm)./CUNNINGHAM(dae_i)) *...
+    dae = dm.^((D_m - 1) / 2) .* sqrt((cunningham_nm(dm) ./ ...
+        cunningham_nm(dae_i)) *...
         6 * k_m / (pi * rho_0));
     
     ind = ind + 1;
@@ -63,15 +77,12 @@ tab = table(dm, magg1, magg2, rho_eff, dve, x, dae, dpp,...
 
 end
 
-function cc = CUNNINGHAM(dp) % Cunningham correction factor
+function cc = cunningham_nm(dp)
+% Cunningham correction factor of the per_caller_7658971 model, which...
+    % ...takes the diameters in nm as TABGEN passes them
 
-% constant coefficients
-A1 = 1.257;
-A2 = 0.4;
-A3 = 0.55;
+lambda = 6.8e-8; % ambient air mean free path (m)
 
-lambda = 6.8e-8; % ambient air mean free path
-
-cc = 1 + (2 * lambda ./ dp) .* (A1 + A2 * exp(-A3*dp/lambda));
+cc = TRANSP.CUNNINGHAM(dp, lambda, 'per_caller_7658971', 'TABGEN');
 
 end

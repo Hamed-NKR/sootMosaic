@@ -57,7 +57,7 @@ if ~isfield(cfg_ld2, 'model') || isempty(cfg_ld2.model)
     cfg_ld2.model = UTILS.MODEL_PROFILE('article1_7658971', 'LD2');
     if exist('opts_fl', 'var') && isfield(opts_fl, 'amb') && ...
             ~isempty(opts_fl.amb)
-        cfg_ld2.model.fluid_properties = char(opts_fl.amb); %#ok<STRNU>
+        cfg_ld2.model.fluid_properties = char(opts_fl.amb);
     end
     warning('sootMosaic:ResumeLD2:NoModelProfile', ['Checkpoint has no ', ...
         'model options. The run continues with the article1_7658971 ', ...
@@ -65,6 +65,20 @@ if ~isfield(cfg_ld2, 'model') || isempty(cfg_ld2.model)
 end
 if ~isfield(fl, 'p') || isempty(fl.p) %#ok<NODEF>
     fl.p = 101325;
+end
+
+% Checkpoints with model options but no slip correction model keep the
+% constants of each caller at 7658971, as the code that wrote them did.
+if ~isfield(cfg_ld2.model, 'slip_correction') || ...
+        isempty(cfg_ld2.model.slip_correction)
+    cfg_ld2.model.slip_correction = 'per_caller_7658971';
+    warning('sootMosaic:ResumeLD2:NoSlipModel', ['Checkpoint has no ', ...
+        'slip correction model. The run continues with ', ...
+        'per_caller_7658971.'])
+end
+if exist('opts_mobil', 'var') && (~isfield(opts_mobil, 'slip') || ...
+        isempty(opts_mobil.slip)) %#ok<NODEF>
+    opts_mobil.slip = cfg_ld2.model.slip_correction;
 end
 
 % Checkpoints written before the periodic collision search carry no domain

@@ -7,7 +7,9 @@ function [pars, opts] = MOBIL(pars, fl, params_const, opts)
 %         ...geometrical and diffusive properties
 %     fl: Fluid info structure
 %     params_const: Problem's table of constant physical properties
-%     opts: Mobility calculation options. The returned copy records in...
+%     opts: Mobility calculation options. opts.slip names the slip...
+%         ...correction model of TRANSP.CUNNINGHAM (default...
+%         ...'per_caller_7658971'). The returned copy records in...
 %         ...step_warned whether the step-limit warning was shown, so...
 %         ...callers that pass it back get the warning once per run.
 % ----------------------------------------------------------------------- %
@@ -18,6 +20,11 @@ if ~exist('opts', 'var')
 end
 if (~isfield(opts, 'mtd')) || isempty(opts.mtd)
     opts.mtd = 'continuum'; % use continuum regime approximation
+end
+
+% initialize slip correction model variable
+if (~isfield(opts, 'slip')) || isempty(opts.slip)
+    opts.slip = 'per_caller_7658971'; % constants of each caller at 7658971
 end
 
 % initialize time-step sensitivity variable
@@ -67,16 +74,12 @@ if strcmp(opts.mtd, 'continuum')
 elseif strcmp(opts.mtd, 'interp')
     opts_proj.tbar = 'off';
     da = 2 * sqrt(PAR.PROJECTION(pars, [], 1e2, 5, [], opts_proj) / pi);
-    dm = TRANSP.DIAMOBIL(pars.dg, da, fl);
+    dm = TRANSP.DIAMOBIL(pars.dg, da, fl, opts.slip);
 end
 
 % Cunningham correction factor (-)
 kn_kin = (2 * fl.lambda) ./ dm; % Kinetic (momentum) Knudsen number (-)
-alpha = 1.254; 
-beta = 0.4;
-gamma = 1.1;
-cc = 1 + kn_kin .* (alpha + beta .* exp(-gamma ./ kn_kin));
-    
+cc = TRANSP.CUNNINGHAM(dm, fl.lambda, opts.slip, 'MOBIL');
 
 % Aggregate mass (kg) and smallest primary diameter (m)
 m = ones(n_par,1);

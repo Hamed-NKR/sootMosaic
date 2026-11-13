@@ -412,6 +412,21 @@ an LD2 config without `model_profile` and pressure runs at 101325 Pa. The
 resolved profile is saved as `cfg_ld1.model` or `cfg_ld2.model` with every
 result and checkpoint.
 
+The slip correction is set under `transport.mobility_options.slip` and
+computed by `TRANSP.CUNNINGHAM`. The `kim2005` model uses the constants of
+Kim et al. (2005), 1.165, 0.483 and 0.997 with Kn = 2 lambda / d, the same in
+the mobility, mobility diameter and aerodynamic diameter functions, with the
+aerodynamic diameter at the reference density of 1000 kg/m3. They were fitted
+with the classical mean free path that the `sutherland` model gives. The
+`per_caller_7658971` model keeps the form and constants each function used at
+commit 7658971 and is the default of the `article1_7658971` profile and of
+calls without the option. The soot property table `UTILS.TABGEN` runs with
+`per_caller_7658971` only until its mass and density units are reviewed.
+Explicit `slip` and `amb` fields in a config win over the profile defaults, so
+the example configs keep `kim2005` and `sutherland` when only `model_profile`
+is changed. The results of 7658971 are reproduced when the resolved options
+match its settings.
+
 The TEM analysis runs separately with `main_tem_analysis_v1` after its local
 config and source datasets have been prepared. The four TEM profiles share the
 complete schema; `local.json` is the default low/high paper profile, and

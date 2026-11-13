@@ -47,7 +47,8 @@
                                                "c_dt":  100,
                                                "step_frac":  0.5,
                                                "step_policy":  "warn",
-                                               "mtd":  "interp"
+                                               "mtd":  "interp",
+                                               "slip":  "kim2005"
                                            },
                       "location_options":  {
                                                "vf":  "on"
