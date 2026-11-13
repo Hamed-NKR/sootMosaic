@@ -193,6 +193,8 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     if ensdata.n_agg(k) <= (r_n_agg(ind_dat) * ensdata.n_agg(1))
 
         % update projected area sizes (if necessary)
+        % (methods without da use PAR.PROJECTION with the projection
+        % section of the config, not the mobility projection options)
         if ~any(strcmp(opts_mobil.mtd, {'interp', 'free_molecular'}))
             pars_LD2.da = 2 * sqrt(PAR.PROJECTION(pars_LD2, [], n_mc_prj,...
                 n_ang_prj, [], opts_prj) / pi);

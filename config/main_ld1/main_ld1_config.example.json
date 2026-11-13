@@ -43,13 +43,19 @@
       "amb": "sutherland"
     },
     "mobility_options": {
-      "mtd": "continuum",
+      "mtd": "interp",
       "c_dt": 1000,
       "step_frac": 0.5,
       "step_policy": "warn",
       "slip": "kim2005",
       "continuum_diameter": "sorensen_backbone",
-      "root_solve": "bracketed"
+      "root_solve": "bracketed",
+      "projection": "isotropic",
+      "proj_cache": true,
+      "proj_points": 1024,
+      "proj_orientations": 64,
+      "proj_replicates": 4,
+      "proj_tol": 0.01
     },
     "location_options": {
       "vf": "off",

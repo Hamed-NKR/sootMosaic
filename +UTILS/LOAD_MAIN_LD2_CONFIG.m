@@ -158,6 +158,41 @@ cfg.transport.mobility_options.root_solve = optional_choice_field( ...
     cfg.transport.mobility_options, 'root_solve', cfg.model.root_solve, ...
     known.root_solve, 'transport.mobility_options.root_solve');
 cfg.model.root_solve = cfg.transport.mobility_options.root_solve;
+cfg.transport.mobility_options.projection = optional_choice_field( ...
+    cfg.transport.mobility_options, 'projection', cfg.model.projection, ...
+    known.projection, 'transport.mobility_options.projection');
+cfg.model.projection = cfg.transport.mobility_options.projection;
+cfg.transport.mobility_options.proj_cache = optional_logical_field( ...
+    cfg.transport.mobility_options, 'proj_cache', cfg.model.proj_cache, ...
+    'transport.mobility_options.proj_cache');
+cfg.model.proj_cache = cfg.transport.mobility_options.proj_cache;
+for proj_field = {'proj_points', 'proj_orientations', 'proj_replicates'}
+    cfg.transport.mobility_options.(proj_field{1}) = ...
+        optional_positive_integer_field(cfg.transport.mobility_options, ...
+        proj_field{1}, cfg.model.(proj_field{1}), ...
+        ['transport.mobility_options.' proj_field{1}]);
+    cfg.model.(proj_field{1}) = cfg.transport.mobility_options.(proj_field{1});
+end
+cfg.transport.mobility_options.proj_tol = optional_tolerance_field( ...
+    cfg.transport.mobility_options, 'proj_tol', cfg.model.proj_tol, ...
+    'transport.mobility_options.proj_tol');
+cfg.model.proj_tol = cfg.transport.mobility_options.proj_tol;
+if cfg.model.proj_cache && ~strcmp(cfg.model.projection, 'isotropic')
+    error('sootMosaic:LOAD_MAIN_LD2_CONFIG:InvalidProjection', ...
+        'The LD2 config sets proj_cache without the isotropic projection.');
+end
+if strcmp(cfg.model.projection, 'isotropic') && ...
+        mod(cfg.model.proj_orientations, cfg.model.proj_replicates) ~= 0
+    error('sootMosaic:LOAD_MAIN_LD2_CONFIG:InvalidProjection', ...
+        'The LD2 config proj_orientations must be a multiple of proj_replicates.');
+end
+if strcmp(cfg.model.projection, 'isotropic') && ...
+        cfg.model.proj_replicates < 2 && isfinite(cfg.model.proj_tol)
+    error('sootMosaic:LOAD_MAIN_LD2_CONFIG:InvalidProjection', ...
+        ['The LD2 config sets a finite proj_tol with one proj_replicates ', ...
+        'set, which gives no standard error. Set proj_tol to none or use ', ...
+        'more sets.']);
+end
 cfg.transport.mobility_options.slip = optional_choice_field( ...
     cfg.transport.mobility_options, 'slip', cfg.model.slip_correction, ...
     known.slip_correction, 'transport.mobility_options.slip');
@@ -247,6 +282,18 @@ end
 
 end
 
+function out = optional_tolerance_field(src, field_name, default_value, label)
+%OPTIONAL_TOLERANCE_FIELD Read an optional positive scalar, the string none means no check (Inf).
+
+if isfield(src, field_name) && (ischar(src.(field_name)) || ...
+        isStringScalar(src.(field_name))) && strcmp(char(src.(field_name)), 'none')
+    out = Inf;
+else
+    out = optional_positive_scalar_field(src, field_name, default_value, label);
+end
+
+end
+
 function out = optional_choice_field(src, field_name, default_value, choices, label)
 %OPTIONAL_CHOICE_FIELD Read an optional text field restricted to a list, empty means the default.
 
@@ -261,6 +308,31 @@ if ~(ischar(src.(field_name)) || isStringScalar(src.(field_name))) || ...
         strjoin(choices, ', '));
 end
 out = char(src.(field_name));
+
+end
+
+function out = optional_positive_integer_field(src, field_name, default_value, label)
+%OPTIONAL_POSITIVE_INTEGER_FIELD Read an optional positive integer, empty means the default.
+
+out = default_value;
+if isfield(src, field_name) && ~isempty(src.(field_name))
+    out = require_positive_integer_field(src, field_name, label);
+end
+
+end
+
+function out = optional_logical_field(src, field_name, default_value, label)
+%OPTIONAL_LOGICAL_FIELD Read an optional true or false field, empty means the default.
+
+out = default_value;
+if ~isfield(src, field_name) || isempty(src.(field_name))
+    return
+end
+if ~islogical(src.(field_name)) || ~isscalar(src.(field_name))
+    error('sootMosaic:LOAD_MAIN_LD2_CONFIG:InvalidLogical', ...
+        'The LD2 config field %s must be true or false.', label);
+end
+out = src.(field_name);
 
 end
 

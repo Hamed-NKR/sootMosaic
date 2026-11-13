@@ -453,6 +453,37 @@ in both stages, `article1_7658971` uses `sorensen_eq17` in LD1 and `interp`
 with `fixed_075dg` and `start_point_7658971` in LD2. The example configs name
 the continuum diameter and the root solve explicitly.
 
+`interp` and `free_molecular` take the projected area from the method named
+by `projection`. `euler_7658971` calls `PAR.PROJECTION` for every aggregate at
+every step with `proj_points` random points and `proj_orientations` triples of
+Euler angles drawn uniformly in [0, 2 pi), as commit 7658971 did with 100 and
+5. `isotropic` uses `PAR.PROJECTION_ISO`. It turns `proj_replicates` sets of
+directions from a spherical Fibonacci lattice on the half sphere by
+independent uniformly distributed rotations, so that every direction is
+uniform on the sphere, and counts the covered points of a randomly shifted
+square grid of `proj_points` points in each of the `proj_orientations`
+orientations, which gives an unbiased orientation averaged area. A single
+primary has the area pi dp^2 / 4. With `proj_cache` set to true,
+`PAR.PROJECTION_CACHE` keeps the area of every aggregate whose primaries are
+unchanged and whose relative positions lie within 1e-9 smallest primary
+diameters of the positions at which the area was computed, so after a merge
+only the new aggregate is sampled and small changes cannot add up unnoticed.
+The standard error of each area comes from the spread of the set means, and a
+warning is shown once per run when its ratio to the area exceeds
+`proj_tol`. With 4 sets it has 3 degrees of freedom, so a nominal two-sided 95
+percent interval would need 3.182 standard errors under normality, and it
+serves as a check of the resolution, not as a confidence interval. One set
+gives no standard error, so `proj_tol` must then be `"none"` (no check, read
+as Inf). An area that is not positive and finite stops the run with a request
+for a finer resolution. `isotropic` takes the particle structure, not AGG
+objects. The projected areas saved for methods without da
+still come from `PAR.PROJECTION` with the `projection` section of the config.
+The `current` profile uses `isotropic` with the cache, 1024 points, 64
+orientations in 4 sets and `proj_tol` 0.01, and `article1_7658971` uses
+`euler_7658971` without the cache. The example configs name the projection,
+the cache and the sampling settings explicitly, and the LD1 example runs
+`interp`.
+
 The TEM analysis runs separately with `main_tem_analysis_v1` after its local
 config and source datasets have been prepared. The four TEM profiles share the
 complete schema; `local.json` is the default low/high paper profile, and

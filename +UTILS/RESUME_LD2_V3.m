@@ -111,6 +111,29 @@ if exist('opts_mobil', 'var')
     end
 end
 
+% Checkpoints with model options but no projected area options computed the
+% areas with PAR.PROJECTION at every call, with 100 points and 5
+% orientations, the settings of 7658971.
+proj_fields = {'projection', 'proj_cache', 'proj_points', ...
+    'proj_orientations', 'proj_replicates', 'proj_tol'};
+if ~isfield(cfg_ld2.model, 'projection') || isempty(cfg_ld2.model.projection)
+    model_a1 = UTILS.MODEL_PROFILE('article1_7658971', 'LD2');
+    for i_f = 1 : numel(proj_fields)
+        cfg_ld2.model.(proj_fields{i_f}) = model_a1.(proj_fields{i_f});
+    end
+    warning('sootMosaic:ResumeLD2:NoProjectionModel', ['Checkpoint has ', ...
+        'no projected area options in its model. The run continues with ', ...
+        'euler_7658971 without cache.'])
+end
+if exist('opts_mobil', 'var')
+    for i_f = 1 : numel(proj_fields)
+        if ~isfield(opts_mobil, proj_fields{i_f}) || ...
+                isempty(opts_mobil.(proj_fields{i_f}))
+            opts_mobil.(proj_fields{i_f}) = cfg_ld2.model.(proj_fields{i_f});
+        end
+    end
+end
+
 % Checkpoints written before the periodic collision search carry no domain
 % size in the growth options, so it is set from the saved domain table.
 opts_grow.dom_size = params_domain.Value(2:4);
@@ -156,6 +179,8 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     if ensdata.n_agg(k) <= (r_n_agg(ind_dat) * ensdata.n_agg(1))
 
         % update projected area sizes (if necessary)
+        % (methods without da use PAR.PROJECTION with the projection
+        % section of the config, not the mobility projection options)
         if ~any(strcmp(opts_mobil.mtd, {'interp', 'free_molecular'}))
             pars_LD2.da = 2 * sqrt(PAR.PROJECTION(pars_LD2, [], n_mc_prj,...
                 n_ang_prj, [], opts_prj) / pi);

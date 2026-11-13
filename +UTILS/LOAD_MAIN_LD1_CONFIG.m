@@ -155,6 +155,41 @@ cfg.transport.mobility_options.root_solve = optional_choice_field( ...
     cfg.transport.mobility_options, 'root_solve', cfg.model.root_solve, ...
     known.root_solve, 'transport.mobility_options.root_solve');
 cfg.model.root_solve = cfg.transport.mobility_options.root_solve;
+cfg.transport.mobility_options.projection = optional_choice_field( ...
+    cfg.transport.mobility_options, 'projection', cfg.model.projection, ...
+    known.projection, 'transport.mobility_options.projection');
+cfg.model.projection = cfg.transport.mobility_options.projection;
+cfg.transport.mobility_options.proj_cache = optional_logical_field( ...
+    cfg.transport.mobility_options, 'proj_cache', cfg.model.proj_cache, ...
+    'transport.mobility_options.proj_cache');
+cfg.model.proj_cache = cfg.transport.mobility_options.proj_cache;
+for proj_field = {'proj_points', 'proj_orientations', 'proj_replicates'}
+    cfg.transport.mobility_options.(proj_field{1}) = ...
+        optional_positive_integer_field(cfg.transport.mobility_options, ...
+        proj_field{1}, cfg.model.(proj_field{1}), ...
+        ['transport.mobility_options.' proj_field{1}]);
+    cfg.model.(proj_field{1}) = cfg.transport.mobility_options.(proj_field{1});
+end
+cfg.transport.mobility_options.proj_tol = optional_tolerance_field( ...
+    cfg.transport.mobility_options, 'proj_tol', cfg.model.proj_tol, ...
+    'transport.mobility_options.proj_tol');
+cfg.model.proj_tol = cfg.transport.mobility_options.proj_tol;
+if cfg.model.proj_cache && ~strcmp(cfg.model.projection, 'isotropic')
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidProjection', ...
+        'The LD1 config sets proj_cache without the isotropic projection.');
+end
+if strcmp(cfg.model.projection, 'isotropic') && ...
+        mod(cfg.model.proj_orientations, cfg.model.proj_replicates) ~= 0
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidProjection', ...
+        'The LD1 config proj_orientations must be a multiple of proj_replicates.');
+end
+if strcmp(cfg.model.projection, 'isotropic') && ...
+        cfg.model.proj_replicates < 2 && isfinite(cfg.model.proj_tol)
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidProjection', ...
+        ['The LD1 config sets a finite proj_tol with one proj_replicates ', ...
+        'set, which gives no standard error. Set proj_tol to none or use ', ...
+        'more sets.']);
+end
 cfg.transport.mobility_options.c_dt = require_positive_scalar_field( ...
     cfg.transport.mobility_options, 'c_dt', 'transport.mobility_options.c_dt');
 cfg.transport.mobility_options.step_frac = optional_positive_scalar_field( ...
@@ -240,6 +275,16 @@ if isfield(src, field_name) && ~isempty(src.(field_name))
 end
 end
 
+function out = optional_tolerance_field(src, field_name, default_value, label)
+% A positive scalar, or the string none for no check, read as Inf
+if isfield(src, field_name) && (ischar(src.(field_name)) || ...
+        isStringScalar(src.(field_name))) && strcmp(char(src.(field_name)), 'none')
+    out = Inf;
+else
+    out = optional_positive_scalar_field(src, field_name, default_value, label);
+end
+end
+
 function out = optional_choice_field(src, field_name, default_value, choices, label)
 out = default_value;
 if ~isfield(src, field_name) || isempty(src.(field_name))
@@ -260,6 +305,25 @@ if out < 0
     error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidNonnegativeScalar', ...
         'The LD1 config field %s must be nonnegative.', label);
 end
+end
+
+function out = optional_positive_integer_field(src, field_name, default_value, label)
+out = default_value;
+if isfield(src, field_name) && ~isempty(src.(field_name))
+    out = require_positive_integer_field(src, field_name, label);
+end
+end
+
+function out = optional_logical_field(src, field_name, default_value, label)
+out = default_value;
+if ~isfield(src, field_name) || isempty(src.(field_name))
+    return
+end
+if ~islogical(src.(field_name)) || ~isscalar(src.(field_name))
+    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidLogical', ...
+        'The LD1 config field %s must be true or false.', label);
+end
+out = src.(field_name);
 end
 
 function out = require_positive_integer_field(src, field_name, label)
