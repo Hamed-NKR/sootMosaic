@@ -153,6 +153,16 @@ if opts_diag.knudsen && ~isfield(ensdata, 'kn_pair') %#ok<NODEF>
     ensdata.knn_defined = false(size(ensdata.t));
 end
 
+% A model without an initial velocity sampler is recorded as...
+    % ...mean_speed_7658971, the resumed steps draw no initial velocities
+if ~isfield(cfg_ld2.model, 'initial_velocity') || ...
+        isempty(cfg_ld2.model.initial_velocity)
+    cfg_ld2.model.initial_velocity = 'mean_speed_7658971'; %#ok<STRNU> saved with the run
+    warning('sootMosaic:ResumeLD2:NoVelocityModel', ['Checkpoint has no ', ...
+        'initial velocity sampler in its model. It is recorded as ', ...
+        'mean_speed_7658971.'])
+end
+
 % Checkpoints written before the periodic collision search carry no domain
 % size in the growth options, so it is set from the saved domain table.
 opts_grow.dom_size = params_domain.Value(2:4);

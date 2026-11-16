@@ -228,6 +228,18 @@ cfg.transport.diagnostics_options.knudsen = optional_logical_field( ...
     cfg.model.knudsen_diagnostics, 'transport.diagnostics_options.knudsen');
 cfg.model.knudsen_diagnostics = cfg.transport.diagnostics_options.knudsen;
 
+% Optional sampler of the initial velocities
+if isfield(cfg.transport, 'velocity_options')
+    cfg.transport.velocity_options = require_struct_field(cfg.transport, ...
+        'velocity_options', 'transport.velocity_options section');
+else
+    cfg.transport.velocity_options = struct();
+end
+cfg.transport.velocity_options.sampler = optional_choice_field( ...
+    cfg.transport.velocity_options, 'sampler', cfg.model.initial_velocity, ...
+    known.initial_velocity, 'transport.velocity_options.sampler');
+cfg.model.initial_velocity = cfg.transport.velocity_options.sampler;
+
 end
 
 function out = require_struct_field(src, field_name, label)

@@ -64,6 +64,9 @@
     "growth_options": {},
     "diagnostics_options": {
       "knudsen": true
+    },
+    "velocity_options": {
+      "sampler": "maxwell_boltzmann"
     }
   }
 }

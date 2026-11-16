@@ -513,6 +513,18 @@ gives the particle mean free path of another convention, 3.19 times the
 length (m kT)^0.5 / f of `kn_diff`, so diffusive Knudsen numbers can only be
 compared within one convention.
 
+The initial velocities are drawn by `PAR.INIT_VEL` with the sampler named
+under `transport.velocity_options.sampler`, with the profile default when the
+field is left out. `maxwell_boltzmann` draws the three components of each
+particle from a normal distribution with zero mean and variance kT / m, so the
+mean kinetic energy is 1.5 kT and the speeds follow the Maxwell-Boltzmann
+distribution with the mean speed (8 kT / (pi m))^0.5 of reference 12.
+`mean_speed_7658971` keeps the sampler and the random numbers of commit
+7658971, every particle at that mean speed in a direction with the polar angle
+uniform in [0, pi], which gives the mean kinetic energy 4 kT / pi. The
+`current` profile uses `maxwell_boltzmann` and `article1_7658971` uses
+`mean_speed_7658971`. The example configs name the sampler explicitly.
+
 The TEM analysis runs separately with `main_tem_analysis_v1` after its local
 config and source datasets have been prepared. The four TEM profiles share the
 complete schema; `local.json` is the default low/high paper profile, and

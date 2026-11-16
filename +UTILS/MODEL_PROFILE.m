@@ -27,6 +27,7 @@ function [model, known] = MODEL_PROFILE(name, stage)
 %             ...area before a warning (Inf for no check)
 %         knudsen_diagnostics: Recording of the pair and...
 %             ...nearest-neighbor Knudsen numbers of TRANSP.KNUDSEN
+%         initial_velocity: Initial velocity sampler of PAR.INIT_VEL
 %     known: Lists of known model names
 %         fluid_properties: ~ property models of TRANSP.FLPROPS
 %         mobility: ~ mobility methods of TRANSP.MOBIL ('continuum' is...
@@ -35,6 +36,7 @@ function [model, known] = MODEL_PROFILE(name, stage)
 %         continuum_diameter: ~ continuum diameters of TRANSP.DIAMOBIL
 %         root_solve: ~ root solves of TRANSP.DIAMOBIL
 %         projection: ~ projected area methods of TRANSP.MOBIL
+%         initial_velocity: ~ initial velocity samplers of PAR.INIT_VEL
 % ----------------------------------------------------------------------- %
 
 known.fluid_properties = {'sutherland', 'flame', 'room'};
@@ -44,6 +46,7 @@ known.slip_correction = {'kim2005', 'per_caller_7658971'};
 known.continuum_diameter = {'sorensen_backbone', 'fixed_075dg'};
 known.root_solve = {'bracketed', 'start_point_7658971'};
 known.projection = {'isotropic', 'euler_7658971'};
+known.initial_velocity = {'maxwell_boltzmann', 'mean_speed_7658971'};
 
 if ~(ischar(name) || isStringScalar(name)) || isempty(name)
     error('sootMosaic:MODEL_PROFILE:UnknownProfile', ...
@@ -72,6 +75,7 @@ switch name
         proj_replicates = 4;
         proj_tol = 0.01; % Relative standard error of the area
         knudsen_diagnostics = true; % Pair and nearest-neighbor Kn
+        initial_velocity = 'maxwell_boltzmann'; % Components of variance kT / m
     case 'article1_7658971'
         if strcmp(stage, 'LD1')
             fluid_properties = 'flame'; % Preset for 1700 K and 101325 Pa
@@ -90,6 +94,7 @@ switch name
         proj_replicates = 1;
         proj_tol = Inf; % No check
         knudsen_diagnostics = false; % No Knudsen diagnostics
+        initial_velocity = 'mean_speed_7658971'; % Mean speed, polar angle pi U
     otherwise
         error('sootMosaic:MODEL_PROFILE:UnknownProfile', ['Unknown model ', ...
             'profile %s. Known profiles are current and ', ...
@@ -102,6 +107,7 @@ model = struct('profile', name, 'fluid_properties', fluid_properties, ...
     'projection', projection, 'proj_cache', proj_cache, 'proj_points', ...
     proj_points, 'proj_orientations', proj_orientations, ...
     'proj_replicates', proj_replicates, 'proj_tol', proj_tol, ...
-    'knudsen_diagnostics', knudsen_diagnostics);
+    'knudsen_diagnostics', knudsen_diagnostics, 'initial_velocity', ...
+    initial_velocity);
 
 end

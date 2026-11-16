@@ -40,6 +40,7 @@ opts0_grow = cfg_transport.growth_options;
 opts0_loc = cfg_transport.location_options;
 opts0_prj = cfg_projection.options;
 opts0_diag = cfg_transport.diagnostics_options;
+opts0_vel = cfg_transport.velocity_options;
 
 n0_mc_prj = cfg_projection.n_mc;
 n0_ang_prj = cfg_projection.n_ang;
@@ -113,7 +114,8 @@ for i = 1 : n_trial
             params0_const, opts0_mobil);
     end
 
-    pars0.v = PAR.INIT_VEL(pars0.pp, pars0.n, fl0.temp, params0_const);
+    pars0.v = PAR.INIT_VEL(pars0.pp, pars0.n, fl0.temp, params0_const, ...
+        opts0_vel.sampler);
 
     j = 2;
     jj = 1;
