@@ -39,6 +39,7 @@ opts0_mobil = cfg_transport.mobility_options;
 opts0_grow = cfg_transport.growth_options;
 opts0_loc = cfg_transport.location_options;
 opts0_prj = cfg_projection.options;
+opts0_diag = cfg_transport.diagnostics_options;
 
 n0_mc_prj = cfg_projection.n_mc;
 n0_ang_prj = cfg_projection.n_ang;
@@ -76,6 +77,12 @@ ensdata0.dpp = zeros(j_max, 2 * n_trial);
 ensdata0.sigmapp = zeros(j_max, 2 * n_trial);
 ensdata0.da = zeros(j_max, 2 * n_trial);
 ensdata0.dm = zeros(j_max, 2 * n_trial);
+if opts0_diag.knudsen
+    % Pair and nearest-neighbor Knudsen numbers of TRANSP.KNUDSEN
+    ensdata0.kn_pair = zeros(j_max, 2 * n_trial);
+    ensdata0.knn = zeros(j_max, 2 * n_trial);
+    ensdata0.knn_defined = false(j_max, n_trial);
+end
 
 %% Perform first-stage Langevin dynamics simulations %%
 
@@ -101,6 +108,10 @@ for i = 1 : n_trial
     pars0 = PAR.SIZING(pars0);
     [pars0, opts0_mobil] = TRANSP.MOBIL(pars0, fl0, params0_const, opts0_mobil);
     ensdata0 = record_ensemble(ensdata0, 1, i, pars0, opts0_mobil);
+    if opts0_diag.knudsen
+        ensdata0 = record_knudsen(ensdata0, 1, i, pars0, fl0, ...
+            params0_const, opts0_mobil);
+    end
 
     pars0.v = PAR.INIT_VEL(pars0.pp, pars0.n, fl0.temp, params0_const);
 
@@ -134,6 +145,10 @@ for i = 1 : n_trial
         end
 
         ensdata0 = record_ensemble(ensdata0, j, i, pars0, opts0_mobil, delt0);
+        if opts0_diag.knudsen
+            ensdata0 = record_knudsen(ensdata0, j, i, pars0, fl0, ...
+                params0_const, opts0_mobil);
+        end
 
         UTILS.TEXTBAR([j, j_max]);
         j = j + 1;
@@ -221,6 +236,17 @@ if any(strcmp(opts0_mobil.mtd, {'interp', 'free_molecular'})) && ...
         isfield(pars0, 'da') && ~isempty(pars0.da)
     ensdata0.da(row_idx, col) = [geomean(pars0.da), UTILS.GEOSTD(pars0.da)];
 end
+end
+
+function ensdata0 = record_knudsen(ensdata0, row_idx, trial_idx, pars0, fl0, ...
+    params0_const, opts0_mobil)
+% Mean and standard deviation over the particles of the pair diffusive...
+    % ...and the nearest-neighbor Knudsen numbers, diagnostics only
+col = 2 * (trial_idx - 1) + (1:2);
+kn = TRANSP.KNUDSEN(pars0, fl0, params0_const, opts0_mobil);
+ensdata0.kn_pair(row_idx, col) = [mean(kn.kn_pair), std(kn.kn_pair)];
+ensdata0.knn(row_idx, col) = [mean(kn.knn), std(kn.knn)];
+ensdata0.knn_defined(row_idx, trial_idx) = kn.knn_defined;
 end
 
 function [pp0, pp0_n, parsdata0, seen_aggregates] = store_snapshot( ...
@@ -317,6 +343,11 @@ ensdata0.dpp(next_row:end, col) = 0;
 ensdata0.sigmapp(next_row:end, col) = 0;
 ensdata0.da(next_row:end, col) = 0;
 ensdata0.dm(next_row:end, col) = 0;
+if isfield(ensdata0, 'kn_pair')
+    ensdata0.kn_pair(next_row:end, col) = 0;
+    ensdata0.knn(next_row:end, col) = 0;
+    ensdata0.knn_defined(next_row:end, trial_idx) = false;
+end
 end
 
 function ensdata0 = trim_empty_ensemble_rows(ensdata0)
@@ -333,4 +364,9 @@ ensdata0.dpp = ensdata0.dpp(keep_rows, :);
 ensdata0.sigmapp = ensdata0.sigmapp(keep_rows, :);
 ensdata0.da = ensdata0.da(keep_rows, :);
 ensdata0.dm = ensdata0.dm(keep_rows, :);
+if isfield(ensdata0, 'kn_pair')
+    ensdata0.kn_pair = ensdata0.kn_pair(keep_rows, :);
+    ensdata0.knn = ensdata0.knn(keep_rows, :);
+    ensdata0.knn_defined = ensdata0.knn_defined(keep_rows, :);
+end
 end

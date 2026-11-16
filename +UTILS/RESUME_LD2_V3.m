@@ -134,6 +134,25 @@ if exist('opts_mobil', 'var')
     end
 end
 
+% A model without a diagnostics option continues without the Knudsen...
+    % ...diagnostics, since its ensdata holds none
+if ~isfield(cfg_ld2.model, 'knudsen_diagnostics') || ...
+        isempty(cfg_ld2.model.knudsen_diagnostics)
+    cfg_ld2.model.knudsen_diagnostics = false;
+    warning('sootMosaic:ResumeLD2:NoKnudsenModel', ['Checkpoint has no ', ...
+        'Knudsen diagnostics option in its model. The run continues ', ...
+        'without the diagnostics.'])
+end
+if ~exist('opts_diag', 'var') || ~isfield(opts_diag, 'knudsen') || ...
+        isempty(opts_diag.knudsen) %#ok<NODEF>
+    opts_diag.knudsen = cfg_ld2.model.knudsen_diagnostics;
+end
+if opts_diag.knudsen && ~isfield(ensdata, 'kn_pair') %#ok<NODEF>
+    ensdata.kn_pair = nan(size(ensdata.tau)); % no values before the resume
+    ensdata.knn = nan(size(ensdata.tau));
+    ensdata.knn_defined = false(size(ensdata.t));
+end
+
 % Checkpoints written before the periodic collision search carry no domain
 % size in the growth options, so it is set from the saved domain table.
 opts_grow.dom_size = params_domain.Value(2:4);
@@ -175,7 +194,13 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     if any(strcmp(opts_mobil.mtd, {'interp', 'free_molecular'}))
         ensdata.da(k,1:2) = [geomean(pars_LD2.da), UTILS.GEOSTD(pars_LD2.da)];
     end
-    
+    if opts_diag.knudsen
+        kn = TRANSP.KNUDSEN(pars_LD2, fl, params_const, opts_mobil);
+        ensdata.kn_pair(k,1:2) = [mean(kn.kn_pair), std(kn.kn_pair)];
+        ensdata.knn(k,1:2) = [mean(kn.knn), std(kn.knn)];
+        ensdata.knn_defined(k) = kn.knn_defined;
+    end
+
     if ensdata.n_agg(k) <= (r_n_agg(ind_dat) * ensdata.n_agg(1))
 
         % update projected area sizes (if necessary)
@@ -229,6 +254,11 @@ ensdata.dpp(k:end,:) = [];
 ensdata.sigmapp(k:end,:) = [];
 ensdata.da(k:end,:) = [];
 ensdata.dm(k:end,:) = [];
+if isfield(ensdata, 'kn_pair')
+    ensdata.kn_pair(k:end,:) = [];
+    ensdata.knn(k:end,:) = [];
+    ensdata.knn_defined(k:end) = [];
+end
 
 % save the final workspace
 dt_final = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss'));

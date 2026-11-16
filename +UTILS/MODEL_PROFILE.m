@@ -25,6 +25,8 @@ function [model, known] = MODEL_PROFILE(name, stage)
 %         proj_replicates: Rotated direction sets (isotropic)
 %         proj_tol: Largest relative standard error of an isotropic...
 %             ...area before a warning (Inf for no check)
+%         knudsen_diagnostics: Recording of the pair and...
+%             ...nearest-neighbor Knudsen numbers of TRANSP.KNUDSEN
 %     known: Lists of known model names
 %         fluid_properties: ~ property models of TRANSP.FLPROPS
 %         mobility: ~ mobility methods of TRANSP.MOBIL ('continuum' is...
@@ -69,6 +71,7 @@ switch name
         proj_orientations = 64; % Four sets of 16 directions
         proj_replicates = 4;
         proj_tol = 0.01; % Relative standard error of the area
+        knudsen_diagnostics = true; % Pair and nearest-neighbor Kn
     case 'article1_7658971'
         if strcmp(stage, 'LD1')
             fluid_properties = 'flame'; % Preset for 1700 K and 101325 Pa
@@ -86,6 +89,7 @@ switch name
         proj_orientations = 5;
         proj_replicates = 1;
         proj_tol = Inf; % No check
+        knudsen_diagnostics = false; % No Knudsen diagnostics
     otherwise
         error('sootMosaic:MODEL_PROFILE:UnknownProfile', ['Unknown model ', ...
             'profile %s. Known profiles are current and ', ...
@@ -97,6 +101,7 @@ model = struct('profile', name, 'fluid_properties', fluid_properties, ...
     'continuum_diameter', continuum_diameter, 'root_solve', root_solve, ...
     'projection', projection, 'proj_cache', proj_cache, 'proj_points', ...
     proj_points, 'proj_orientations', proj_orientations, ...
-    'proj_replicates', proj_replicates, 'proj_tol', proj_tol);
+    'proj_replicates', proj_replicates, 'proj_tol', proj_tol, ...
+    'knudsen_diagnostics', knudsen_diagnostics);
 
 end

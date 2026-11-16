@@ -63,6 +63,9 @@
                                            },
                       "growth_options":  {
                                              "indupdate":  "off"
-                                         }
+                                         },
+                      "diagnostics_options":  {
+                                                  "knudsen":  true
+                                              }
                   }
 }

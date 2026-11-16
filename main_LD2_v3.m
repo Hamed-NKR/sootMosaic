@@ -106,6 +106,13 @@ ensdata.dpp = zeros(k_max, 2);
 ensdata.sigmapp = zeros(k_max, 2);
 ensdata.da = zeros(k_max, 2);
 ensdata.dm = zeros(k_max, 2);
+opts_diag = cfg_transport.diagnostics_options;
+if opts_diag.knudsen
+    % pair and nearest-neighbor Knudsen numbers of TRANSP.KNUDSEN
+    ensdata.kn_pair = zeros(k_max, 2);
+    ensdata.knn = zeros(k_max, 2);
+    ensdata.knn_defined = false(k_max, 1);
+end
 
 % store ensemble values at the first moment
 ensdata.t(1) = 0;
@@ -117,6 +124,12 @@ ensdata.dpp(1,1:2) = [geomean(pars_LD2.dpp_g(:,1)), UTILS.GEOSTD(pars_LD2.dpp_g(
 ensdata.sigmapp(1,1:2) = [geomean(pars_LD2.dpp_g(:,2)), UTILS.GEOSTD(pars_LD2.dpp_g(:,2))];
 ensdata.da(1,1:2) = [geomean(pars_LD2.da), UTILS.GEOSTD(pars_LD2.da)];
 ensdata.dm(1,1:2) = [geomean(pars_LD2.dm), UTILS.GEOSTD(pars_LD2.dm)];
+if opts_diag.knudsen
+    kn = TRANSP.KNUDSEN(pars_LD2, fl, params_const, opts_mobil);
+    ensdata.kn_pair(1,1:2) = [mean(kn.kn_pair), std(kn.kn_pair)];
+    ensdata.knn(1,1:2) = [mean(kn.knn), std(kn.knn)];
+    ensdata.knn_defined(1) = kn.knn_defined;
+end
 
 pars_LD2.n_hyb = ones(n0_agg, 1); % initialize number of sub-aggregates...
 % ...(first, all aggregates are non-hybrid)
@@ -189,7 +202,13 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     if any(strcmp(opts_mobil.mtd, {'interp', 'free_molecular'}))
         ensdata.da(k,1:2) = [geomean(pars_LD2.da), UTILS.GEOSTD(pars_LD2.da)];
     end
-    
+    if opts_diag.knudsen
+        kn = TRANSP.KNUDSEN(pars_LD2, fl, params_const, opts_mobil);
+        ensdata.kn_pair(k,1:2) = [mean(kn.kn_pair), std(kn.kn_pair)];
+        ensdata.knn(k,1:2) = [mean(kn.knn), std(kn.knn)];
+        ensdata.knn_defined(k) = kn.knn_defined;
+    end
+
     if ensdata.n_agg(k) <= (r_n_agg(ind_dat) * ensdata.n_agg(1))
 
         % update projected area sizes (if necessary)
@@ -243,6 +262,11 @@ ensdata.dpp(k:end,:) = [];
 ensdata.sigmapp(k:end,:) = [];
 ensdata.da(k:end,:) = [];
 ensdata.dm(k:end,:) = [];
+if isfield(ensdata, 'kn_pair')
+    ensdata.kn_pair(k:end,:) = [];
+    ensdata.knn(k:end,:) = [];
+    ensdata.knn_defined(k:end) = [];
+end
 
 % save the final workspace
 dt_final = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss'));

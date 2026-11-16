@@ -202,6 +202,18 @@ cfg.transport.location_options.vf = require_text_field( ...
 cfg.transport.growth_options.indupdate = require_text_field( ...
     cfg.transport.growth_options, 'indupdate', 'transport.growth_options.indupdate');
 
+% Optional diagnostics, recorded in ensdata and never used in the dynamics
+if isfield(cfg.transport, 'diagnostics_options')
+    cfg.transport.diagnostics_options = require_struct_field(cfg.transport, ...
+        'diagnostics_options', 'transport.diagnostics_options section');
+else
+    cfg.transport.diagnostics_options = struct();
+end
+cfg.transport.diagnostics_options.knudsen = optional_logical_field( ...
+    cfg.transport.diagnostics_options, 'knudsen', ...
+    cfg.model.knudsen_diagnostics, 'transport.diagnostics_options.knudsen');
+cfg.model.knudsen_diagnostics = cfg.transport.diagnostics_options.knudsen;
+
 end
 
 function out = require_struct_field(src, field_name, label)

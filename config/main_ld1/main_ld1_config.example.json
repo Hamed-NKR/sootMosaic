@@ -61,6 +61,9 @@
       "vf": "off",
       "vf_type": "pp"
     },
-    "growth_options": {}
+    "growth_options": {},
+    "diagnostics_options": {
+      "knudsen": true
+    }
   }
 }

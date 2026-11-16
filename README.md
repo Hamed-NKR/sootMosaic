@@ -484,6 +484,35 @@ orientations in 4 sets and `proj_tol` 0.01, and `article1_7658971` uses
 the cache and the sampling settings explicitly, and the LD1 example runs
 `interp`.
 
+`TRANSP.MOBIL` stores two single-particle Knudsen numbers with every
+particle, the gas Knudsen number `kn_kin` = 2 lambda / dm and `kn_diff` =
+2 (m kT)^0.5 / (f dm). With `transport.diagnostics_options.knudsen` set to
+true, `TRANSP.KNUDSEN` adds two numbers of the literature at every recorded
+step. The pair diffusive Knudsen number of Eq. 11 in reference 10 is taken
+for each particle and its nearest neighbor under the periodic minimum image,
+with the reduced mass and friction of the pair, the combined Smoluchowski
+radius (dm_i + dm_j) / 2 and the combined projected area
+pi (da_i + da_j)^2 / 4 (dm in place of da for methods that set no projected
+area). Both are sums of single-particle radii, exact for two spheres, and the
+mobility radius equals the capacity radius of reference 10 only in the
+continuum limit. For aggregate pairs the number is therefore an approximate
+diagnostic. The comparison of reference 10 (Table 1), where sums of capacity
+radii and projected areas give values 1.16 to 1.46 times those of the computed
+pair geometry, does not bound it, and the regime limits 0.035 and 3.7 of
+reference 10 belong to the computed definition and only indicate the regime
+here. For two identical spheres it equals `kn_diff` / 2^0.5, Eq. 2 of
+reference 11. The nearest-neighbor Knudsen number of reference 11 is
+(18 D tau)^0.5 / rn with rn = n^(-1/3) - 2 rmax, from the number
+concentration n and the mean maximum radius rmax, and is not defined when rn
+is not positive. `ensdata` (`ensdata0` in LD1) gains `kn_pair` and `knn`,
+each as mean and standard deviation over the particles, and `knn_defined`,
+which is false with `knn` set to NaN where rn is not positive. The
+diagnostics change neither the particles nor the random numbers. The
+`current` profile records them and `article1_7658971` does not. Reference 12
+gives the particle mean free path of another convention, 3.19 times the
+length (m kT)^0.5 / f of `kn_diff`, so diffusive Knudsen numbers can only be
+compared within one convention.
+
 The TEM analysis runs separately with `main_tem_analysis_v1` after its local
 config and source datasets have been prepared. The four TEM profiles share the
 complete schema; `local.json` is the default low/high paper profile, and
@@ -568,3 +597,13 @@ Discrete element Langevin dynamics in sootMosaic follows these repeated operatio
 9. Rogak, S. N., Flagan, R. C., & Nguyen, H. V. (1993). The mobility and
    structure of aerosol agglomerates. Aerosol Science and Technology, 18(1),
    25-47.
+10. Thajudeen, T., Gopalakrishnan, R., & Hogan, C. J., Jr. (2012). The
+    collision rate of nonspherical particles and aggregates for all diffusive
+    Knudsen numbers. Aerosol Science and Technology, 46(11), 1174-1186.
+11. Moran, J., Yon, J., Poux, A., Corbin, F., Ouf, F.-X., & Simeon, A.
+    (2020). Monte Carlo Aggregation Code (MCAC) Part 2: Application to soot
+    agglomeration, highlighting the importance of primary particles. Journal
+    of Colloid and Interface Science, 575, 274-285.
+12. Eggersdorfer, M. L., & Pratsinis, S. E. (2014). Agglomerates and
+    aggregates of nanoparticles made in the gas phase. Advanced Powder
+    Technology, 25(1), 71-90.

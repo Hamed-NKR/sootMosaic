@@ -164,7 +164,7 @@ switch opts.mtd
 end
 
 % Cunningham correction factor (-)
-kn_kin = (2 * fl.lambda) ./ dm; % Kinetic (momentum) Knudsen number (-)
+kn_kin = (2 * fl.lambda) ./ dm; % Gas (kinetic) Knudsen number 2 lambda / dm (-)
 cc = TRANSP.CUNNINGHAM(dm, fl.lambda, opts.slip, 'MOBIL');
 
 % Aggregate mass (kg) and smallest primary diameter (m)
@@ -223,7 +223,9 @@ if n_par > 1
     end
 end
 
-lambda = sqrt(m .* kb .* (fl.temp)) ./ f; % Diffusive mean free path (m)
+% Single-particle diffusive Knudsen number 2 (m kT)^0.5 / (f dm). The pair...
+    % ...and nearest-neighbor forms of the literature are in TRANSP.KNUDSEN.
+lambda = sqrt(m .* kb .* (fl.temp)) ./ f; % Length (m kT)^0.5 / f (m)
 kn_diff = 2 * lambda ./ dm; % Diffusive Knudsen number (-)
 
 % Updating the transport properties for the structure/class of aggregates

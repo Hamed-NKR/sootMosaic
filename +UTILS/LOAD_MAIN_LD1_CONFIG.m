@@ -216,6 +216,18 @@ else
     cfg.transport.growth_options = struct();
 end
 
+% Optional diagnostics, recorded in ensdata0 and never used in the dynamics
+if isfield(cfg.transport, 'diagnostics_options')
+    cfg.transport.diagnostics_options = require_struct_field(cfg.transport, ...
+        'diagnostics_options', 'transport.diagnostics_options section');
+else
+    cfg.transport.diagnostics_options = struct();
+end
+cfg.transport.diagnostics_options.knudsen = optional_logical_field( ...
+    cfg.transport.diagnostics_options, 'knudsen', ...
+    cfg.model.knudsen_diagnostics, 'transport.diagnostics_options.knudsen');
+cfg.model.knudsen_diagnostics = cfg.transport.diagnostics_options.knudsen;
+
 end
 
 function out = require_struct_field(src, field_name, label)
