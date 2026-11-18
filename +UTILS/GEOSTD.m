@@ -43,7 +43,7 @@ function gsd = GEOSTD(x, flag, dim)
 if nargin < 1
     error('geostd:notEnoughInputs', 'This function requires at least one input.');
 elseif any(x(:) < 0)
-    error(geostd:badData', 'All data values must be positive.');
+    error('geostd:badData', 'All data values must be positive.');
 end
 
 % Setup default flag where required
