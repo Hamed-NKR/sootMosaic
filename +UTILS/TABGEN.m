@@ -1,4 +1,4 @@
-function tab = TABGEN(dpp, dm, slip)
+function tab = TABGEN(dpp, dm, slip, coefficients)
 % "TABGEN" generates a table of properties for typical fractal soot...
 %   ...according to the well-established literature correlations that...
 %   ...can be found in Sipkens et al. (2023)'s review on soot morphology.
@@ -7,6 +7,7 @@ function tab = TABGEN(dpp, dm, slip)
 % Inputs:
 %   dpp: Mean primary particle diameter (nm)
 %   dm: Mobility diameter (nm)
+%     coefficients: Resolved slip section, or [a b c] (optional)
 %   slip: Slip correction model of TRANSP.CUNNINGHAM. Only...
 %       ...'per_caller_7658971' (the default) is available, other models...
 %       ...stop until the mass and density units of the table are reviewed
@@ -16,6 +17,8 @@ function tab = TABGEN(dpp, dm, slip)
 %   tab: table of morphological properties of soot using the benchmark...
 %       ...correlations.
 % ----------------------------------------------------------------------- %
+
+if nargin < 4, coefficients = []; end
 
 %%% define constants %%%
 dpp_100 = 17.8; % universal correlation prefactor
@@ -55,8 +58,8 @@ dve = 1e9 * (6 * (1e-18*magg2) / (rho_m * pi)).^(1/3); % volume equivalent diame
 
 rho_eff = (6 * (1e18*magg2)) ./ (pi * (1e-9*dm).^3); % effective density (kg/m3)
 
-x = (rho_m./rho_eff).^(1/3) .* (cunningham_nm(dve) ./ ...
-    cunningham_nm(dm)); % shape factor
+x = (rho_m./rho_eff).^(1/3) .* (cunningham_nm(dve, coefficients) ./ ...
+    cunningham_nm(dm, coefficients)); % shape factor
 
 % trial and error for aerodynamic diameter
 dae_i = 2 * rand(length(dm),1) .* dm; % initial guess
@@ -65,8 +68,8 @@ ind = 0;
 while any(abs((dae - dae_i) ./ dae_i) > 0.01) && (ind < 1e3)
     if ind~=0; dae_i = dae; end
     
-    dae = dm.^((D_m - 1) / 2) .* sqrt((cunningham_nm(dm) ./ ...
-        cunningham_nm(dae_i)) *...
+    dae = dm.^((D_m - 1) / 2) .* sqrt((cunningham_nm(dm, coefficients) ./ ...
+        cunningham_nm(dae_i, coefficients)) *...
         6 * k_m / (pi * rho_0));
     
     ind = ind + 1;
@@ -77,12 +80,13 @@ tab = table(dm, magg1, magg2, rho_eff, dve, x, dae, dpp,...
 
 end
 
-function cc = cunningham_nm(dp)
+function cc = cunningham_nm(dp, coefficients)
 % Cunningham correction factor of the per_caller_7658971 model, which...
     % ...takes the diameters in nm as TABGEN passes them
 
 lambda = 6.8e-8; % ambient air mean free path (m)
 
-cc = TRANSP.CUNNINGHAM(dp, lambda, 'per_caller_7658971', 'TABGEN');
+cc = TRANSP.CUNNINGHAM(dp, lambda, 'per_caller_7658971', 'TABGEN', ...
+    coefficients);
 
 end

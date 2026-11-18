@@ -35,6 +35,50 @@ old = 'per_caller_7658971';
 rng_saved = rng;
 restore_rng = onCleanup(@() rng(rng_saved));
 
+% Comparing supplied profile coefficients with the literal expressions
+[~, ~, fixed] = UTILS.MODEL_PROFILE('article1_7658971', 'LD2');
+callers = {'MOBIL', 'DIAMOBIL', 'AERODYN', 'TABGEN'};
+diameters = [1e-9; 134.6e-9; 1e-6];
+for model = {kim, old}
+    for j = 1:numel(callers)
+        who = callers{j};
+        x = diameters;
+        if strcmp(model{1}, old) && strcmp(who, 'TABGEN'), x = x * 1e9; end
+        a = TRANSP.CUNNINGHAM(x, 67.3e-9, model{1}, who);
+        b = TRANSP.CUNNINGHAM(x, 67.3e-9, model{1}, who, fixed.si.slip);
+        if strcmp(model{1}, kim)
+            coef = [1.165 0.483 0.997];
+        else
+            switch who
+                case 'MOBIL', coef = [1.254 0.4 1.1];
+                case 'TABGEN', coef = [1.257 0.4 0.55];
+                otherwise, coef = [1.165 0.483 0.997];
+            end
+        end
+        if strcmp(model{1}, old) && strcmp(who, 'AERODYN')
+            ref = 1 + x .* (coef(1) + coef(2) * exp(-coef(3) ./ x));
+        elseif strcmp(model{1}, old) && strcmp(who, 'TABGEN')
+            ref = 1 + (2 * 67.3e-9 ./ x) .* (coef(1) + coef(2) * ...
+                exp(-coef(3) * x / 67.3e-9));
+        else
+            kn = 2 * 67.3e-9 ./ x;
+            ref = 1 + kn .* (coef(1) + coef(2) * exp(-coef(3) ./ kn));
+        end
+        fprintf('%s %s %.17g %.17g %.17g\n', model{1}, who, b);
+        [names, pass] = add(names, pass, [model{1} ' ' who ' identity'], ...
+            isequal(a, b) && isequal(b, ref));
+    end
+end
+changed = fixed.si.slip;
+changed.kim2005.a = 2 * changed.kim2005.a;
+a = TRANSP.CUNNINGHAM(134.6e-9, 67.3e-9, kim, 'MOBIL', changed);
+b = TRANSP.CUNNINGHAM(134.6e-9, 67.3e-9, kim, 'MOBIL');
+[names, pass] = add(names, pass, 'coefficient override reaches correction', ...
+    abs((a - b) - 1.165) < 1e-14);
+[names, pass] = add(names, pass, 'invalid coefficients rejected', ...
+    raises_error(@() TRANSP.CUNNINGHAM(1, 1, kim, 'MOBIL', [1 NaN 1]), ...
+    'sootMosaic:CUNNINGHAM:InvalidCoefficients'));
+
 % hand calculated values
 lam = 67.3e-9;
 [names, pass] = add(names, pass, ...
@@ -245,6 +289,76 @@ res = dae - sqrt((6 / (pi * 1000)) * (m ./ p2.dm) .* ...
     'AERODYN with kim2005 needs the mean free path', ...
     raises_error(@() TRANSP.AERODYN(pars.pp, p2.dm, 1800, [], kim), ...
     'sootMosaic:AERODYN:MissingMeanFreePath'));
+
+% Checking that callers pass the supplied coefficients and density
+opts = struct('mtd', 'continuum', 'c_dt', 1e-3, 'slip', kim, ...
+    'slip_coefficients', changed);
+p_changed = quiet(@() TRANSP.MOBIL(pars, fl, params_const, opts));
+expected_cc = TRANSP.CUNNINGHAM(p_changed.dm, fl.lambda, kim, ...
+    'MOBIL', changed);
+[names, pass] = add(names, pass, 'MOBIL passes coefficient override', ...
+    isequal(p_changed.f, (3 * pi * fl.mu) .* p_changed.dm ./ expected_cc));
+opts.mtd = 'interp';
+rng(3);
+p_changed = quiet(@() TRANSP.MOBIL(pars, fl, params_const, opts));
+dm_direct = TRANSP.DIAMOBIL(pars.dg, p_changed.da, fl, kim, ...
+    struct('slip_coefficients', changed));
+[names, pass] = add(names, pass, 'interpolation passes coefficient override', ...
+    isequal(p_changed.dm, dm_direct));
+aero = fixed.si;
+aero.constants.rho_aero_ref_kg_m3 = 1800;
+aero.slip = changed;
+[names, pass] = add(names, pass, 'AERODYN uses supplied reference density', ...
+    near(TRANSP.AERODYN(sph, 30e-9, 1800, fl, kim, aero), 30e-9, 1e-12));
+aero.constants.rho_aero_ref_kg_m3 = 900;
+[names, pass] = add(names, pass, 'AERODYN fixed form uses material density', ...
+    near(TRANSP.AERODYN(sph, 30e-9, 1800, fl, old, aero), 30e-9, 1e-12));
+rng(7);
+tab_default = UTILS.TABGEN([20; 25; 30], [100; 200; 300], old);
+rng(7);
+tab_profile = UTILS.TABGEN([20; 25; 30], [100; 200; 300], old, fixed.si.slip);
+[names, pass] = add(names, pass, 'TABGEN passes profile coefficients', ...
+    isequal(tab_default, tab_profile));
+
+% Comparing caller outputs with and without explicit fixed sections
+methods = {'sorensen_eq17', 'continuum', 'sorensen_backbone', ...
+    'interp', 'free_molecular'};
+for j = 1:numel(fls)
+    for model = {old, kim}
+        for k = 1:numel(methods)
+            options = struct('mtd', methods{k}, 'slip', model{1}, ...
+                'c_dt', 1e-3, 'step_policy', 'cap');
+            rng(3);
+            pa = quiet(@() TRANSP.MOBIL(pars, fls{j}, params_const, options));
+            state = rng;
+            options.slip_coefficients = fixed.si.slip;
+            rng(3);
+            pb = quiet(@() TRANSP.MOBIL(pars, fls{j}, params_const, options));
+            [names, pass] = add(names, pass, 'MOBIL fixed-section identity', ...
+                isequal(pa, pb) && isequal(state, rng));
+            fprintf('MOBIL %s %s gas %d\n', methods{k}, model{1}, j);
+            fprintf('%.17g %.17g %.17g\n', [pb.dm pb.f pb.tau]');
+        end
+        for root = {'start_point_7658971', 'bracketed'}
+            options = struct('root', root{1});
+            da = TRANSP.DIAMOBIL(pars.dg, da_h, fls{j}, model{1}, options);
+            options.slip_coefficients = fixed.si.slip;
+            db = TRANSP.DIAMOBIL(pars.dg, da_h, fls{j}, model{1}, options);
+            [names, pass] = add(names, pass, 'DIAMOBIL fixed-section identity', ...
+                isequal(da, db));
+            fprintf('DIAMOBIL %s %s gas %d\n', model{1}, root{1}, j);
+            fprintf('%.17g\n', db);
+        end
+        da = TRANSP.AERODYN(pars.pp, db, 1800, fls{j}, model{1});
+        db = TRANSP.AERODYN(pars.pp, db, 1800, fls{j}, model{1}, fixed.si);
+        [names, pass] = add(names, pass, 'AERODYN fixed-section identity', ...
+            isequal(da, db));
+        fprintf('AERODYN %s gas %d\n', model{1}, j);
+        fprintf('%.17g\n', db);
+    end
+end
+fprintf('TABGEN fixed-section identity\n');
+fprintf('%.17g %.17g\n', [tab_profile.x tab_profile.dae]');
 
 % model profiles and loaders
 m1 = UTILS.MODEL_PROFILE('article1_7658971', 'LD1');

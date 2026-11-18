@@ -6,7 +6,7 @@ function [pars, fl] = INIT_DOM(params_ud, params_const, opts_fl)
 %     params_ud: Table of user-defined parameters
 %     params_const: ~ constant physical properties
 %     opts_fl: Fluid property options passed to TRANSP.FLPROPS...
-%         ...(optional, default the flame preset)
+%         ...(amb and gas section, optional, default the flame preset)
 % ----------------------------------------------------------------------- %
 % 
 % Outputs:

@@ -94,9 +94,13 @@ if (~isfield(opts, 'proj_warned')) || isempty(opts.proj_warned)
     opts.proj_warned = call_defaults.mobil.proj_warned;
 end
 
-% initialize slip correction model variable
+% Reading the slip model and optional opts.slip_coefficients section
 if (~isfield(opts, 'slip')) || isempty(opts.slip)
     opts.slip = call_defaults.mobil.slip;
+end
+
+if ~isfield(opts, 'slip_coefficients')
+    opts.slip_coefficients = [];
 end
 
 % initialize time-step sensitivity variable
@@ -151,7 +155,8 @@ switch opts.mtd
         [da, opts] = projected_diameter(pars, opts);
         if strcmp(opts.mtd, 'interp')
             opts_dia = struct('continuum', opts.continuum_diameter, ...
-                'root', opts.root_solve);
+                'root', opts.root_solve, ...
+                'slip_coefficients', opts.slip_coefficients);
             if strcmp(opts.continuum_diameter, 'sorensen_backbone')
                 opts_dia.npp = npp;
                 opts_dia.dpp1 = single_primary_diameter(pars, npp);
@@ -168,7 +173,8 @@ end
 
 % Cunningham correction factor (-)
 kn_kin = (2 * fl.lambda) ./ dm; % Gas (kinetic) Knudsen number 2 lambda / dm (-)
-cc = TRANSP.CUNNINGHAM(dm, fl.lambda, opts.slip, 'MOBIL');
+cc = TRANSP.CUNNINGHAM(dm, fl.lambda, opts.slip, 'MOBIL', ...
+    opts.slip_coefficients);
 
 % Aggregate mass (kg) and smallest primary diameter (m)
 m = ones(n_par,1);

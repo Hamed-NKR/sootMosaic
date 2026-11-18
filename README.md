@@ -419,10 +419,15 @@ To use correlation-based scaling instead, run `main_scale_v2` in place of
 
 The LD1 and LD2 configs set the gas temperature and pressure under
 `transport.fluid` and the property model under `transport.fluid_options.amb`.
-The `sutherland` model gives the viscosity from 1.716e-5 Pa s at 273.15 K
-with the temperature law of reference 7 (constant 110.4 K) and the mean
-free path from 67.3 nm at 296.15 K and 101325 Pa, scaled with temperature and
-pressure as in Kim et al. (2005). The `flame` (1700 K) and `room` (293.15 K)
+The `current` profile gives the viscosity from 1.83245e-5 Pa s at 296.15 K
+with the temperature law of reference 7, Eq. 9 (constant 110.4 K).
+The fixed profile and calls without a gas section use 1.716e-5 Pa s at
+273.15 K. The mean free path is 67.3 nm at 296.15 K and 101325 Pa, scaled
+with temperature and pressure as in reference 7, Eq. 11.
+The `current` viscosity rises by 0.2631 percent at every temperature;
+seeded runs with that profile change by design. Fixed-profile and
+profile-free runs keep their gas and slip values and evaluation order.
+The `flame` (1700 K) and `room` (293.15 K)
 presets hold fixed values at 101325 Pa and warn when the configured state
 differs by more than 1 K or 1 percent. The top-level `model_profile` names the
 default models, `current` or `article1_7658971` (the models of commit

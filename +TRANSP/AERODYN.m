@@ -1,4 +1,4 @@
-function dae = AERODYN(pp, dm, rho0, fl, slip)
+function dae = AERODYN(pp, dm, rho0, fl, slip, params)
 % "AERODYN" calculates the aerodynamic diameter from mass and mobility...
 %   ...diameter of aggregates.
 % ----------------------------------------------------------------------- %
@@ -6,6 +6,7 @@ function dae = AERODYN(pp, dm, rho0, fl, slip)
 % Inputs:
 %   pp: a series of 2d arrays containing primary particle data for...
 %       ...different aggregates.    
+%     params: Resolved SI profile sections (optional)
 %   dm: mobility diameter of aggregates
 %   rho0: material density for fractal aggregates (kg/m3)
 %   fl: fluid flow characteristics structure (lambda in m), needed by...
@@ -21,6 +22,9 @@ function dae = AERODYN(pp, dm, rho0, fl, slip)
 %   dae: Aerodynamic diameter of aggregates
 % ----------------------------------------------------------------------- %
 
+if nargin < 6 || isempty(params)
+    params = UTILS.MODEL_DEFAULTS('article1_7658971');
+end
 if ~exist('slip', 'var') || isempty(slip)
     slip = 'per_caller_7658971'; % constants of each caller at 7658971
 end
@@ -35,7 +39,7 @@ else
 end
 
 % Cunningham correction factor (x: particle diameter in m)
-cc = @(x) TRANSP.CUNNINGHAM(x, lambda, slip, 'AERODYN');
+cc = @(x) TRANSP.CUNNINGHAM(x, lambda, slip, 'AERODYN', params.slip);
 
 dae0 = PAR.EQUIV(pp); % initial guess (volume-equivalent diameter)
 
@@ -51,7 +55,7 @@ opts_fz = optimset('TolX', eps);
 if legacy
     rho_ref = rho0; % reference density of the 7658971 equation
 else
-    rho_ref = 1000; % aerodynamic reference density (kg/m3)
+    rho_ref = params.constants.rho_aero_ref_kg_m3; % Density (kg/m3)
 end
 
 for i = 1 : length(dae0)

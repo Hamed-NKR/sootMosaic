@@ -5,7 +5,8 @@ function [mu_f, lambda_f] = FLPROPS(fl, params_const, opts)
 %
 % Inputs:
 %     fl: Fluid information structure (temp in K, p in Pa)
-%     params_const: Problem's table of constant physical properties
+%     params_const: Physical constants table (unused)
+%     opts.gas: Gas section of the resolved SI profile (optional)
 %     opts.amb: Property model, 'sutherland' (from fl.temp and fl.p),...
 %         ...'flame' (preset for 1700 K and 101325 Pa) or 'room' (preset...
 %         ...for 293.15 K and 101325 Pa), default 'flame'
@@ -32,56 +33,59 @@ if ~exist('opts', 'var')
     opts = struct();
 end
 if (~isfield(opts, 'amb')) || isempty(opts.amb)
-    opts.amb = 'flame'; % assume flame conditions as default
+    defaults = UTILS.CALL_DEFAULTS();
+    opts.amb = defaults.flprops.amb;
 end
 
-% Calculating the properties of air at the fluid temperature and pressure
+% Reading the supplied gas section over the fixed call values
+defaults = UTILS.MODEL_DEFAULTS('article1_7658971');
+gas = defaults.gas;
+if isfield(opts, 'gas') && ~isempty(opts.gas)
+    gas = UTILS.CONFIG_MERGE(gas, opts.gas);
+end
+validate_gas(gas);
+
+% Calculating viscosity and mean free path (README reference 7, Eqs. 9, 11)
 if strcmp(opts.amb, 'sutherland')
     temp = require_state(fl, 'temp', 'sootMosaic:FLPROPS:InvalidTemperature',...
         'fl.temp must be a positive finite temperature (K).');
     p = require_state(fl, 'p', 'sootMosaic:FLPROPS:InvalidPressure',...
         'fl.p must be a positive finite pressure (Pa).');
-
-    % Viscosity of 1.716e-5 Pa.s at 273.15 K, scaled with T^1.5 / (T +...
-        % ...110.4) with T in K (README reference 7)
-    mu_f = 1.716e-5 * (temp / 273.15)^1.5 * (273.15 + 110.4) /...
-        (temp + 110.4);
-
-    % Mean free path of 67.3 nm at 296.15 K and 101325 Pa, scaled with...
-        % ...T^2 / (T + 110.4) / p with T in K and p in Pa (README...
-        % ...reference 7)
-    lambda_f = 67.3e-9 * (temp / 296.15)^2 * (296.15 + 110.4) /...
-        (temp + 110.4) * (101325 / p);
+    v = gas.sutherland;
+    g = gas.mean_free_path;
+    mu_f = v.mu_ref_pa_s * (temp / v.t_ref_k)^1.5 * ...
+        (v.t_ref_k + v.s_k) / (temp + v.s_k);
+    lambda_f = g.lambda_ref_m * (temp / g.t_ref_k)^2 * ...
+        (g.t_ref_k + g.s_k) / (temp + g.s_k) * (g.p_ref_pa / p);
     return
 end
 
-if strcmp(opts.amb, 'room') % @ 20 c & 1 atm: room conditions; typical of post-flame agglomeration
-    mu_f = 1.813e-5; % Viscosity (Pa.s)
-    lambda_f = 6.8e-8; % Mean free path (m)
-    temp_preset = 293.15; % Preset temperature (K)
-elseif strcmp(opts.amb, 'flame') % @ 1700 k & 1 atm: typical of soot formation within flame
-    mu_f = 5.647e-5;
-    lambda_f = 4.98e-7;
-    temp_preset = 1700;
+if any(strcmp(opts.amb, {'room', 'flame'}))
+    preset = gas.presets.(opts.amb);
+    mu_f = preset.mu_pa_s;
+    lambda_f = preset.lambda_m;
+    temp_preset = preset.t_k;
 else
     error('sootMosaic:FLPROPS:UnknownModel', ['Unknown fluid property ',...
         'model %s. Known models are sutherland, flame and room.'],...
         char(opts.amb))
 end
 
-% Comparing the preset state with the fluid state (1 K, 1 percent)
+% Comparing the preset state with the fluid state
+w = gas.preset_warning;
 if isfield(fl, 'temp') && ~isempty(fl.temp) &&...
-        abs(fl.temp - temp_preset) > 1
+        abs(fl.temp - temp_preset) > w.temperature_tol_k
     warning('sootMosaic:FLPROPS:PresetTemperature', ['The %s preset holds ',...
         'gas properties at %.2f K and the fluid is at %.2f K. The ',...
         'sutherland model gives them at the fluid temperature.'],...
         opts.amb, temp_preset, fl.temp)
 end
-if isfield(fl, 'p') && ~isempty(fl.p) && abs(fl.p / 101325 - 1) > 0.01
+if isfield(fl, 'p') && ~isempty(fl.p) && ...
+        abs(fl.p / w.p_ref_pa - 1) > w.pressure_rel_tol
     warning('sootMosaic:FLPROPS:PresetPressure', ['The %s preset holds gas ',...
-        'properties at 101325 Pa and the fluid is at %.6g Pa. The ',...
+        'properties at %.6g Pa and the fluid is at %.6g Pa. The ',...
         'sutherland model gives them at the fluid pressure.'],...
-        opts.amb, fl.p)
+        opts.amb, w.p_ref_pa, fl.p)
 end
 
 end
@@ -95,4 +99,24 @@ if ~isfield(fl, field_name) || ~isnumeric(fl.(field_name)) ||...
     error(id, msg)
 end
 val = double(fl.(field_name));
+end
+
+function validate_gas(gas)
+% "validate_gas" checks numeric gas parameters before evaluation.
+sections = {gas.sutherland, gas.mean_free_path, gas.presets.room, ...
+    gas.presets.flame, gas.preset_warning};
+for k = 1:numel(sections)
+    names = fieldnames(sections{k});
+    for j = 1:numel(names)
+        name = names{j};
+        value = sections{k}.(name);
+        zero_ok = any(strcmp(name, {'temperature_tol_k', ...
+            'pressure_rel_tol', 's_k'}));
+        if ~isnumeric(value) || ~isreal(value) || ~isscalar(value) || ...
+                ~isfinite(value) || value < 0 || (~zero_ok && value == 0)
+            error('sootMosaic:FLPROPS:InvalidGasParameter', ...
+                'Gas parameter %s is outside its physical range.', name);
+        end
+    end
+end
 end

@@ -29,6 +29,53 @@ pass = [];
 atm = 101325;
 sut = struct('amb', 'sutherland');
 
+% Checking profile references and a direct viscosity override
+[~, ~, current] = UTILS.MODEL_PROFILE('current', 'LD1');
+[~, ~, fixed] = UTILS.MODEL_PROFILE('article1_7658971', 'LD1');
+cur = struct('amb', 'sutherland', 'gas', current.si.gas);
+old = struct('amb', 'sutherland', 'gas', fixed.si.gas);
+[mu_cur, lam_cur] = props(296.15, atm, cur);
+[mu_old, lam_old] = props(296.15, atm, old);
+[names, pass] = add(names, pass, 'current viscosity reference', ...
+    mu_cur == 1.83245e-5 && lam_cur == 67.3e-9);
+[names, pass] = add(names, pass, 'fixed viscosity reference', ...
+    near(mu_old, 1.827641888947989e-5, 1e-14) && lam_old == lam_cur);
+cur.gas.sutherland.mu_ref_pa_s = 2 * cur.gas.sutherland.mu_ref_pa_s;
+[mu_twice, lam_twice] = props(1700, atm, cur);
+cur.gas.sutherland.mu_ref_pa_s = cur.gas.sutherland.mu_ref_pa_s / 2;
+[mu_base, lam_base] = props(1700, atm, cur);
+[names, pass] = add(names, pass, 'mu_ref scales viscosity only', ...
+    mu_twice == 2 * mu_base && lam_twice == lam_base);
+for temp = [296.15 298 1700 1830]
+    [a, b] = props(temp, atm, old);
+    [c, d] = props(temp, atm, sut);
+    fprintf('fixed gas %.17g %.17g %.17g\n', temp, a, b);
+    [names, pass] = add(names, pass, 'fixed gas equals call values', ...
+        isequal([a b], [c d]));
+end
+cur.gas.sutherland.mu_ref_pa_s = 0;
+[names, pass] = add(names, pass, 'zero viscosity reference rejected', ...
+    raises_error(@() props(298, atm, cur), ...
+    'sootMosaic:FLPROPS:InvalidGasParameter'));
+custom = struct('amb', 'room', 'gas', fixed.si.gas);
+custom.gas.presets.room.mu_pa_s = 2 * custom.gas.presets.room.mu_pa_s;
+custom.gas.presets.room.lambda_m = 2 * custom.gas.presets.room.lambda_m;
+custom.gas.presets.room.t_k = 298;
+custom.gas.preset_warning.temperature_tol_k = 2;
+custom.gas.preset_warning.pressure_rel_tol = 0.02;
+custom.gas.preset_warning.p_ref_pa = 1e5;
+[a, b] = props(298, 1e5, custom);
+[names, pass] = add(names, pass, 'preset value overrides', ...
+    a == 2 * 1.813e-5 && b == 2 * 6.8e-8);
+[names, pass] = add(names, pass, 'preset warning overrides', ...
+    no_warning(@() props(300, 101325, custom), ...
+    {'sootMosaic:FLPROPS:PresetTemperature', ...
+    'sootMosaic:FLPROPS:PresetPressure'}) && ...
+    raises_warning(@() props(301, 1e5, custom), ...
+    'sootMosaic:FLPROPS:PresetTemperature') && ...
+    raises_warning(@() props(298, 103000, custom), ...
+    'sootMosaic:FLPROPS:PresetPressure'));
+
 % hand calculated values at 101325 Pa (mu in Pa.s, lambda in m)
 ref_mu_298 = 1.836437388e-5;
 ref_mu_1700 = 5.644640720e-5;
@@ -277,7 +324,7 @@ part.n_par = 10;
 [~, fl] = TRANSP.INIT_DOM(p_ud, p_const, cfg.transport.fluid_options);
 [names, pass] = add(names, pass, ...
     'LD1 example config gives the 1700 K properties', ...
-    near(fl.mu, ref_mu_1700, 1e-6) && near(fl.lambda, ref_lam_1700, 1e-6) && ...
+    near(fl.mu, mu_base, 1e-14) && near(fl.lambda, ref_lam_1700, 1e-6) && ...
     fl.temp == 1700 && fl.p == atm);
 
 % LD1 passes the configured model to INIT_DOM and saves fl0

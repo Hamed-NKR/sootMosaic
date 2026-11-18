@@ -1,4 +1,4 @@
-function cc = CUNNINGHAM(d, lambda, model, caller)
+function cc = CUNNINGHAM(d, lambda, model, caller, coefficients)
 % "CUNNINGHAM" calculates the slip (Cunningham) correction factor of...
 %     ...particles in a gas.
 % ----------------------------------------------------------------------- %
@@ -9,6 +9,7 @@ function cc = CUNNINGHAM(d, lambda, model, caller)
 %     model: Slip correction model, 'kim2005' or 'per_caller_7658971'
 %     caller: Calling function, 'MOBIL', 'DIAMOBIL', 'AERODYN' or...
 %         ...'TABGEN', needed by 'per_caller_7658971' only
+%     coefficients: Resolved slip section, or [a b c] (optional)
 % ----------------------------------------------------------------------- %
 %
 % Outputs:
@@ -35,10 +36,38 @@ if ~(ischar(model) || isStringScalar(model))
         'model must be kim2005 or per_caller_7658971.'])
 end
 
+if nargin < 4, caller = ''; end
+if nargin < 5 || isempty(coefficients)
+    defaults = UTILS.MODEL_DEFAULTS('article1_7658971');
+    coefficients = defaults.slip;
+end
+if isstruct(coefficients)
+    if strcmp(model, 'kim2005')
+        c = coefficients.kim2005;
+        coefficients = [c.a c.b c.c];
+    elseif strcmp(model, 'per_caller_7658971') && ...
+            any(strcmp(caller, {'MOBIL', 'DIAMOBIL', 'AERODYN', 'TABGEN'}))
+        coefficients = coefficients.per_caller_7658971.(lower(caller));
+    end
+end
+if any(strcmp(model, {'kim2005', 'per_caller_7658971'})) && ...
+        (strcmp(model, 'kim2005') || ...
+        any(strcmp(caller, {'MOBIL', 'DIAMOBIL', 'AERODYN', 'TABGEN'})))
+    if ~isnumeric(coefficients) || ~isreal(coefficients) || ...
+            numel(coefficients) ~= 3 || ...
+            any(~isfinite(coefficients(:))) || any(coefficients(:) < 0)
+        error('sootMosaic:CUNNINGHAM:InvalidCoefficients', ...
+            'Slip coefficients must be three finite nonnegative numbers.');
+    end
+    a = coefficients(1);
+    b = coefficients(2);
+    c = coefficients(3);
+end
+
 switch char(model)
     case 'kim2005'
         kn = 2 * lambda ./ d; % Knudsen number (-)
-        cc = 1 + kn .* (1.165 + 0.483 * exp(-0.997 ./ kn));
+        cc = 1 + kn .* (a + b * exp(-c ./ kn));
 
     case 'per_caller_7658971'
         if nargin < 4 || ~(ischar(caller) || isStringScalar(caller))
@@ -47,15 +76,15 @@ switch char(model)
         switch char(caller)
             case 'MOBIL'
                 kn = 2 * lambda ./ d;
-                cc = 1 + kn .* (1.254 + 0.4 * exp(-1.1 ./ kn));
+                cc = 1 + kn .* (a + b * exp(-c ./ kn));
             case 'DIAMOBIL'
                 kn = 2 * lambda ./ d;
-                cc = 1 + kn .* (1.165 + 0.483 * exp(-0.997 ./ kn));
+                cc = 1 + kn .* (a + b * exp(-c ./ kn));
             case 'AERODYN'
-                cc = 1 + d .* (1.165 + 0.483 * exp(-0.997 ./ d));
+                cc = 1 + d .* (a + b * exp(-c ./ d));
             case 'TABGEN'
-                cc = 1 + (2 * lambda ./ d) .* (1.257 + 0.4 * ...
-                    exp(-0.55 * d / lambda));
+                cc = 1 + (2 * lambda ./ d) .* (a + b * ...
+                    exp(-c * d / lambda));
             otherwise
                 error('sootMosaic:CUNNINGHAM:UnknownCaller', ['The ', ...
                     'per_caller_7658971 model needs the caller MOBIL, ', ...

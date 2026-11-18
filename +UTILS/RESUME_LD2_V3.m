@@ -175,6 +175,10 @@ if ~isfield(cfg_ld2, 'model_params') || isempty(cfg_ld2.model_params)
         'uses the fixed built-in profile.']);
 end
 
+if exist('opts_mobil', 'var') && ~isfield(opts_mobil, 'slip_coefficients')
+    opts_mobil.slip_coefficients = cfg_ld2.model_params.si.slip;
+end
+
 % set the domain size from the saved domain table for checkpoints...
     % ...saved without it in the growth options
 opts_grow.dom_size = params_domain.Value(2:4);

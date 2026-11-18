@@ -452,6 +452,8 @@ explicit.initial_velocity.sampler = cfg.model.initial_velocity;
     cfg.model_params, explicit, cfg.config_file);
 cfg.model_source.overrides = [cfg.model_source.overrides; changes];
 cfg.model_params.si = UTILS.CONFIG_MERGE(cfg.model_params.si, explicit);
+cfg.transport.fluid_options.gas = cfg.model_params.si.gas;
+cfg.transport.mobility_options.slip_coefficients = cfg.model_params.si.slip;
 cfg.model_params.resolved.rho_aero_ref_kg_m3 = ...
     cfg.model_params.constants.rho_aero_ref_kg_m3;
 cfg.model_params.resolved.root_tolerance = 'eps_scaled';

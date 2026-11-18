@@ -17,6 +17,7 @@ function dm = DIAMOBIL(dg, da, fl, slip, opts)
 %         root: Root solve, 'start_point_7658971' (fzero from one start...
 %             ...point, the default) or 'bracketed' (fzero on the bracket...
 %             ...between the continuum diameter and da)
+%         slip_coefficients: Resolved slip section (optional)
 %         npp: Number of primaries, needed by 'sorensen_backbone'
 %         dpp1: Primary diameter of single-primary aggregates, needed by...
 %             ...'sorensen_backbone'
@@ -59,8 +60,13 @@ if ~any(strcmp(opts.root, {'start_point_7658971', 'bracketed'}))
         '%s. Known names are start_point_7658971 and bracketed.'], opts.root)
 end
 
+if ~isfield(opts, 'slip_coefficients')
+    opts.slip_coefficients = [];
+end
+
 % Cunningham correction factor (x: particle diameter in m)
-cc = @(x) TRANSP.CUNNINGHAM(x, fl.lambda, slip, 'DIAMOBIL');
+cc = @(x) TRANSP.CUNNINGHAM(x, fl.lambda, slip, 'DIAMOBIL', ...
+    opts.slip_coefficients);
 
 % Continuum regime asymptotic approximation
 switch opts.continuum

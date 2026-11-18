@@ -13,8 +13,8 @@
   "gas": {
     "model": "sutherland",
     "sutherland": {
-      "mu_ref_pa_s": 1.716e-5,
-      "t_ref_k": 273.15,
+      "mu_ref_pa_s": 1.83245e-5,
+      "t_ref_k": 296.15,
       "s_k": 110.4
     },
     "mean_free_path": {
