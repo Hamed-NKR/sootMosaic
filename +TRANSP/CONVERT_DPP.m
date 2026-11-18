@@ -3,41 +3,46 @@ function [rho_eff, dm_nm] = CONVERT_DPP(dp_nm, method, params)
 %   ...mobility diameter based on correlations/data discussed in...
 %   ...Sipkens et al. (2023): "Overview of methods...".
 % ----------------------------------------------------------------------- %
-%   [rho_eff, dm_nm] = dp_to_rhoeff_dm(dp_nm)
-%   [rho_eff, dm_nm] = dp_to_rhoeff_dm(dp_nm, method)
-%   [rho_eff, dm_nm] = dp_to_rhoeff_dm(dp_nm, method, params)
+%
+% Inputs:
+%     dp_nm: Nx1 primary particle diameters [nm]
+%     method: 'equations' (default) or 'table'
+%     params: Structure that overrides the defaults (fields depend on...
+%         ...the method)
+%
+% Outputs:
+%     rho_eff: Nx1 effective density [kg/m^3]
+%     dm_nm: Nx1 mobility diameter [nm]
 % ----------------------------------------------------------------------- %
-% Inputs
-%   dp_nm  : Nx1 primary particle diameters [nm]
-%   method : 'equations' (default) or 'table'
-%   params : struct to override defaults (fields depend on method)
-% ----------------------------------------------------------------------- %
-% Outputs
-%   rho_eff : Nx1 effective density [kg/m^3]
-%   dm_nm   : Nx1 mobility diameter [nm]
-% -------------------------------------------------------------------------
-% PHYSICS USED (equations method)
-% 1) TEM scaling:        dp = dp100 * (dm/100)^D_TEM   (using dm ≈ d_A)
-%    => dm = 100 * (dp/dp100)^(1/D_TEM)
-% 2) Mass–mobility law:  m = m100 * (dm/100)^D_m
-% 3) Effective density:  rho_eff = 6*m / (pi*dm^3)     (SI units)
-% -------------------------------------------------------------------------
-% Defaults (typical fresh soot in air):
+%
+% Physics used (equations method)
+%   1) TEM scaling:        dp = dp100 * (dm/100)^D_TEM   (using dm ~ d_A)
+%      => dm = 100 * (dp/dp100)^(1/D_TEM)
+%   2) Mass-mobility law:  m = m100 * (dm/100)^D_m
+%   3) Effective density:  rho_eff = 6*m / (pi*dm^3)     (SI units)
+%
+% Defaults (typical fresh soot in air)
 %   D_m    = 2.48
 %   m100   = 0.267 fg (mass at dm = 100 nm)
 %   D_TEM  = 0.35
-%   dp100  = 17.8 nm  (primary size at dm = 100 nm)
-% -------------------------------------------------------------------------
-% Usage:
+%   dp100  = 17.8 nm (primary size at dm = 100 nm)
+%
+% Usage
 %   Example primary sizes:
 %   dp = [12; 18; 25; 35];   % nm
-% 
-%   1) Using equations (smooth, parametric; recommended)
-%   [rho1, dm1] = dp_to_rhoeff_dm(dp, 'equations');
-% 
-%   2) Using the table (discrete, matches table 2 in Sipkens et al. (2023))
-%   [rho2, dm2] = dp_to_rhoeff_dm(dp, 'table');
-% -------------------------------------------------------------------------
+%
+%   1) Using equations (smooth, parametric, recommended)
+%   [rho1, dm1] = TRANSP.CONVERT_DPP(dp, 'equations');
+%
+%   2) Using the table (discrete, matches Table 2 in Sipkens et al. (2023))
+%   [rho2, dm2] = TRANSP.CONVERT_DPP(dp, 'table');
+%
+%   3) Overriding defaults
+%   [rho3, dm3] = TRANSP.CONVERT_DPP(dp, 'equations', struct('D_m', 2.3));
+%
+% Unknown methods stop with the identifier...
+%   ...sootMosaic:CONVERT_DPP:UnknownMethod.
+% ----------------------------------------------------------------------- %
 
 if nargin < 2 || isempty(method), method = 'equations'; end
 if nargin < 3, params = struct(); end
@@ -60,7 +65,7 @@ switch lower(method)
 
         % 3) effective density in SI
         dm_m  = dm_nm * 1e-9;                      % m
-        m_kg  = m_fg  * 1e-15;                     % kg
+        m_kg  = m_fg  * 1e-18;                     % kg
         rho_eff = (6 .* m_kg) ./ (pi .* dm_m.^3);  % kg/m^3
 
     case 'table'
@@ -81,7 +86,8 @@ switch lower(method)
         end
 
     otherwise
-        error('Unknown method. Use ''equations'' or ''table''.');
+        error('sootMosaic:CONVERT_DPP:UnknownMethod', ...
+            'Unknown method. Use ''equations'' or ''table''.');
 end
 end
 
