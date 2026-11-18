@@ -18,7 +18,8 @@ if ~isempty(cfg_sim.rng_seed)
 end
 
 [params0_ud, params0_const] = UTILS.LD1_PARAMS_FROM_CONFIG( ...
-    cfg_transport.domain, cfg_transport.particles, cfg_transport.fluid);
+    cfg_transport.domain, cfg_transport.particles, cfg_transport.fluid, ...
+    cfg_ld1.model_params.si.constants);
 
 % Initialize particle and fluid structures using the same table contract as
 % the legacy PFA first-stage workflow.

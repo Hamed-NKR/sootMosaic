@@ -1,8 +1,19 @@
-function [params_ud, params_const] = LD1_PARAMS_FROM_CONFIG(domain_cfg, particles_cfg, fluid_cfg)
-%LD1_PARAMS_FROM_CONFIG Build LD1 runtime parameter tables from JSON config.
-%   [PARAMS_UD, PARAMS_CONST] = UTILS.LD1_PARAMS_FROM_CONFIG(...) converts
-%   compact LD1 config sections into the legacy table shapes consumed by
-%   TRANSP.INIT_DOM, PAR.INIT_DIAM, PAR.INIT_LOC, and TRANSP.MARCH.
+function [params_ud, params_const] = LD1_PARAMS_FROM_CONFIG( ...
+        domain_cfg, particles_cfg, fluid_cfg, constants)
+% "LD1_PARAMS_FROM_CONFIG" builds domain and physical constants tables.
+% ----------------------------------------------------------------------- %
+%
+% Inputs:
+%     domain_cfg: Domain settings
+%     particles_cfg: Initial particle settings
+%     fluid_cfg: Fluid temperature, velocity and pressure
+%     constants: Resolved SI constants section (optional, fixed profile)
+% ----------------------------------------------------------------------- %
+%
+% Outputs:
+%     params_ud: Domain, particle and fluid parameter table
+%     params_const: Named physical constants table
+% ----------------------------------------------------------------------- %
 
 if nargin < 1 || ~isstruct(domain_cfg)
     error('sootMosaic:LD1_PARAMS_FROM_CONFIG:MissingDomain', ...
@@ -64,12 +75,8 @@ Description = {'Particle volume fraction'; 'Computational domain length'; ...
     'Flow z velocity'; 'Flow pressure'};
 params_ud = table(Name, Value, Unit, Description);
 
-Name = {'rho_bc'; 'M_air'; 'kb'; 'Na'; 'Ru'};
-Value = [1.86e3; 28.97e-3; 1.381e-23; 6.022e23; 8.314];
-Unit = {'kg/m3'; 'kg/mol'; 'j/k'; 'mol^-1'; 'j/mol.k'};
-Description = {'Black Carbon bulk density'; 'Air molar mass'; ...
-    'Boltzmann constant'; 'Avogadro constant'; 'Universal gas constant'};
-params_const = table(Name, Value, Unit, Description);
+if nargin < 4, constants = []; end
+params_const = UTILS.CONSTANTS_TABLE(constants);
 
 end
 

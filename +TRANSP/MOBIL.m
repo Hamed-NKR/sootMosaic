@@ -176,22 +176,24 @@ kn_kin = (2 * fl.lambda) ./ dm; % Gas (kinetic) Knudsen number 2 lambda / dm (-)
 cc = TRANSP.CUNNINGHAM(dm, fl.lambda, opts.slip, 'MOBIL', ...
     opts.slip_coefficients);
 
+rho_bc = UTILS.CONSTANT_VALUE(params_const, 'rho_bc');
+
 % Aggregate mass (kg) and smallest primary diameter (m)
 m = ones(n_par,1);
 dpp_min = inf;
 for i = 1 : n_par
     if isa(pars, 'AGG')
-        m(i) = (params_const.Value(1) * pi / 6) * sum((pars(i).pp.d(:)).^3);
+        m(i) = (rho_bc * pi / 6) * sum((pars(i).pp.d(:)).^3);
         dpp_min = min(dpp_min, min(pars(i).pp.d(:)));
     else
-        m(i) = (params_const.Value(1) * pi / 6) * sum((pars.pp{i}(:,2)).^3);
+        m(i) = (rho_bc * pi / 6) * sum((pars.pp{i}(:,2)).^3);
         dpp_min = min(dpp_min, min(pars.pp{i}(:,2)));
     end
 end
 
 rho = (6 / pi) * (m ./ (dm.^3)); % Effective density (kg/m3)
 tau = rho .* (dm.^2) .* cc ./ (18 * fl.mu); % Response (relaxation) time (s)
-kb = params_const.Value(3); % Boltzmann's constant (j/k)
+kb = UTILS.CONSTANT_VALUE(params_const, 'kb'); % Thermal constant (J/K)
 f = (3 * pi * fl.mu) .* dm ./ cc; % Friction factor (-)
 delt = opts.c_dt * f .* (dm.^2) ./ (6 * kb * fl.temp); % Marching timestep
 diff = (kb * (fl.temp)) ./ f; % Particle diffusivity (m2/s)

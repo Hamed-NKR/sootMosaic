@@ -22,7 +22,7 @@ else
     n_par = size(pars.n, 1);
 end
 
-kb = params_const.Value(3); % Boltzmann's constant (j/k)
+kb = UTILS.CONSTANT_VALUE(params_const, 'kb'); % Thermal constant (J/K)
 
 % Compiling/copying properties locally
 m = cat(1, pars.m);

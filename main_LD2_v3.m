@@ -73,7 +73,7 @@ end
 
 % Build the fluid and domain parameter tables from the JSON config.
 [params_domain, params_const, fl] = UTILS.LD2_PARAMS_FROM_CONFIG( ...
-    cfg_transport.domain, cfg_transport.fluid);
+    cfg_transport.domain, cfg_transport.fluid, cfg_ld2.model_params.si.constants);
 fprintf('LD2 config: %s\n', cfg_ld2.config_file);
 fprintf('LD2 requested volume fraction: %.6g\n', params_domain.Value(1));
 

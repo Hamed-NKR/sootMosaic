@@ -96,7 +96,7 @@ if isfield(opts, 'mtd') && ~isempty(opts.mtd)
     mtd = char(opts.mtd);
 end
 
-kb = params_const.Value(3); % Boltzmann's constant (J/K)
+kb = UTILS.CONSTANT_VALUE(params_const, 'kb'); % Thermal constant (J/K)
 temp = fl.temp; % Gas temperature (K)
 dom_size = reshape(double(fl.size), 1, 3); % Domain lengths (m)
 n_par = size(pars.n, 1); % Total number of (independent) particles

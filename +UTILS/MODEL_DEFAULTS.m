@@ -18,10 +18,12 @@ profile.profile = 'current';
 profile.description = 'Present default choices';
 profile.constants.rho_bc_kg_m3 = 1.86e3;
 profile.constants.m_air_kg_mol = 28.97e-3;
-profile.constants.kb_j_k = 1.381e-23;
-profile.constants.na_mol_inv = 6.022e23;
-profile.constants.ru_j_mol_k = 8.314;
+profile.constants.kb_j_k = 1.380649e-23;
+profile.constants.na_mol_inv = 6.02214076e23;
+profile.constants.ru_j_mol_k = 8.31446261815324;
 profile.constants.rho_aero_ref_kg_m3 = 1000;
+profile.constants.e_c = 1.602176634e-19;
+profile.constants.eps0_f_m = 8.8541878128e-12;
 profile.gas.model = 'sutherland';
 profile.gas.sutherland.mu_ref_pa_s = 1.83245e-5;
 profile.gas.sutherland.t_ref_k = 296.15;
@@ -87,6 +89,10 @@ profile.stages.INV.slip = struct();
 
 if strcmp(name, 'article1_7658971')
     profile.profile = 'article1_7658971';
+    profile.constants.kb_j_k = 1.381e-23;
+    profile.constants.na_mol_inv = 6.022e23;
+    profile.constants.ru_j_mol_k = 8.314;
+    profile.constants = rmfield(profile.constants, {'e_c', 'eps0_f_m'});
     profile.description = 'Fixed first article choices';
     profile.gas.model = 'flame';
     profile.gas.sutherland.mu_ref_pa_s = 1.716e-5;

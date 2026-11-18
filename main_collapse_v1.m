@@ -30,7 +30,8 @@ load(fullfile(fdir_fl, strcat(fname_fl, '.mat')), 'fl');
 eval(['pars_in' ' = ' parsname ';']);
 eval(['clear ' parsname]);
 
-rho0 = 1860; % soot material density
+[~, ~, model_params] = UTILS.MODEL_PROFILE('current', 'LD2');
+rho0 = model_params.si.constants.rho_bc_kg_m3; % Material density (kg/m3)
 
 %% set up effective density figure
 

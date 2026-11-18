@@ -60,8 +60,27 @@ if numel(unique(condition_ids)) ~= numel(condition_ids)
 end
 
 cfg.physics = require_struct(cfg, 'physics', 'physics');
-cfg.physics.material_density_kg_m3 = positive_scalar(cfg.physics, ...
-    'material_density_kg_m3', 'physics.material_density_kg_m3');
+profile_name = 'article1_7658971';
+if isfield(cfg, 'model_profile'), profile_name = cfg.model_profile; end
+overrides = struct();
+if isfield(cfg, 'model_overrides'), overrides = cfg.model_overrides; end
+[cfg.model, ~, cfg.model_params, cfg.model_source] = ...
+    UTILS.MODEL_PROFILE(profile_name, 'LD2', overrides);
+if isfield(cfg.physics, 'material_density_kg_m3')
+    density = positive_scalar(cfg.physics, 'material_density_kg_m3', ...
+        'physics.material_density_kg_m3');
+    explicit.constants.rho_bc_kg_m3 = density;
+    [cfg.model_params, changes] = UTILS.CONFIG_MERGE( ...
+        cfg.model_params, explicit, cfg.config_file);
+    cfg.model_source.overrides = [cfg.model_source.overrides; changes];
+    cfg.model_params.si.constants.rho_bc_kg_m3 = density;
+end
+cfg.physics.material_density_kg_m3 = ...
+    cfg.model_params.si.constants.rho_bc_kg_m3;
+if strcmp(cfg.model.slip_correction, 'per_caller_7658971')
+    cfg.model_params.resolved.rho_aero_ref_kg_m3 = ...
+        cfg.physics.material_density_kg_m3;
+end
 
 cfg.references = require_struct(cfg, 'references', 'references');
 cfg.references.dpp_vs_da = validate_reference( ...

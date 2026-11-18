@@ -447,6 +447,17 @@ one warning per profile per session. The dimensionless reference exponent is
 `reference.mass_mobility_exponent`; `reference.d_m` is accepted as an alias.
 Parameter sections and SI values are saved in `cfg.model_params`,
 and file digests, mirror flags and overrides in `cfg.model_source`.
+The `current` physical constants use the exact 2019 SI values
+`kb_j_k = 1.380649e-23`, `na_mol_inv = 6.02214076e23`, and their exact
+decimal product `ru_j_mol_k = 8.31446261815324`. It supplies
+`e_c = 1.602176634e-19` (2019 SI) and `eps0_f_m = 8.8541878128e-12`
+(CODATA 2018) for INV. Seeded `current` runs change by design.
+The fixed profile and profile-free calls retain the rounded constants.
+The physical constants table retains its four columns and five rows in the
+order `rho_bc`, `M_air`, `kb`, `Na`, `Ru`, with those names as row names.
+Named access accepts reordered tables; unnamed saved tables use the fixed
+row order. Validation `physics.material_density_kg_m3` overrides the profile
+density and is recorded in `cfg.model_params` and `cfg.model_source`.
 The resolved density uses the material density for `per_caller_7658971`
 and the aerodynamic reference density otherwise. The mobility root tolerance
 is recorded as `default` only for that slip choice with

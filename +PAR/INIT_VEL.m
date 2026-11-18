@@ -36,8 +36,8 @@ if nargin < 5 || isempty(method)
     method = 'mean_speed_7658971';
 end
 
-rho_bc = params_const.Value(1); % Black Carbon's bulk density (kg/m3)
-kb = params_const.Value(3); % Boltzmann's constant (j/k)
+rho_bc = UTILS.CONSTANT_VALUE(params_const, 'rho_bc'); % Material density (kg/m3)
+kb = UTILS.CONSTANT_VALUE(params_const, 'kb'); % Thermal constant (J/K)
 
 n_par = size(n_pp,1); % Total number of (independent) particles
 pp = cell2mat(pp);
