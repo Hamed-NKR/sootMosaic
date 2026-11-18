@@ -1,12 +1,18 @@
-function cfg = LOAD_MAIN_LD2_CONFIG(config_path)
-%LOAD_MAIN_LD2_CONFIG Load and validate the main_LD2 JSON config.
-%   CFG = UTILS.LOAD_MAIN_LD2_CONFIG reads the config path from the
-%   SOOTMOSAIC_MAIN_LD2_CONFIG environment variable, or from
-%   PFAL_MAIN_LD2_CONFIG when that one is empty, and returns a validated
-%   MATLAB struct.
+function cfg = LOAD_MAIN_LD2_CONFIG(config_path, opts)
+% "LOAD_MAIN_LD2_CONFIG" loads and validates the LD2 configuration.
+% ----------------------------------------------------------------------- %
 %
-%   CFG = UTILS.LOAD_MAIN_LD2_CONFIG(CONFIG_PATH) reads a specific config
-%   file instead of the environment-selected file.
+% Inputs:
+%     config_path: Task file, or empty for selection by the environment
+%     opts: Optional MODEL_PROFILE reader controls. QA and release calls...
+%         ...set Strict to true
+% ----------------------------------------------------------------------- %
+%
+% Outputs:
+%     cfg: Validated task, resolved profile and source records
+% ----------------------------------------------------------------------- %
+
+if nargin < 2, opts = struct(); end
 
 if nargin < 1 || isempty(config_path)
     config_path = getenv('SOOTMOSAIC_MAIN_LD2_CONFIG');
@@ -85,7 +91,17 @@ else
         ['The LD2 config has no model_profile. The run uses the ' ...
         'article1_7658971 profile.']);
 end
-[cfg.model, known] = UTILS.MODEL_PROFILE(profile_name, 'LD2');
+overrides = struct();
+if isfield(cfg, 'model_overrides')
+    overrides = cfg.model_overrides;
+end
+[cfg.model, known, cfg.model_params, cfg.model_source] = ...
+    UTILS.MODEL_PROFILE(profile_name, 'LD2', overrides, opts);
+for i_change = 1:numel(cfg.model_source.overrides)
+    if strcmp(cfg.model_source.overrides(i_change).source, '<arguments>')
+        cfg.model_source.overrides(i_change).source = config_path;
+    end
+end
 
 cfg.transport = require_struct_field(cfg, 'transport', 'transport section');
 if isfield(cfg.transport, 'user_defined')
@@ -136,13 +152,14 @@ cfg.model.fluid_properties = cfg.transport.fluid_options.amb;
 cfg.transport.mobility_options.c_dt = require_positive_scalar_field( ...
     cfg.transport.mobility_options, 'c_dt', 'transport.mobility_options.c_dt');
 cfg.transport.mobility_options.step_frac = optional_positive_scalar_field( ...
-    cfg.transport.mobility_options, 'step_frac', 0.5, ...
+    cfg.transport.mobility_options, 'step_frac', cfg.model_params.step.step_frac, ...
     'transport.mobility_options.step_frac');
 cfg.transport.mobility_options.step_policy = optional_choice_field( ...
-    cfg.transport.mobility_options, 'step_policy', 'warn', {'warn', 'cap'}, ...
+    cfg.transport.mobility_options, 'step_policy', cfg.model_params.step.step_policy, ...
+    {'warn', 'cap'}, ...
     'transport.mobility_options.step_policy');
 cfg.transport.mobility_options.mtd = optional_choice_field( ...
-    cfg.transport.mobility_options, 'mtd', cfg.model.mobility, ...
+    cfg.transport.mobility_options, 'mtd', cfg.model_params.mobility.method, ...
     known.mobility, 'transport.mobility_options.mtd');
 cfg.model.mobility = cfg.transport.mobility_options.mtd;
 if strcmp(cfg.model.mobility, 'continuum')
@@ -225,6 +242,8 @@ cfg.transport.velocity_options.sampler = optional_choice_field( ...
     cfg.transport.velocity_options, 'sampler', cfg.model.initial_velocity, ...
     known.initial_velocity, 'transport.velocity_options.sampler');
 cfg.model.initial_velocity = cfg.transport.velocity_options.sampler;
+
+cfg = record_model(cfg);
 
 end
 
@@ -436,4 +455,35 @@ catch
     path_value = char(path_value);
 end
 
+end
+
+function cfg = record_model(cfg)
+% "record_model" records explicit task choices and conditional rules.
+explicit.gas.model = cfg.model.fluid_properties;
+explicit.slip.model = cfg.model.slip_correction;
+explicit.mobility.method = cfg.transport.mobility_options.mtd;
+explicit.mobility.continuum_diameter = cfg.model.continuum_diameter;
+explicit.mobility.root_solve = cfg.model.root_solve;
+explicit.projection = struct('method', cfg.model.projection, ...
+    'cache', cfg.model.proj_cache, 'points', cfg.model.proj_points, ...
+    'orientations', cfg.model.proj_orientations, ...
+    'replicates', cfg.model.proj_replicates, 'tol', cfg.model.proj_tol);
+explicit.step.step_frac = cfg.transport.mobility_options.step_frac;
+explicit.step.step_policy = cfg.transport.mobility_options.step_policy;
+explicit.diagnostics.knudsen = cfg.model.knudsen_diagnostics;
+explicit.initial_velocity.sampler = cfg.model.initial_velocity;
+[cfg.model_params, changes] = UTILS.CONFIG_MERGE( ...
+    cfg.model_params, explicit, cfg.config_file);
+cfg.model_source.overrides = [cfg.model_source.overrides; changes];
+cfg.model_params.si = UTILS.CONFIG_MERGE(cfg.model_params.si, explicit);
+cfg.model_params.resolved.rho_aero_ref_kg_m3 = ...
+    cfg.model_params.constants.rho_aero_ref_kg_m3;
+cfg.model_params.resolved.root_tolerance = 'eps_scaled';
+if strcmp(cfg.model.slip_correction, 'per_caller_7658971')
+    cfg.model_params.resolved.rho_aero_ref_kg_m3 = ...
+        cfg.model_params.constants.rho_bc_kg_m3;
+    if strcmp(cfg.model.root_solve, 'start_point_7658971')
+        cfg.model_params.resolved.root_tolerance = 'default';
+    end
+end
 end

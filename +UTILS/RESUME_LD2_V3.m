@@ -54,7 +54,8 @@ if ~exist('cfg_ld2', 'var')
     cfg_ld2 = struct();
 end
 if ~isfield(cfg_ld2, 'model') || isempty(cfg_ld2.model)
-    cfg_ld2.model = UTILS.MODEL_PROFILE('article1_7658971', 'LD2');
+    cfg_ld2.model = UTILS.MODEL_PROFILE('article1_7658971', 'LD2', ...
+        struct(), struct('BuiltinOnly', true));
     if exist('opts_fl', 'var') && isfield(opts_fl, 'amb') && ...
             ~isempty(opts_fl.amb)
         cfg_ld2.model.fluid_properties = char(opts_fl.amb);
@@ -117,7 +118,8 @@ end
 proj_fields = {'projection', 'proj_cache', 'proj_points', ...
     'proj_orientations', 'proj_replicates', 'proj_tol'};
 if ~isfield(cfg_ld2.model, 'projection') || isempty(cfg_ld2.model.projection)
-    model_a1 = UTILS.MODEL_PROFILE('article1_7658971', 'LD2');
+    model_a1 = UTILS.MODEL_PROFILE('article1_7658971', 'LD2', ...
+        struct(), struct('BuiltinOnly', true));
     for i_f = 1 : numel(proj_fields)
         cfg_ld2.model.(proj_fields{i_f}) = model_a1.(proj_fields{i_f});
     end
@@ -157,10 +159,20 @@ end
     % ...mean_speed_7658971, the resumed steps draw no initial velocities
 if ~isfield(cfg_ld2.model, 'initial_velocity') || ...
         isempty(cfg_ld2.model.initial_velocity)
-    cfg_ld2.model.initial_velocity = 'mean_speed_7658971'; %#ok<STRNU> saved with the run
+    cfg_ld2.model.initial_velocity = 'mean_speed_7658971';
     warning('sootMosaic:ResumeLD2:NoVelocityModel', ['Checkpoint has no ', ...
         'initial velocity sampler in its model. It is recorded as ', ...
         'mean_speed_7658971.'])
+end
+
+% Completing absent parameter records from the fixed built-in profile
+if ~isfield(cfg_ld2, 'model_params') || isempty(cfg_ld2.model_params)
+    [~, ~, cfg_ld2.model_params, cfg_ld2.model_source] = ...
+        UTILS.MODEL_PROFILE('article1_7658971', 'LD2', struct(), ...
+        struct('BuiltinOnly', true));
+    warning('sootMosaic:RESUME_LD2_V3:NoModelParameters', ...
+        ['Checkpoint has no parameter record. The parameter record ', ...
+        'uses the fixed built-in profile.']);
 end
 
 % set the domain size from the saved domain table for checkpoints...

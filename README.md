@@ -431,6 +431,28 @@ an LD2 config without `model_profile` and pressure runs at 101325 Pa. The
 resolved profile is saved as `cfg_ld1.model` or `cfg_ld2.model` with every
 result and checkpoint.
 
+Profile files live in `config/profiles` and are checked against
+`profile.keys.json`. Stage sections override common sections, then
+`model_overrides` applies section-shaped task values, and explicit transport
+options take precedence. A custom file can use
+`"extends": "article1_7658971.json"` and set its own `profile` name.
+An edited fixed profile stops the run; an edited `current` profile warns.
+A missing shipped file or profile dictionary uses the built-in mirror with
+one warning per profile per session. The dimensionless reference exponent is
+`reference.mass_mobility_exponent`; `reference.d_m` is accepted as an alias.
+Parameter sections and SI values are saved in `cfg.model_params`,
+and file digests, mirror flags and overrides in `cfg.model_source`.
+The resolved density uses the material density for `per_caller_7658971`
+and the aerodynamic reference density otherwise. The mobility root tolerance
+is recorded as `default` only for that slip choice with
+`start_point_7658971`, and as `eps_scaled` otherwise; its dimensional value
+depends on the diameters at the solve. A checkpoint without parameter records
+receives the fixed built-in values and a `NoModelParameters` warning.
+Mobility calls without options read `UTILS.CALL_DEFAULTS`, including method
+`continuum` and `c_dt` of 1; sampling and property call defaults are listed
+alongside them. `QA.TEST_MODEL_PROFILE` and
+`QA.TEST_CALL_DEFAULTS` check the files, mirrors, loaders and call interface.
+
 The slip correction is set under `transport.mobility_options.slip` and
 computed by `TRANSP.CUNNINGHAM`. The `kim2005` model uses the constants of
 Kim et al. (2005), 1.165, 0.483 and 0.997 with Kn = 2 lambda / d, the same in

@@ -2,8 +2,8 @@ function [pars, opts] = MOBIL(pars, fl, params_const, opts)
 % "MOBIL" calculates the transport properties of aggregates.
 % ----------------------------------------------------------------------- %
 %
-% Inputs/output:
-%     pars: Aggregates information structure containting their...
+% Inputs/Outputs:
+%     pars: Aggregates information structure containing their...
 %         ...geometrical and diffusive properties
 %     fl: Fluid info structure
 %     params_const: Problem's table of constant physical properties
@@ -54,51 +54,54 @@ function [pars, opts] = MOBIL(pars, fl, params_const, opts)
 %         ...callers that pass it back get the warning once per run.
 % ----------------------------------------------------------------------- %
 
-% initialize calculation method variable
+% Initializing call options
+call_defaults = UTILS.CALL_DEFAULTS();
+
+% Initializing the calculation method
 if ~exist('opts', 'var') 
     opts = struct();
 end
 if (~isfield(opts, 'mtd')) || isempty(opts.mtd)
-    opts.mtd = 'continuum'; % use continuum regime approximation
+    opts.mtd = call_defaults.mobil.mtd;
 end
 if (~isfield(opts, 'continuum_diameter')) || isempty(opts.continuum_diameter)
-    opts.continuum_diameter = 'fixed_075dg'; % 0.75 dg in TRANSP.DIAMOBIL
+    opts.continuum_diameter = call_defaults.mobil.continuum_diameter;
 end
 if (~isfield(opts, 'root_solve')) || isempty(opts.root_solve)
-    opts.root_solve = 'start_point_7658971'; % fzero from one start point
+    opts.root_solve = call_defaults.mobil.root_solve;
 end
 
 % initialize projected area variables
 if (~isfield(opts, 'projection')) || isempty(opts.projection)
-    opts.projection = 'euler_7658971'; % PAR.PROJECTION, uncached
+    opts.projection = call_defaults.mobil.projection;
 end
 if (~isfield(opts, 'proj_cache')) || isempty(opts.proj_cache)
-    opts.proj_cache = false; % compute every aggregate at every call
+    opts.proj_cache = call_defaults.mobil.proj_cache;
 end
 if (~isfield(opts, 'proj_points')) || isempty(opts.proj_points)
-    opts.proj_points = 100; % sampling points per orientation
+    opts.proj_points = call_defaults.mobil.proj_points;
 end
 if (~isfield(opts, 'proj_orientations')) || isempty(opts.proj_orientations)
-    opts.proj_orientations = 5; % orientations per aggregate
+    opts.proj_orientations = call_defaults.mobil.proj_orientations;
 end
 if (~isfield(opts, 'proj_replicates')) || isempty(opts.proj_replicates)
-    opts.proj_replicates = 1; % rotated direction sets (isotropic)
+    opts.proj_replicates = call_defaults.mobil.proj_replicates;
 end
 if (~isfield(opts, 'proj_tol')) || isempty(opts.proj_tol)
-    opts.proj_tol = Inf; % no check of the sampling error
+    opts.proj_tol = call_defaults.mobil.proj_tol;
 end
 if (~isfield(opts, 'proj_warned')) || isempty(opts.proj_warned)
-    opts.proj_warned = false; % the sampling warning has not been shown
+    opts.proj_warned = call_defaults.mobil.proj_warned;
 end
 
 % initialize slip correction model variable
 if (~isfield(opts, 'slip')) || isempty(opts.slip)
-    opts.slip = 'per_caller_7658971'; % constants of each caller at 7658971
+    opts.slip = call_defaults.mobil.slip;
 end
 
 % initialize time-step sensitivity variable
 if (~isfield(opts, 'c_dt')) || isempty(opts.c_dt)
-    opts.c_dt = 1; % multiply random-walk timestep by this factor
+    opts.c_dt = call_defaults.mobil.c_dt;
 end
 if ~isnumeric(opts.c_dt) || ~isreal(opts.c_dt) || ~isscalar(opts.c_dt) || ...
         ~isfinite(opts.c_dt) || opts.c_dt <= 0
@@ -108,7 +111,7 @@ end
 
 % initialize the limit on the displacement per time step
 if (~isfield(opts, 'step_frac')) || isempty(opts.step_frac)
-    opts.step_frac = 0.5; % RMS relative step limit in smallest primary diameters
+    opts.step_frac = call_defaults.mobil.step_frac;
 end
 if ~isnumeric(opts.step_frac) || ~isreal(opts.step_frac) || ...
         ~isscalar(opts.step_frac) || ~isfinite(opts.step_frac) || ...
@@ -117,14 +120,14 @@ if ~isnumeric(opts.step_frac) || ~isreal(opts.step_frac) || ...
         'opts.step_frac must be a positive finite real numeric scalar.')
 end
 if (~isfield(opts, 'step_policy')) || isempty(opts.step_policy)
-    opts.step_policy = 'warn'; % report a step above the limit, keep c_dt
+    opts.step_policy = call_defaults.mobil.step_policy;
 end
 if ~any(strcmp(opts.step_policy, {'warn', 'cap'}))
     error('sootMosaic:MOBIL:InvalidStepPolicy', ...
         'opts.step_policy must be warn or cap.')
 end
 if (~isfield(opts, 'step_warned')) || isempty(opts.step_warned)
-    opts.step_warned = false; % the step-limit warning has not been shown
+    opts.step_warned = call_defaults.mobil.step_warned;
 end
 
 % Total number of (independent) particles
