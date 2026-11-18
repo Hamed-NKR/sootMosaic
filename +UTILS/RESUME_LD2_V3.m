@@ -163,8 +163,8 @@ if ~isfield(cfg_ld2.model, 'initial_velocity') || ...
         'mean_speed_7658971.'])
 end
 
-% Checkpoints written before the periodic collision search carry no domain
-% size in the growth options, so it is set from the saved domain table.
+% set the domain size from the saved domain table for checkpoints...
+    % ...saved without it in the growth options
 opts_grow.dom_size = params_domain.Value(2:4);
 
 k = k + 1;

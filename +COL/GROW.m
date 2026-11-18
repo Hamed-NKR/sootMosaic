@@ -130,10 +130,6 @@ if any(ovrs == 1)
             end
 %             timetable.postconnect = [timetable.postconnect; clock];
             
-%             % Initializing collision status variable (1 --> collided,...
-%                 % ...0 --> uncollided)
-%             if ~exist('colstat', 'var'); colstat = 1; end
-            
 %             timetable.preunite = [timetable.preunite; clock];
             if colstat
                 
