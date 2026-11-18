@@ -48,6 +48,19 @@ the size it was given. The resulting aggregates are compared with TEM
 measurements of primary size against aggregate size and with tandem AAC-SMPS
 measurements of effective density.
 
+## How the Langevin dynamics loop works
+
+Discrete element Langevin dynamics in sootMosaic follows these repeated operations:
+
+1. Read physical, domain, transport, and output parameters.
+2. Initialize primary-particle sizes and aggregate morphology.
+3. Randomly initialize particle locations and velocities.
+4. Compute mobility and Brownian transport properties.
+5. March positions and velocities under Brownian motion, drag, and inertia.
+6. Apply periodic boundary conditions.
+7. Detect collisions and connect touching aggregates.
+8. Update geometry, mobility, and saved diagnostics.
+
 ## Main Workflow
 
 ```text
@@ -565,19 +578,6 @@ sootMosaic/
 |-- @AGG/                  aggregate class utilities
 `-- +DEPOT/                archived or experimental scripts, including legacy PFA
 ```
-
-## Background
-
-Discrete element Langevin dynamics in sootMosaic follows these repeated operations:
-
-1. Read physical, domain, transport, and output parameters.
-2. Initialize primary-particle sizes and aggregate morphology.
-3. Randomly initialize particle locations and velocities.
-4. Compute mobility and Brownian transport properties.
-5. March positions and velocities under Brownian motion, drag, and inertia.
-6. Apply periodic boundary conditions.
-7. Detect collisions and connect touching aggregates.
-8. Update geometry, mobility, and saved diagnostics.
 
 ## References
 
