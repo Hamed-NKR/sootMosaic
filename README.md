@@ -2,182 +2,189 @@ sootMosaic
 ==========
 
 sootMosaic (formerly PFAL, the Post-Flame Agglomeration Algorithm) generates
-soot-like fractal aggregates with a staged Langevin dynamics workflow. The core
-simulation pipeline has three stages:
+soot-like fractal aggregates with Langevin dynamics (LD). First-stage LD
+(LD1) builds an aggregate library. Scale or scatter calibration assigns size
+distributions. Second-stage LD (LD2) simulates post-flame agglomeration while
+each primary particle retains its assigned size.
 
-1. `main_LD1_v3.m` generates a raw first-stage aggregate library.
-2. `main_scale_v2.m` or `main_scatter_v8.m` calibrates that library to target
-   primary-particle and projected-area distributions.
-3. `main_LD2_v3.m` runs second-stage post-flame agglomeration on the calibrated
-   aggregate population.
+Transmission electron microscopy (TEM) analysis runs independently. Validation
+compares LD2 populations with processed TEM data and effective-density
+measurements from a tandem aerodynamic aerosol classifier (AAC) and scanning
+mobility particle sizer (SMPS). It produces diameter and density comparisons,
+pointwise predictions, log-space metrics, and source records.
 
-`main_tem_analysis_v1.m` is a separate analysis workflow for TEM aggregate and
-primary-particle measurements. It produces summary tables, model-input
-statistics, and publication figures from configured datasets.
+## Getting Started
 
-`main_valid_v3.m` compares selected LD2 populations with the processed TEM and
-tandem AAC-SMPS effective-density measurements. It produces manuscript-ready
-`d_pp` versus `d_a` and `rho_eff` versus `d_m` figures together with pointwise
-predictions, log-space validation metrics, and source provenance.
+### 1. Requirements
 
-The model represents soot aggregates that first form as compact
-diffusion-limited clusters, acquire realistic size distributions, and continue
-agglomerating after dilution or cooling. It is intended for studies of hybrid
-soot structures with nonuniform primary-particle sizes.
+Use MATLAB R2022a or later with Java enabled and Statistics and Machine
+Learning Toolbox. LD uses `lognrnd`, `geomean`, and `knnsearch`, calibration
+uses `fitlm` and distribution functions, TEM uses `boxplot`, and validation
+uses `gamrnd` and `tinv`. R2020b supplies `pagemtimes` and `exportgraphics`.
+On R2020b or R2021 releases, quality-assurance (QA) tests need Signal
+Processing Toolbox for `rms`. The separate `post_collapse` script needs R2023a for
+`combinations`. Optional particle-outline plots need Image Processing
+Toolbox for `viscircles`, and `UTILS.BAYESFIT_POLY2`, `3`, and `4` need
+Econometrics Toolbox.
 
-Examples of hybrid soot imaged under transmission electron microscopy:
+For the example PDF-to-PNG exports, install Poppler and make `pdftocairo`
+available to MATLAB's `system` command. Direct raster export uses TEM
+`plots.png_source` or validation `outputs.png_source` set to `"figure"`.
+Choose installed fonts in each task's local configuration.
 
-![Hybrid soot TEM examples](https://github.com/user-attachments/assets/db858f62-1e22-471c-90ad-dc06329de681)
-
-## Soot as a mosaic
-
-In a flame, soot aggregates can grow with primary particles of nearly uniform
-size inside each aggregate, while that size differs from one aggregate to the
-next. Downstream, as the soot dilutes and cools, the aggregates keep colliding,
-and a collision can join aggregates of different primary size into one hybrid
-structure. The result reads like a mosaic, with each parent aggregate still
-visible as a patch of its own primary size. The TEM images above show such
-hybrid aggregates.
-
-The simulation is built in the same order. First-stage Langevin dynamics (LD1)
-builds a library of aggregates that stands for the soot leaving the flame, and
-a scaling or scatter step calibrates that library to measured primary-particle
-and projected-area distributions. Second-stage Langevin dynamics (LD2) then
-lets these pieces agglomerate after the flame, and every primary particle keeps
-the size it was given. The resulting aggregates are compared with TEM
-measurements of primary size against aggregate size and with tandem AAC-SMPS
-measurements of effective density.
-
-## How the Langevin dynamics loop works
-
-Discrete element Langevin dynamics in sootMosaic follows these repeated operations:
-
-1. Read physical, domain, transport, and output parameters.
-2. Initialize primary-particle sizes and aggregate morphology.
-3. Randomly initialize particle locations and velocities.
-4. Compute mobility and Brownian transport properties.
-5. March positions and velocities under Brownian motion, drag, and inertia.
-6. Apply periodic boundary conditions.
-7. Detect collisions and connect touching aggregates.
-8. Update geometry, mobility, and saved diagnostics.
-
-## Main Workflow
-
-```text
-main_LD1_v3
-first-stage Langevin dynamics
-        |
-        v
-data/main_ld1/ld1_aggregate_library.mat
-        |
-        +------------------------------+
-        |                              |
-        v                              v
-main_scale_v2                    main_scatter_v8
-correlation-based scaling        bivariate scatter sampling (default)
-        |                              |
-        v                              v
-data/main_scale/                 data/main_scatter/
-scaled_aggs_for_LD2_             scaled_aggs_for_LD2_
-from_main_scale.mat              from_main_scatter.mat
-        |                              |
-        +--------------+---------------+
-                       |
-                       v
-                 main_LD2_v3
-        second-stage Langevin dynamics
-                       |
-                       v
-     results/main_ld2_from_main_*/
-       LD2__*__YYYY-MM-DD/
+```matlab
+ver
+which pagemtimes
+which exportgraphics
+which lognrnd
+which knnsearch
+which fitlm
+which gamrnd
+which boxplot
+which rms
+assert(usejava('jvm'))
 ```
 
-### Stage 1: LD1 Aggregate Library
+`ver` lists the products, each `which` resolves a function, and the assertion
+completes when Java is enabled.
 
-`main_LD1_v3.m` performs first-stage Langevin dynamics. It initializes primary
-particles, assigns positions and velocities, evaluates mobility, marches the
-particles, applies periodic boundaries, joins collisions, and updates size and
-mobility properties after every growth step.
+### 2. Getting the code
 
-LD1 saves its default output to:
-
-```text
-data/main_ld1/ld1_aggregate_library.mat
-```
-
-The file contains:
-
-- `pp0`: flat cell array of aggregate primary-particle matrices, directly
-  usable by `main_scale_v2.m` and `main_scatter_v8.m`.
-- `pp0_n`: number of primaries in each saved aggregate.
-- `pars_ld1`: structured version of the saved aggregate library.
-- `ensdata0`, `parsdata0`: real-time ensemble summaries and saved aggregate
-  properties.
-- `fl0`: gas temperature (K), pressure (Pa), viscosity (Pa s) and mean free
-  path (m) of the run.
-- `cfg_ld1`, `metadata`: config and run provenance.
+Install Git. Replace `REPOSITORY_URL` with this repository's clone address
+and run this terminal command. It creates the `sootMosaic` folder.
 
 ```text
-LD1 config JSON
-      |
-      v
-main_LD1_v3
-      |
-      +-- pp0                 flat aggregate cell library
-      |     |
-      |     +--> main_scale_v2
-      |     |
-      |     `--> main_scatter_v8
-      |
-      +-- pp0_n               primary-particle counts
-      |
-      +-- pars_ld1            sizing fields and aggregate structure
-      |
-      `-- ensdata0, parsdata0 diagnostics and saved snapshots
+git clone REPOSITORY_URL sootMosaic
 ```
 
-### Stage 2A: Scale Or Scatter
+Start MATLAB in its parent folder. Both `which` calls should find this checkout.
 
-Both calibration scripts start from the LD1 `pp0` library.
-
-`main_scale_v2.m` rescales and filters LD1 aggregates against the Brasil et al.
-(1999) aggregate correlation and the Olfert and Rogak (2019) universal
-correlation. It writes:
-
-```text
-data/main_scale/scaled_aggs_for_LD2_from_main_scale.mat
+```matlab
+cd('sootMosaic')
+addpath(pwd)
+which main_LD1_v3
+which UTILS.LOAD_MAIN_LD1_CONFIG
 ```
 
-`main_scatter_v8.m` samples a projected-area/primary-particle size
-distribution, assigns LD1 aggregate seeds to those targets, and rescales the
-selected aggregates. Bivariate sampling is the default. The `sequential` and
-`ideal` modes remain available for sensitivity runs through
-`options.opt_scale` in the scatter config.
+Keep the root as the current folder and repeat `addpath(pwd)` in new sessions.
+Main scripts clear workspace variables and figures, so save them before running.
 
-Every scatter run writes the canonical LD2 input:
+### 3. Local configuration
 
-```text
-data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat
+Copy the examples once to ignored local JSON files, then edit the copies.
+
+```matlab
+tasks = {'main_ld1', 'main_scale', 'main_scatter', ...
+    'main_valid', 'main_tem_analysis'};
+for k = 1:numel(tasks)
+    folder = fullfile('config', tasks{k});
+    stem = [tasks{k} '_config'];
+    copyfile(fullfile(folder, [stem '.example.json']), ...
+        fullfile(folder, [stem '.local.json']))
+end
+for branch = {'main_scatter', 'main_scale'}
+    stem = ['main_ld2_from_' branch{1} '_config'];
+    copyfile(fullfile('config', 'main_ld2', [stem '.example.json']), ...
+        fullfile('config', 'main_ld2', [stem '.local.json']))
+end
 ```
 
-It also writes a mode-specific copy, such as:
+| Task | Keys to fill or check | Settings that can stay |
+| --- | --- | --- |
+| LD1 | `results.root`, `results.library_file` for output locations | All example settings, with no external input |
+| Scale and scatter | `dataset.file` naming the LD1 library and `dataset.variable` of `pp0` | Example input path after LD1, distributions, correlations, sampling, and projection |
+| LD2 | Select the scale or scatter local file and set `dataset.file` to its `pars_out` product | Branch output paths, transport, and `simulation.r_n_agg` |
+| TEM | `entries[].entry_dir`, `aggregate.file`, `aggregate.variable`, `primary_particles.folder`, `file_pattern`, `area_column`, `aggregate_ids`, and `primary_particle_aggregate_ids` | Analysis, style, and output settings |
+| Validation | `sources.ld2.file`, `sources.tem.file`, `sources.effective_density.file`, and enabled `conditions` mappings | Fits, references, physics, style, and output settings |
 
-```text
-data/main_scatter/scaled_aggs_for_LD2_from_main_scatter_bivariate.mat
+Task input paths and output roots are relative to the configuration folder.
+LD1 `results.library_file` is relative to `results.root`. TEM aggregate files
+and primary-particle folders are relative to `entries[].entry_dir`. LD lengths
+and calibration particle products use meters. Configured calibration diameters
+use nanometers, temperature uses kelvin, and pressure uses pascals.
+Geometric standard deviations are dimensionless. Random seeds are set by LD
+`simulation.rng_seed`, scatter `options.rng_seed`, and TEM
+`analysis.random_seed`. Keep JSON numbers numeric and retain required sections.
+
+An explicit loader filename takes precedence over environment selectors.
+For each row below, `SOOTMOSAIC_` takes precedence over `PFAL_`. Use the
+`PFAL_` settings when reproducing a setup that uses those variable names.
+
+| Task | Environment selectors | Default local file under `config/` |
+| --- | --- | --- |
+| LD1 | `SOOTMOSAIC_MAIN_LD1_CONFIG`, `PFAL_MAIN_LD1_CONFIG` | `main_ld1/main_ld1_config.local.json` |
+| LD2 | `SOOTMOSAIC_MAIN_LD2_CONFIG`, `PFAL_MAIN_LD2_CONFIG` | Select `main_ld2/main_ld2_from_main_scatter_config.local.json` or the `main_scale` branch |
+| Scale | None | `main_scale/main_scale_config.local.json` |
+| Scatter | None | `main_scatter/main_scatter_config.local.json` |
+| TEM | `SOOTMOSAIC_MAIN_TEM_ANALYSIS_CONFIG`, `PFAL_MAIN_TEM_ANALYSIS_CONFIG` | `main_tem_analysis/main_tem_analysis_config.local.json` |
+| Validation | `SOOTMOSAIC_MAIN_VALID_CONFIG`, `PFAL_MAIN_VALID_CONFIG` | `main_valid/main_valid_config.local.json` |
+
+Select LD2 as shown in First runs. Clear a selector with `setenv(name, '')`,
+including its paired fallback. Selections last for the MATLAB process.
+Use full example copies for these six tasks. Profiles and registries use
+`extends` for parent files relative to the overlay. Objects merge recursively,
+arrays replace parent arrays, and objects with unique IDs merge by ID.
+`config/sources/sources.local.json` overlays the sources registry.
+The shared reader warns on unknown dictionary keys. `struct('Strict', true)`
+turns these into errors when passed to `UTILS.CONFIG_READ` or as the fourth
+argument of `UTILS.MODEL_PROFILE`. Direct task readers check required fields.
+
+Set `model_profile` to `current` for the current models or
+`article1_7658971` for the LD model choices of reference 6. To use the
+selected profile's model choices, set `transport.fluid_options`,
+`transport.velocity_options`, and `transport.diagnostics_options` to `{}`,
+and remove `mtd`, `slip`, `continuum_diameter`, `root_solve`, `projection`,
+`proj_cache`, `proj_points`, `proj_orientations`, `proj_replicates`, and
+`proj_tol` from `transport.mobility_options`. Keep `c_dt` and the step
+settings. Inspect `cfg.model` and `cfg.model_params` from the task loader to
+see the resolved choices. Custom profiles go in `config/profiles/<name>.json`
+with `extends` naming the parent profile.
+
+Inversion (INV) configuration holds inputs, scan settings, and model choices.
+The instrument registry holds instrument constants and charge models. Copy the
+example below, then fill `campaigns.table`, applicable `inputs` paths,
+`outputs.root`, and instrument IDs. Set only fields marked `configurable` in
+`config/main_inv/main_inv.keys.json`. Measured scan values are passed in the
+second argument of `UTILS.LOAD_MAIN_INV_CONFIG(file, data, campaign, opts)`.
+Keep other defaults, including `model_profile` of
+`current`. Loading returns settings, instrument entries, International System
+of Units (SI) values, and source records. `SOOTMOSAIC_MAIN_INV_CONFIG` selects
+another file.
+
+```matlab
+copyfile('config/main_inv/main_inv_config.example.json', ...
+    'config/main_inv/main_inv_config.local.json')
+cfg_inv = UTILS.LOAD_MAIN_INV_CONFIG;
 ```
 
-Both calibration workflows save the aggregate payload as `pars_out`, the input
-variable expected by LD2. Scatter outputs also contain `scatter_metadata` and
-`scatter_summary`.
+### 4. Data
 
-### Stage 2B: LD2 Post-Flame Agglomeration
+Generate simulation inputs in pipeline order and place measured inputs under
+`data/`. `config/sources/sources.json` lists registered products, with `file`
+and `cache_file` relative to `data/`. Task `dataset` and `sources` blocks
+select input files. Dataset loader calls can select a registry entry through
+`struct('source_id', '<registered_id>')`, with inline fields taking precedence.
 
-`main_LD2_v3.m` loads one of the calibrated `pars_out` files, reinitializes the
-aggregate population in a second domain, and performs post-flame Langevin
-dynamics. The LD2 config chooses whether the source is the scale output or the
-scatter output.
+For downloads, fill `url` with a direct MAT address, `doi` with the publication
+identifier, and `sha256` with its published SHA-256 digest. Loaders check a
+nonempty digest for local, cached, and downloaded files. Obtain missing
+digests from the publication or supplier. An empty digest skips verification,
+and a URL with an empty digest produces `MissingChecksum`.
+Use `UTILS.FILE_SHA256(file)` to obtain a generated file's digest.
 
-Set `SOOTMOSAIC_MAIN_LD2_CONFIG` before running LD2, for example:
+### 5. First runs
+
+Run LD1, then either calibration branch, then LD2 from the repository root.
+
+| MATLAB command | Expected product |
+| --- | --- |
+| `main_LD1_v3` | Prints `Saved LD1 aggregate library` and writes `data/main_ld1/ld1_aggregate_library.mat` with `pp0`, snapshots, gas state, and configuration |
+| `main_scatter_v8` | Writes `data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat` and a mode-specific copy with `pars_out`, metadata, and summary. Figures go to `results/main_scatter/` |
+| `main_scale_v2` | Writes `data/main_scale/scaled_aggs_for_LD2_from_main_scale.mat` with `pars_out`. Figures go to `results/main_scale/` |
+
+Scatter uses `bivariate` by default, with `sequential` and `ideal` selected by
+`options.opt_scale`. Calibration outputs use fixed filenames. Select the
+matching LD2 input, replacing `main_scatter` with `main_scale` for scale.
 
 ```matlab
 setenv('SOOTMOSAIC_MAIN_LD2_CONFIG', ...
@@ -185,123 +192,30 @@ setenv('SOOTMOSAIC_MAIN_LD2_CONFIG', ...
 main_LD2_v3
 ```
 
-LD2 creates a dated run directory under the configured `results.root` and
-writes checkpoint and final MAT files using the configured prefixes. An
-interrupted checkpoint can be resumed with:
+LD2 writes checkpoints and a final MAT file under
+`results/main_ld2_from_main_scatter/LD2__scaled_aggs_for_LD2_from_main_scatter__YYYY-MM-DD/`.
+Final names start with `LD2__from_main_scatter__final__` and end in a timestamp.
+The scale branch uses `main_scale` in these names. The workspace includes
+`parsdata`, `r_n_agg`, `fl`, `cfg_ld2`, and source metadata.
+`UTILS.RESUME_LD2_V3` prompts for a checkpoint folder and filename and resumes
+into that run folder. Those two strings can also be passed as arguments.
 
-```matlab
-UTILS.RESUME_LD2_V3(checkpoint_folder, checkpoint_file)
-```
+For TEM, place aggregate MAT files and primary-area CSV files in the configured
+entry folders, normally `data/tem_analysis/`. The example reads an `Aggs`
+structure array with `da` in nanometers and the morphology fields `n_subagg`,
+`n_colaps`, `ca`, `zbar_opt`, and `sbar_opt`. CSVs contain an `Area` column in
+square nanometers. Set `analysis.primary_area_start_row` to 2 when the first
+data row describes the aggregate or background, or 1 when it describes a
+primary particle. Aggregate IDs index `Aggs`, and `%d` in
+`primary_particles.file_pattern` receives that index. Primary-particle IDs must
+be a subset of aggregate IDs. Run
+`main_tem_analysis_v1` to write `data/main_tem_analysis/tem_analysis_results.mat`,
+summary CSVs, and figures in `results/main_tem_analysis/`. The MAT file
+contains `aggregate_table` and `morphology_table`.
 
-Calling `UTILS.RESUME_LD2_V3` without arguments prompts for both values.
-
-### TEM Measurement Analysis
-
-`main_tem_analysis_v1.m` processes configured TEM datasets independently of
-the LD simulation pipeline. Each config entry identifies an aggregate MAT file
-(the example expects an `Aggs` variable), ImageJ primary-particle area CSV
-files, and a complete publication style. `aggregate_ids` selects the aggregate
-MAT records used for morphology summaries. The optional
-`primary_particle_aggregate_ids` field selects the subset with manual
-primary-particle CSVs; when omitted, it inherits `aggregate_ids` for backward
-compatibility. Figure-specific `condition_ids`
-control which enabled conditions appear and in what order. The default profiles
-select only low and high agglomeration. A collapse condition can be added later
-by defining one entry and adding its ID to the required figure lists; plotting
-code changes are not required.
-
-The profile is organized into four editing areas:
-
-- `analysis` and `outputs` control calculations and file locations.
-- `plots.font`, `plots.axes`, `plots.boxplot`, and `plots.export` control the
-  shared publication format.
-- `plots.figures.<figure_id>` controls one figure, including its enabled state,
-  condition list, axis settings, layout, legend, and figure-specific options.
-- `entries` defines each condition, its data sources, marker, condition colors,
-  boxplot colors, and same-hue stacked-bar palettes.
-
-For the usual paper update, edit only `entries[].style` and the relevant
-`condition_ids`, axis limits, or ticks. Frequency-bin definitions are grouped
-separately under `plots.frequency_bins` because they affect only the two
-stacked-frequency diagnostics.
-
-Run the default paper profile from MATLAB:
-
-```matlab
-main_tem_analysis_v1
-```
-
-Run a specific profile explicitly:
-
-```matlab
-setenv('SOOTMOSAIC_MAIN_TEM_ANALYSIS_CONFIG', ...
-    'config/main_tem_analysis/main_tem_analysis_config.local.file.json')
-main_tem_analysis_v1
-```
-
-The script name is not a PowerShell command. From PowerShell, launch MATLAB in
-batch mode instead:
-
-```powershell
-matlab -batch "cd('<path to sootMosaic>'); main_tem_analysis_v1"
-```
-
-The figure configuration controls output formats and resolution, typography,
-condition colors and markers, reference lines, axes, legends, category
-definitions, and all frequency-bin boundaries and inclusivity rules. Each
-condition also defines independent `stack_colors` arrays for the subaggregate-
-count and collapsed-subaggregate frequency figures. The paper profile uses
-blue shades for low agglomeration and orange shades for high agglomeration.
-Segoe UI Semilight is the default face, Segoe UI is its fallback, and all font
-weights are normal. The larger paper defaults are 13-point axis text,
-18-point labels, and 15-point legends. The default export is vector PDF plus a
-600-dpi PNG rendered from that PDF, so both formats use identical embedded
-fonts and geometry. This `png_source` setting requires `pdftocairo`, supplied
-by Poppler and common TeX distributions; set it to `figure` to use MATLAB's
-direct raster renderer. Shared axis-label offsets and tick-label rotation are
-configurable under `plots.axes`; the paper profile uses horizontal, multiline
-condition labels.
-
-Figures are constructed off-screen at their configured `position` dimensions
-before export. This preserves tall publication aspect ratios even when the
-interactive MATLAB window cannot fit them on the current monitor.
-
-With the example output settings, the main machine-readable files are:
-
-```text
-data/main_tem_analysis/tem_analysis_results.mat
-data/main_tem_analysis/model_inputs.csv
-data/main_tem_analysis/summary_table.csv
-data/main_tem_analysis/hybridity_frequency_summary.csv
-data/main_tem_analysis/collapse_frequency_summary.csv
-data/main_tem_analysis/subaggregate_count_distribution_summary.csv
-```
-
-`data/tem_analysis/` contains source MAT and ImageJ files and is never written
-by the workflow. `data/main_tem_analysis/` contains derived outputs created by
-`main_tem_analysis_v1`; the similar names identify input and output roles rather
-than duplicate datasets. The saved MAT file keeps `aggregate_table` for
-dpp-dependent aggregates and `morphology_table` for configured aggregate MAT
-records.
-
-The exported figure set includes the manual TEM correlation, both
-primary-particle Appendix variants, aggregate metrics, a mirrored exact-count
-lollipop distribution for a configured pair of conditions, separate stacked-
-frequency figures for subaggregate counts and collapsed-subaggregate fractions,
-and the subaggregate-category correlation. The mirrored distribution uses a
-colored condition legend and independently configurable major and minor x-axis
-grids. Figures are written to `results/main_tem_analysis/`.
-
-### Experimental Validation
-
-The validation workflow consumes processed data and does not rerun TEM or
-ODIAS analysis. Keep the original ODIAS workspace at:
-
-```text
-data/experimental_effective_density/Effective_Density_Compiled-17_Mar_2025-05_00_44.mat
-```
-
-Create the small, self-describing companion used by validation once:
+For the named grouped density dataset, run this once to create the validation
+companion. It reads `dist_grp` and `test_condition`, then writes
+`effective_density_data`, `metadata`, and a checksum sidecar.
 
 ```matlab
 source_file = fullfile('data', 'experimental_effective_density', ...
@@ -313,396 +227,298 @@ UTILS.NORMALIZE_EFFECTIVE_DENSITY_DATA(source_file, output_file, ...
     '3EEF1BC1981EE654BA5FE0198AF50EA977DAEFA5973D37AE27DD787A5844048C');
 ```
 
-The normalizer loads only `dist_grp` and `test_condition`, copies all four
-condition groups without rounding or recalculation, and proves exact numerical
-round-trip equality before replacing the companion. The original workspace is
-never modified. Its raw tandem distributions, saved figures, and fit objects
-are not required by sootMosaic.
+Set validation `sources.ld2.file` to the final LD2 file and confirm the TEM
+and density paths. Map enabled conditions to LD2 fractions, TEM entry IDs,
+and density condition IDs. The example selects fraction 1 for low
+agglomeration and 0.1 plus 0.05 for high agglomeration. Run `main_valid_v3`.
+It writes `validation_dpp_vs_da` and `validation_rho_eff_vs_dm` as PDF/PNG
+pairs in `results/main_valid/`. Its `runs/<timestamp>/` folder holds the
+resolved configuration, manifest, metrics, predictions, condition summaries,
+and `validation_results.mat`.
 
-The TEM input is the existing processed artifact:
+### 6. Checking the install
 
-```text
-data/main_tem_analysis/tem_analysis_results.mat
-```
-
-`main_valid_v3.m` uses only `aggregate_table.entry_id`, `da_nm`, `dbarpp_nm`,
-and the optional `dbarpp_ci95_*` columns. Set the validation config and run:
+Run all 14 QA functions. A pass prints one `PASS TEST_...`
+line per file, with all returned `pass` flags true. These checks use synthetic
+inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
-setenv('SOOTMOSAIC_MAIN_VALID_CONFIG', ...
-    'config/main_valid/main_valid_config.local.json')
-main_valid_v3
+warning('on', 'all')
+checks = dir(fullfile('+QA', 'TEST_*.m'));
+assert(numel(checks) == 14)
+for k = 1:numel(checks)
+    [~, name] = fileparts(checks(k).name);
+    report = feval(['QA.' name]);
+    assert(~isempty(report) && all([report.pass]), name)
+    fprintf('PASS %s\n', name)
+end
 ```
 
-Low and high agglomeration are enabled by default. Moderate and extensive
-collapse remain named, disabled conditions that can be activated after their
-TEM and LD2 mappings are supplied. Bayesian fitting, degree, credible level,
-posterior samples, priors, plot styling, Segoe UI typography, reference
-relations, and exports are controlled independently in JSON.
-Legend location, column count, orientation, border visibility, text interpreter,
-and text size are configurable under `figures.legend` and
-`figures.font.legend_size`. All text uses Segoe UI Semilight at normal weight in the
-manuscript profile, including 13-point tick labels, 18-point axis labels, and
-15-point legends. The plot-frame and tick-line weight is controlled by
-`figures.axis_line_width`; label offsets and tick-label rotation are controlled
-under `figures.axes`.
-Measurement edge color, marker-face color, outline width, and marker size are
-configured per condition through the `conditions[].style.experimental_*`
-fields, independently of the numerical-population color. The default marker
-face is `none`, leaving the darker measurement outlines transparent.
+For a synthetic validation run, create fixtures and load them as follows.
+The fixtures go to `data/main_valid_webtest/server/` and exports go to
+`results/main_valid_synthetic/`. The assertion checks that metrics were returned.
 
-Stable PDF and matching PDF-rendered PNG figures are written to
-`results/main_valid/`. Every run also
-creates `results/main_valid/runs/<timestamp>/` with the resolved config, source
-hashes, pointwise predictions, summary metrics, and a MAT result bundle.
-
-## Data sources and checksums
-
-`config/sources/sources.json` holds datasets keyed by source id.
-`UTILS.LOAD_DATASET_SOURCE` reads it with `UTILS.CONFIG_READ` and
-`sources.keys.json`. A loader accepts `struct('source_id', '<id>')`;
-inline fields override that entry. Registry file and cache paths are relative
-to `data/`. Inline paths keep the calling loader's path rules. An optional
-`sources.local.json` beside the registry overrides machine-local paths and
-addresses. Its `where` field is `file` (local file first) or `web` (skip the
-local file, then apply the caller's cache policy). Only the local overlay may
-set `where`. QA and release callers pass `opts.Strict = true`.
-
-The dictionary lists each registered id explicitly. Add matching rows when
-adding an id. Each entry requires a file, a kind and the variable selection
-used by its caller. The effective-density entry `inv_effective_density`
-links to the inversion output. Its file name reserves the product location;
-no measured data, address or published digest is supplied. The LD2 results
-placeholder is selected in the local overlay. Scale and scatter producer
-links name `pars_out`, since their output names are fixed by their tasks.
-Task configuration readers still require their inline blocks; source-id-only
-selection is available directly through the dataset loaders.
-
-Checksums serve three separate roles.
-
-- Producer: `UTILS.WRITE_SHA256_SIDECAR(file)` hashes a completed product and
-  writes `<file>.sha256` with the lowercase digest, two spaces, the basename
-  and a line feed. Its return value is the digest for the producer run record.
-  This format matches `NORMALIZE_EFFECTIVE_DENSITY_DATA`. Producer tasks are
-  responsible for calling the writer and saving its returned digest.
-- Consumer: a nonempty source digest is checked for local, cached and
-  downloaded files. A mismatch stops with `ChecksumMismatch`. An empty
-  digest skips verification; a nonempty URL then warns with `MissingChecksum`.
-  Validation reuses its cache, including `.pfal-cache` when the corresponding
-  `.sootmosaic-cache` file is absent. A bad cache fails again on the next call.
-  LD2, scale and scatter download whenever the configured source file is
-  missing, even when a separate cache exists. A bad local source stays in
-  place and fails again. With no explicit cache, LD2 downloads to its source
-  path; scale and scatter use their respective data folders.
-- Provenance: source metadata retains URL, DOI and the configured digest.
-  Validation records the actual source digest independently of verification.
-  The loaders' optional third output records registry and local-overlay
-  configuration digests, the dictionary digest and inline overrides. Existing
-  inline calls return an empty provenance structure and retain their source
-  metadata shape. LD2 workspace saves retain `dataset_src.doi`. The general
-  run record also carries profile and instrument configuration provenance
-  when those readers supply it.
-
-At deposit time, published digests belong in the tracked registry. Empty
-digests for products awaiting deposit do not assert that their bytes are
-verified. `QA.TEST_DATASET_SOURCE` uses a local copy function in place of a
-download and creates every writable fixture under `tempname`.
-
-## Configuration and Running
-
-Each configurable workflow has an example JSON file committed under `config/`.
-Copy the required example to the corresponding `.local.json` name and edit the
-dataset paths and, where present, output settings before running it. Files
-matching `.local*.json` are ignored by Git.
-
-```text
-config/
-|-- main_ld1/
-|   `-- main_ld1_config.example.json
-|-- main_scale/
-|   `-- main_scale_config.example.json
-|-- main_scatter/
-|   `-- main_scatter_config.example.json
-|-- main_ld2/
-|   |-- main_ld2_from_main_scale_config.example.json
-|   `-- main_ld2_from_main_scatter_config.example.json
-|-- main_tem_analysis/
-|   `-- main_tem_analysis_config.example.json
-`-- main_valid/
-    `-- main_valid_config.example.json
+```matlab
+files = UTILS.CREATE_MAIN_VALID_WEBTEST_FIXTURES;
+cfg = UTILS.LOAD_MAIN_VALID_CONFIG( ...
+    'config/main_valid/main_valid_config.example.json');
+for item = {'ld2', 'tem', 'effective_density'}
+    cfg.sources.(item{1}).file = files.(item{1});
+end
+cfg.figures.visible = 'off';
+cfg.outputs.png_source = 'figure';
+cfg.outputs.root = fullfile(pwd, 'results', 'main_valid_synthetic');
+result = UTILS.RUN_MAIN_VALIDATION(cfg);
+assert(~isempty(result.metrics))
 ```
 
-The tree lists tracked examples only. Local copies are ignored.
-In the validation example, `sources.ld2.file` names
-`../../results/main_ld2_from_main_scatter/LD2_RESULTS_PLACEHOLDER.mat`.
-Set this placeholder to the selected LD2 result in the local config.
-For TEM, `entries[].entry_dir` and `outputs.data_root` are independent
-paths resolved relative to the config folder. Input file names within an
-entry are resolved relative to its `entry_dir`; `outputs.data_root`
-selects the output data folder.
+### 7. When something fails
 
-Config selection follows the script loaders:
+Errors use `sootMosaic:<FUNCTION>:<Reason>`. Check the named function and the
+reported key or file. Capture an error identifier and message with
+`try, main_LD2_v3, catch err, disp(err.identifier), disp(err.message), end`.
 
-| Script | Config selection |
+| Error or symptom | Action |
 | --- | --- |
-| `main_LD1_v3.m` | `SOOTMOSAIC_MAIN_LD1_CONFIG`, then `PFAL_MAIN_LD1_CONFIG`, then `config/main_ld1/main_ld1_config.local.json` |
-| `main_scale_v2.m` | `config/main_scale/main_scale_config.local.json` |
-| `main_scatter_v8.m` | `config/main_scatter/main_scatter_config.local.json` |
-| `main_LD2_v3.m` | `SOOTMOSAIC_MAIN_LD2_CONFIG`, then `PFAL_MAIN_LD2_CONFIG`, with no default file |
-| `main_tem_analysis_v1.m` | `SOOTMOSAIC_MAIN_TEM_ANALYSIS_CONFIG`, then `PFAL_MAIN_TEM_ANALYSIS_CONFIG`, then `config/main_tem_analysis/main_tem_analysis_config.local.json` |
-| `main_valid_v3.m` | `SOOTMOSAIC_MAIN_VALID_CONFIG`, then `PFAL_MAIN_VALID_CONFIG`, then `config/main_valid/main_valid_config.local.json` |
+| Function not found | Run `addpath(pwd)` from the repository root and check `which` and `ver` |
+| `MissingConfig` or `MissingConfigSelection` | Copy the example and check both selectors. LD2 requires a branch selection |
+| `InvalidConfig`, `InvalidJSON`, or `MissingSection` | Check JSON syntax and required sections against the example |
+| `UnknownKey` | Use the key spelling in the dictionary |
+| `MissingFileOnDisk`, `MissingFile`, or `MissingAggregateFile` | Generate the upstream product or supply the measurement file at the configured path |
+| `MissingVariableInFile`, `MissingVariable`, or `MissingTableVariables` | Supply the expected MAT variables and table columns |
+| `MissingChecksum` or `ChecksumMismatch` | Supply the published digest and a matching source or cached file |
+| `MissingTEMMapping` or `MissingDensityMapping` | Match enabled condition IDs to the input tables |
+| `InvalidProjection` | Use cache with `isotropic`, orientations divisible by replicates, and `proj_tol` of `"none"` for one replicate |
+| `RendererFailed` | Install `pdftocairo` or select `"figure"` for `png_source` |
 
-Each loader uses the first nonempty environment variable in its row. A config
-path passed directly to a loader overrides both.
+## Soot as a mosaic
 
-Typical run order:
+In a flame, soot aggregates can grow with primary particles of nearly uniform
+size inside each aggregate, while that size differs from one aggregate to the
+next. Downstream, as the soot dilutes and cools, the aggregates keep colliding.
+A collision can join aggregates of different primary size into one hybrid
+structure. Each parent aggregate remains visible as a patch of its own
+primary size, giving the hybrid the appearance of a mosaic.
 
-```matlab
-main_LD1_v3
-main_scatter_v8      % default bivariate calibration branch
-setenv('SOOTMOSAIC_MAIN_LD2_CONFIG', ...
-    'config/main_ld2/main_ld2_from_main_scatter_config.local.json')
-main_LD2_v3
-```
+![Hybrid soot TEM examples](https://github.com/user-attachments/assets/db858f62-1e22-471c-90ad-dc06329de681)
 
-To use correlation-based scaling instead, run `main_scale_v2` in place of
-`main_scatter_v8` and select
-`config/main_ld2/main_ld2_from_main_scale_config.local.json` for LD2.
+## How the Langevin dynamics loop works
+
+1. Read physical, domain, transport, and output parameters.
+2. Initialize primary-particle sizes and aggregate morphology.
+3. Assign random particle locations and velocities.
+4. Compute mobility and Brownian transport properties.
+5. March positions and velocities under Brownian motion, drag, and inertia.
+6. Apply periodic boundary conditions.
+7. Detect collisions and connect touching aggregates.
+8. Update geometry, mobility, and saved diagnostics.
+
+## Configuration reference
+
+| Dictionary | Scope |
+| --- | --- |
+| [`config/profiles/profile.keys.json`](config/profiles/profile.keys.json) | Model choices, constants, stage sections, units, and aliases |
+| [`config/sources/sources.keys.json`](config/sources/sources.keys.json) | Registered dataset fields and local `where` selection |
+| [`config/main_inv/main_inv.keys.json`](config/main_inv/main_inv.keys.json) | INV defaults, units, and input reading rules |
+| [`config/instruments/instruments.keys.json`](config/instruments/instruments.keys.json) | Instrument and charging registry fields |
+
+Task examples and `UTILS.LOAD_MAIN_*_CONFIG` define the task settings. TEM
+style uses `plots` and `entries[].style`, and validation style uses `figures`
+and `conditions[].style`.
+
+`opts.RequiredPaths` lists required input keys. Resolved SI values are in
+`cfg_inv.si`.
+
+### TEM and validation figures
+
+TEM `plots.figures.<figure_id>` controls enabled state, ordered
+`condition_ids`, axes, layout, legend, and figure options. `entries[].style`
+controls markers, condition colors, box colors, and independent `stack_colors`
+for subaggregate count and collapsed-subaggregate frequency figures. Add an
+entry and its ID to the required figure lists to include another condition.
+
+`plots.frequency_bins` defines frequency boundaries and their inclusivity. The
+example uses blue shades for low agglomeration and orange for high
+agglomeration. Shared axes and labels use `plots.axes`, fonts use `plots.font`,
+and boxes use `plots.boxplot`. Export controls are scalar fields such as
+`plots.export`, `plots.pdf`, `plots.png`, and `plots.png_resolution`.
+`plots.format` and `plots.resolution` are accepted export controls.
+
+The TEM figure set includes the manual correlation, two primary-distribution
+Appendix variants, aggregate metrics, a mirrored exact-count lollipop
+distribution for two conditions, two stacked-frequency figures, and a
+subaggregate-category correlation. The mirrored plot has a condition legend and
+independent major/minor grids. Figures are built off-screen at configured
+dimensions before export, preserving their aspect ratios.
+
+Both examples use normal font weight, 13-point axes, 18-point labels, and
+15-point legends. Vector PDFs and 600-dpi PNGs rendered from them share fonts
+and geometry. Axis-label offsets and tick rotation are configurable. TEM's
+example uses horizontal multiline condition labels.
+
+Validation controls Bayesian degree, credible level, posterior draws, priors,
+reference relations, and exports separately. `figures.legend` sets location,
+columns, orientation, border, and interpreter. `figures.font.legend_size` sets
+text size, `figures.axis_line_width` sets frame/tick weight, and `figures.axes`
+sets label offsets and rotation. Each condition's `style.experimental_*` fields
+set measurement edges, faces, sizes, and outline widths independently of
+simulation color. Example marker faces are `none`. Empty axis limits select
+automatic limits.
+
+### Transport models and saved records
 
 The LD1 and LD2 configs set the gas temperature and pressure under
 `transport.fluid` and the property model under `transport.fluid_options.amb`.
-The `current` profile gives the viscosity from 1.83245e-5 Pa s at 296.15 K
-with the temperature law of reference 7, Eq. 9 (constant 110.4 K).
-The fixed profile and calls without a gas section use 1.716e-5 Pa s at
-273.15 K. The mean free path is 67.3 nm at 296.15 K and 101325 Pa, scaled
-with temperature and pressure as in reference 7, Eq. 11.
-The `current` viscosity rises by 0.2631 percent at every temperature;
-seeded runs with that profile change by design. Fixed-profile and
-profile-free runs keep their gas and slip values and evaluation order.
-The `flame` (1700 K) and `room` (293.15 K)
-presets hold fixed values at 101325 Pa and warn when the configured state
-differs by more than 1 K or 1 percent. The top-level `model_profile` names the
-default models, `current` or `article1_7658971` (the models of commit
-7658971). A config without `model_profile` runs with `article1_7658971`, and
-an LD2 config without `model_profile` and pressure runs at 101325 Pa. The
-resolved profile is saved as `cfg_ld1.model` or `cfg_ld2.model` with every
-result and checkpoint.
+The `current` profile gives the viscosity from 1.83245e-5 Pa s at 296.15 K with
+the temperature law of reference 7, Eq. 9 (constant 110.4 K). For the
+`sutherland` calculation, `article1_7658971` and calls without a gas section
+use the reference viscosity 1.716e-5 Pa s at 273.15 K.
+The mean free path is 67.3 nm at 296.15 K and 101325 Pa, scaled with
+temperature and pressure as in reference 7, Eq. 11. The `flame` (1700 K) and
+`room` (293.15 K) presets hold fixed values at 101325 Pa and warn when the
+configured state differs by more than 1 K or 1 percent. The resolved profile is
+saved as `cfg_ld1.model` or `cfg_ld2.model` with every result and checkpoint.
 
-Profile files live in `config/profiles` and are checked against
-`profile.keys.json`. Stage sections override common sections, then
-`model_overrides` applies section-shaped task values, and explicit transport
-options take precedence. A custom file can use
-`"extends": "article1_7658971.json"` and set its own `profile` name.
-An edited fixed profile stops the run; an edited `current` profile warns.
-A missing shipped file or profile dictionary uses the built-in mirror with
-one warning per profile per session. The dimensionless reference exponent is
-`reference.mass_mobility_exponent`; `reference.d_m` is accepted as an alias.
-Parameter sections and SI values are saved in `cfg.model_params`,
-and file digests, mirror flags and overrides in `cfg.model_source`.
-The `current` physical constants use the exact 2019 SI values
-`kb_j_k = 1.380649e-23`, `na_mol_inv = 6.02214076e23`, and their exact
-decimal product `ru_j_mol_k = 8.31446261815324`. It supplies
-`e_c = 1.602176634e-19` (2019 SI) and `eps0_f_m = 8.8541878128e-12`
-(CODATA 2018) for INV. Seeded `current` runs change by design.
-The fixed profile and profile-free calls retain the rounded constants.
-The physical constants table retains its four columns and five rows in the
-order `rho_bc`, `M_air`, `kb`, `Na`, `Ru`, with those names as row names.
-Named access accepts reordered tables; unnamed saved tables use the fixed
-row order. Validation `physics.material_density_kg_m3` overrides the profile
-density and is recorded in `cfg.model_params` and `cfg.model_source`.
-The resolved density uses the material density for `per_caller_7658971`
-and the aerodynamic reference density otherwise. The mobility root tolerance
-is recorded as `default` only for that slip choice with
-`start_point_7658971`, and as `eps_scaled` otherwise; its dimensional value
-depends on the diameters at the solve. A checkpoint without parameter records
-receives the fixed built-in values and a `NoModelParameters` warning.
-Mobility calls without options read `UTILS.CALL_DEFAULTS`, including method
-`continuum` and `c_dt` of 1; sampling and property call defaults are listed
-alongside them. `QA.TEST_MODEL_PROFILE` and
-`QA.TEST_CALL_DEFAULTS` check the files, mirrors, loaders and call interface.
+The dimensionless reference exponent is `reference.mass_mobility_exponent`.
+`reference.d_m` is accepted as an alias. Parameter sections and SI values are
+saved in `cfg.model_params`, and file digests, mirror flags and overrides in
+`cfg.model_source`. The `current` physical constants use the exact 2019 SI
+values `kb_j_k = 1.380649e-23`, `na_mol_inv = 6.02214076e23`, and their exact
+decimal product `ru_j_mol_k = 8.31446261815324`. It supplies `e_c =
+1.602176634e-19` (2019 SI) and `eps0_f_m = 8.8541878128e-12` (CODATA 2018) for
+INV. The `article1_7658971` profile and profile-free calls use rounded
+constants. The physical constants table has four columns and five rows in the
+order `rho_bc`, `M_air`, `kb`, `Na`, `Ru`, with those names as row names. Named
+access accepts reordered tables. Unnamed saved tables use the fixed row order.
+Validation `physics.material_density_kg_m3` overrides the profile density and
+is recorded in `cfg.model_params` and `cfg.model_source`. The resolved density
+uses the material density for `per_caller_7658971` and the aerodynamic
+reference density otherwise. The mobility root tolerance is recorded as
+`default` only for that slip choice with `start_point_7658971`, and as
+`eps_scaled` otherwise. Its dimensional value depends on the diameters at the
+solve. Mobility calls without options read `UTILS.CALL_DEFAULTS`, including
+method `continuum` and `c_dt` of 1. Sampling and property call defaults are
+listed alongside them. `QA.TEST_MODEL_PROFILE` and `QA.TEST_CALL_DEFAULTS`
+check the files, mirrors, loaders and call interface.
 
-The slip correction is set under `transport.mobility_options.slip` and
-computed by `TRANSP.CUNNINGHAM`. The `kim2005` model uses the constants of
-Kim et al. (2005), 1.165, 0.483 and 0.997 with Kn = 2 lambda / d, the same in
-the mobility, mobility diameter and aerodynamic diameter functions, with the
+The slip correction is set under `transport.mobility_options.slip` and computed
+by `TRANSP.CUNNINGHAM`. The `kim2005` model uses the constants of Kim et al.
+(2005), 1.165, 0.483 and 0.997 with Kn = 2 lambda / d, the same in the
+mobility, mobility diameter and aerodynamic diameter functions, with the
 aerodynamic diameter at the reference density of 1000 kg/m3. They were fitted
 with the classical mean free path that the `sutherland` model gives. The
-`per_caller_7658971` model keeps the form and constants each function used at
-commit 7658971 and is the default of the `article1_7658971` profile and of
-calls without the option. The soot property table `UTILS.TABGEN` runs with
-`per_caller_7658971` only until its mass and density units are reviewed.
-Explicit `slip` and `amb` fields in a config win over the profile defaults, so
-the example configs keep `kim2005` and `sutherland` when only `model_profile`
-is changed. The results of 7658971 are reproduced when the resolved options
-match its settings.
+`per_caller_7658971` model supplies the per-function constants for
+`article1_7658971` and calls without the option. The soot property table
+`UTILS.TABGEN` accepts only `per_caller_7658971`.
 
 The mobility method is set under `transport.mobility_options.mtd`, with the
-profile default when the field is left out. `sorensen_eq17` (also accepted
-under its earlier name `continuum` and saved as `sorensen_eq17`) gives the
-continuum mobility diameter dm = 1.29 N^-0.13 dg of Eq. 17 in Sorensen (2011)
-at every number of primaries N. `sorensen_backbone` gives dm = dp for a single
-primary, Eq. 18a for a doublet (dm = 2^0.46 dp for two equal touching
-spheres), Eq. 17 for N from 3 to 74 and dm = 0.75 dg above, the ratio that
-Eq. 18b gives for fractal dimension 1.78 and prefactor 1.3. The crossover
-N = 74 is where Eqs. 18a and 18b meet, and dm steps up by 1.7 percent between
-N = 74 and 75 for the same gyration diameter. The ratio 0.75 is the large-N
-value for DLCA aggregates, so its use for aggregates of other morphology, like
-the doublet relation for unequal primaries, is an extrapolation. `interp`
-solves the adjusted sphere relation in the form given by Rogak et al. (1993)
-between the projected area
-diameter and the continuum diameter named by `continuum_diameter`,
-`fixed_075dg` (0.75 dg at every N) or `sorensen_backbone` (the relations
-above, so that a single primary has dm = dp at every Knudsen number).
-`root_solve` is `start_point_7658971` (fzero from one start point) or
-`bracketed` (fzero on the interval between the two limit diameters, which
-holds the root). `free_molecular` sets dm to the projected area diameter,
-the free molecular limit of Sorensen (2011) and Rogak et al. (1993).
-The `current` profile uses `interp` with `sorensen_backbone` and `bracketed`
-in both stages, `article1_7658971` uses `sorensen_eq17` in LD1 and `interp`
-with `fixed_075dg` and `start_point_7658971` in LD2. The example configs name
-the continuum diameter and the root solve explicitly.
+profile default when the field is left out. `sorensen_eq17` (alias `continuum`)
+gives the continuum mobility diameter dm = 1.29 N^-0.13 dg of Eq. 17 in
+Sorensen (2011) at every number of primaries N. Here dm is mobility diameter,
+dg is gyration diameter, and dp is primary diameter. `sorensen_backbone` gives
+dm = dp for a single primary, Eq. 18a for a doublet (dm = 2^0.46 dp for two
+equal touching spheres), Eq. 17 for N from 3 to 74 and dm = 0.75 dg above, the
+ratio that Eq. 18b gives for fractal dimension 1.78 and prefactor 1.3. The
+crossover is N = 74. Above it, the model uses the diffusion-limited cluster
+aggregation (DLCA) ratio of 0.75. `interp` solves
+the adjusted sphere relation in the form given by Rogak et al. (1993) between
+the projected area diameter and the continuum diameter named by
+`continuum_diameter`, `fixed_075dg` (0.75 dg at every N) or `sorensen_backbone`
+(the relations above, so that a single primary has dm = dp at every Knudsen
+number). `root_solve` is `start_point_7658971` (fzero from one start point) or
+`bracketed` (fzero on the interval between the two limit diameters, which holds
+the root). `free_molecular` sets dm to the projected area diameter, the free
+molecular limit of Sorensen (2011) and Rogak et al. (1993). The `current`
+profile uses `interp` with `sorensen_backbone` and `bracketed` in both stages,
+`article1_7658971` uses `sorensen_eq17` in LD1 and `interp` with `fixed_075dg`
+and `start_point_7658971` in LD2.
 
-`interp` and `free_molecular` take the projected area from the method named
-by `projection`. `euler_7658971` calls `PAR.PROJECTION` for every aggregate at
+`interp` and `free_molecular` take the projected area from the method named by
+`projection`. `euler_7658971` calls `PAR.PROJECTION` for every aggregate at
 every step with `proj_points` random points and `proj_orientations` triples of
-Euler angles drawn uniformly in [0, 2 pi), as commit 7658971 did with 100 and
-5. `isotropic` uses `PAR.PROJECTION_ISO`. It turns `proj_replicates` sets of
-directions from a spherical Fibonacci lattice on the half sphere by
-independent uniformly distributed rotations, so that every direction is
-uniform on the sphere, and counts the covered points of a randomly shifted
-square grid of `proj_points` points in each of the `proj_orientations`
-orientations, which gives an unbiased orientation averaged area. A single
-primary has the area pi dp^2 / 4. With `proj_cache` set to true,
-`PAR.PROJECTION_CACHE` keeps the area of every aggregate whose primaries are
-unchanged and whose relative positions lie within 1e-9 smallest primary
-diameters of the positions at which the area was computed, so after a merge
-only the new aggregate is sampled and small changes cannot add up unnoticed.
-The standard error of each area comes from the spread of the set means, and a
-warning is shown once per run when its ratio to the area exceeds
-`proj_tol`. With 4 sets it has 3 degrees of freedom, so a nominal two-sided 95
-percent interval would need 3.182 standard errors under normality, and it
-serves as a check of the resolution, not as a confidence interval. One set
-gives no standard error, so `proj_tol` must then be `"none"` (no check, read
-as Inf). An area that is not positive and finite stops the run with a request
-for a finer resolution. `isotropic` takes the particle structure, not AGG
-objects. The projected areas saved for methods without da
-still come from `PAR.PROJECTION` with the `projection` section of the config.
-The `current` profile uses `isotropic` with the cache, 1024 points, 64
-orientations in 4 sets and `proj_tol` 0.01, and `article1_7658971` uses
-`euler_7658971` without the cache. The example configs name the projection,
-the cache and the sampling settings explicitly, and the LD1 example runs
-`interp`.
+Euler angles drawn uniformly in [0, 2 pi). The `article1_7658971` profile uses
+100 points and 5 orientations. `isotropic` uses `PAR.PROJECTION_ISO`. It
+rotates `proj_replicates` sets of directions from a spherical Fibonacci lattice
+on the half sphere. Independent uniform rotations make each direction uniform
+on the sphere. It counts covered points on a randomly shifted square grid with
+`ceil(sqrt(proj_points))^2` points in each of the `proj_orientations`
+orientations. A single primary has the area pi dp^2 / 4. With `proj_cache` set
+to true, `PAR.PROJECTION_CACHE` reuses areas for unchanged geometry and samples
+new aggregates after a merge. `proj_tol` controls the sampling-resolution
+check. With one replicate, set `proj_tol` to `"none"`. `isotropic` takes
+particle structures. Saved projected areas for mobility methods without da use
+`PAR.PROJECTION` and the configuration's `projection` section. The `current`
+profile uses `isotropic` with the cache, 1024 points, 64 orientations in 4 sets
+and `proj_tol` 0.01, and `article1_7658971` uses `euler_7658971` without the
+cache.
 
-`TRANSP.MOBIL` stores two single-particle Knudsen numbers with every
-particle, the gas Knudsen number `kn_kin` = 2 lambda / dm and `kn_diff` =
-2 (m kT)^0.5 / (f dm). With `transport.diagnostics_options.knudsen` set to
-true, `TRANSP.KNUDSEN` adds two numbers of the literature at every recorded
-step. The pair diffusive Knudsen number of Eq. 11 in reference 10 is taken
-for each particle and its nearest neighbor under the periodic minimum image,
-with the reduced mass and friction of the pair, the combined Smoluchowski
-radius (dm_i + dm_j) / 2 and the combined projected area
-pi (da_i + da_j)^2 / 4 (dm in place of da for methods that set no projected
-area). Both are sums of single-particle radii, exact for two spheres, and the
-mobility radius equals the capacity radius of reference 10 only in the
-continuum limit. For aggregate pairs the number is therefore an approximate
-diagnostic. The comparison of reference 10 (Table 1), where sums of capacity
-radii and projected areas give values 1.16 to 1.46 times those of the computed
-pair geometry, does not bound it, and the regime limits 0.035 and 3.7 of
-reference 10 belong to the computed definition and only indicate the regime
-here. For two identical spheres it equals `kn_diff` / 2^0.5, Eq. 2 of
-reference 11. The nearest-neighbor Knudsen number of reference 11 is
-(18 D tau)^0.5 / rn with rn = n^(-1/3) - 2 rmax, from the number
-concentration n and the mean maximum radius rmax, and is not defined when rn
-is not positive. `ensdata` (`ensdata0` in LD1) gains `kn_pair` and `knn`,
-each as mean and standard deviation over the particles, and `knn_defined`,
-which is false with `knn` set to NaN where rn is not positive. The
-diagnostics change neither the particles nor the random numbers. The
-`current` profile records them and `article1_7658971` does not. Reference 12
-gives the particle mean free path of another convention, 3.19 times the
-length (m kT)^0.5 / f of `kn_diff`, so diffusive Knudsen numbers can only be
-compared within one convention.
+`TRANSP.MOBIL` stores two single-particle Knudsen numbers with every particle,
+the gas Knudsen number `kn_kin` = 2 lambda / dm and `kn_diff` = 2 (m kT)^0.5 /
+(f dm). Here m is mass, k is the Boltzmann constant, T is temperature, f is
+friction, and lambda is gas mean free path. With
+`transport.diagnostics_options.knudsen` set to true, `TRANSP.KNUDSEN` adds two
+numbers of the literature at every recorded step. The pair diffusive Knudsen
+number of Eq. 11 in reference 10 uses each particle and its nearest neighbor
+under the periodic minimum image. It uses reduced mass and friction, combined
+Smoluchowski radius (dm_i + dm_j) / 2, and combined projected area pi (da_i +
+da_j)^2 / 4. Methods without projected area use dm in place of da. For two
+identical spheres it equals `kn_diff` / 2^0.5, Eq. 2 of reference 11. The
+nearest-neighbor Knudsen number of reference 11 is (18 D tau)^0.5 / rn with rn
+= n^(-1/3) - 2 rmax, from the number concentration n and the mean maximum
+radius rmax. D is diffusivity and tau is relaxation time. `ensdata` (`ensdata0`
+in LD1) gains `kn_pair` and `knn`, each as mean and standard deviation over the
+particles, and `knn_defined`, which is false with `knn` set to NaN where rn is
+not positive. The diagnostics change neither the particles nor the random
+numbers. The `current` profile records them and `article1_7658971` does not.
+Reference 12 gives the particle mean free path of another convention, 3.19
+times the length (m kT)^0.5 / f of `kn_diff`.
 
-The initial velocities are drawn by `PAR.INIT_VEL` with the sampler named
-under `transport.velocity_options.sampler`, with the profile default when the
-field is left out. `maxwell_boltzmann` draws the three components of each
-particle from a normal distribution with zero mean and variance kT / m, so the
-mean kinetic energy is 1.5 kT and the speeds follow the Maxwell-Boltzmann
-distribution with the mean speed (8 kT / (pi m))^0.5 of reference 12.
-`mean_speed_7658971` keeps the sampler and the random numbers of commit
-7658971, every particle at that mean speed in a direction with the polar angle
-uniform in [0, pi], which gives the mean kinetic energy 4 kT / pi. The
-`current` profile uses `maxwell_boltzmann` and `article1_7658971` uses
-`mean_speed_7658971`. The example configs name the sampler explicitly.
+The initial velocities are drawn by `PAR.INIT_VEL` with the sampler named under
+`transport.velocity_options.sampler`, with the profile default when the field
+is left out. `maxwell_boltzmann` draws each of the three components from a
+normal distribution with zero mean and variance kT / m. The mean kinetic energy
+is 1.5 kT. Speeds follow the Maxwell-Boltzmann distribution with mean speed (8
+kT / (pi m))^0.5 of reference 12. `mean_speed_7658971` assigns every particle
+that mean speed with the polar angle uniform in [0, pi], which gives the mean
+kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
+`article1_7658971` uses `mean_speed_7658971`.
 
-The TEM analysis runs separately with `main_tem_analysis_v1` after its local
-config and source datasets have been prepared. The four TEM profiles share the
-complete schema; `local.json` is the default low/high paper profile, and
-`local.webtest.json` uses invisible figures for automated execution.
+## Repository map
 
-Validation also has `local.file`, `local`, and `local.webtest` profiles. The
-web-test profile uses compact fixtures created by:
+| Path | Contents |
+| --- | --- |
+| `main_LD1_v3.m` | First-stage aggregate-library generation |
+| `main_scale_v2.m` | Correlation-based library scaling |
+| `main_scatter_v8.m` | Library sampling and scaling |
+| `main_LD2_v3.m` | Post-flame agglomeration |
+| `main_tem_analysis_v1.m` | TEM analysis and figures |
+| `main_valid_v3.m` | LD2, TEM, and effective-density comparisons |
+| Other `main_*` and `post_*` scripts | Shielding, collapse, and post-processing analyses with script-level inputs |
+| `config/` | Task configurations, profiles, and registries |
+| `config/main_ld1/` | LD1 example configuration |
+| `config/main_ld2/` | Scale and scatter branch examples for LD2 |
+| `config/main_scale/` | Correlation-based calibration example |
+| `config/main_scatter/` | Distribution-based calibration example |
+| `config/main_tem_analysis/` | TEM inputs, analysis, and figure settings |
+| `config/main_valid/` | Validation inputs, condition mappings, and exports |
+| `config/main_inv/` | Inversion configuration example and key dictionary |
+| `config/instruments/` | Instrument constants, charge models, and dictionary |
+| `config/profiles/` | Model profiles and dictionary |
+| `config/sources/` | Dataset registry and dictionary |
+| `+COL/` | Collision detection, connection, and aggregate growth |
+| `+DEPOT/` | Additional simulation and analysis scripts |
+| `+PAR/` | Particle initialization, sizing, projection, and geometry |
+| `+QA/` | Synthetic tests and aggregate geometry checks |
+| `+TRANSP/` | Transport properties, mobility, marching, and boundaries |
+| `+UTILS/` | Configuration, data loading, checkpoint resume, fitting, and plotting |
+| `+VIS/` | Visualization routines |
+| `@AGG/` | Aggregate class |
+| `data/` | Measured inputs and generated handoff files |
+| `results/` | Generated workspaces, figures, and validation records |
+| `inputs/` | Tab-delimited parameter files |
 
-```matlab
-UTILS.CREATE_MAIN_VALID_WEBTEST_FIXTURES
-```
-
-Serve `data/main_valid_webtest/server/` on localhost port 8765, select
-`main_valid_config.local.webtest.json`, and run `main_valid_v3` to exercise the
-URL fallback without transferring the full experimental workspace.
-
-## Inversion configuration and instrument registry
-
-`UTILS.LOAD_MAIN_INV_CONFIG(file, data, campaign, opts)` reads the INV
-dictionary and resolves the `current` profile at stage INV. With no file
-argument it uses `SOOTMOSAIC_MAIN_INV_CONFIG`, then
-`config/main_inv/main_inv_config.local.json`, and falls back to the example
-when that default local file is absent. Local overlays use `extends`.
-The `article1_7658971` profile has no inversion stage and is refused.
-
-Pass scan values at the dictionary paths in their recorded units. A campaign
-is one table row with `values` and `reasons` structure cells, or a structure
-with those fields. Each campaign value needs a reason at the same path.
-Instrument-file settings take precedence over workbook cells; the reading
-record retains all differences. Other campaign fields use the recorded
-reading rule. Consumers use `cfg.si`, which is converted once after source
-selection; the original values remain beside it. Set `opts.RequiredPaths`
-to the inputs needed by the calling stage so missing data stop there.
-
-`config/instruments/instruments.json` holds cited instrument constants and
-`charging.json` holds named charge models. The primary model is
-`soft_xray_3082_tableB3`; the other two models are sensitivity cases.
-Source files and dictionaries have digest records. Charge coefficient tables
-remain empty with a `pending_patch_24` marker. Unquoted constants and open
-defaults remain documented placeholders in `cfg.pending`. Strict QA and
-release calls set `opts.Strict = true`, which rejects unknown keys and
-unresolved selected placeholders. Normal loads warn on unknown keys and
-allow inspection of the example. Explicit grid limits require
-`opts.TestFixture = true`. Configuration loading performs no inversion.
-
-## Repository Map
-
-```text
-sootMosaic/
-|-- main_LD1_v3.m          first-stage aggregate-library generation
-|-- main_scale_v2.m        correlation-based LD1 library scaling
-|-- main_scatter_v8.m      LD1 library sampling/scaling; bivariate by default
-|-- main_LD2_v3.m          second-stage post-flame agglomeration
-|-- main_tem_analysis_v1.m TEM measurement analysis and figure generation
-|-- main_valid_v3.m        LD2/TEM/effective-density validation figures
-|-- main_*                 validation, shielding, collapse, and utility scripts
-|-- post_*                 post-processing scripts for generated results
-|-- config/                JSON templates and ignored local configs
-|-- data/                  local inputs and generated workflow handoff files
-|-- results/               LD2 workspaces and exported TEM figures
-|-- inputs/                legacy tab-delimited parameter files
-|-- +PAR/                  particle initialization, sizing, projection, geometry
-|-- +TRANSP/               transport properties, mobility, marching, boundaries
-|-- +COL/                  collision detection, connection, aggregate growth
-|-- +UTILS/                config, checkpoint-resume, plotting, fitting, and IO helpers
-|-- +VIS/                  visualization routines
-|-- @AGG/                  aggregate class utilities
-`-- +DEPOT/                archived or experimental scripts, including legacy PFA
-```
+Generated data, `results/`, `outputs/`, `.sootmosaic-cache/`, and
+`.pfal-cache/` are ignored by `.gitignore`.
 
 ## References
 
