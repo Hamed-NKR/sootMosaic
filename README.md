@@ -356,6 +356,58 @@ Stable PDF and matching PDF-rendered PNG figures are written to
 creates `results/main_valid/runs/<timestamp>/` with the resolved config, source
 hashes, pointwise predictions, summary metrics, and a MAT result bundle.
 
+## Data sources and checksums
+
+`config/sources/sources.json` holds datasets keyed by source id.
+`UTILS.LOAD_DATASET_SOURCE` reads it with `UTILS.CONFIG_READ` and
+`sources.keys.json`. A loader accepts `struct('source_id', '<id>')`;
+inline fields override that entry. Registry file and cache paths are relative
+to `data/`. Inline paths keep the calling loader's path rules. An optional
+`sources.local.json` beside the registry overrides machine-local paths and
+addresses. Its `where` field is `file` (local file first) or `web` (skip the
+local file, then apply the caller's cache policy). Only the local overlay may
+set `where`. QA and release callers pass `opts.Strict = true`.
+
+The dictionary lists each registered id explicitly. Add matching rows when
+adding an id. Each entry requires a file, a kind and the variable selection
+used by its caller. The effective-density entry `inv_effective_density`
+links to the inversion output. Its file name reserves the product location;
+no measured data, address or published digest is supplied. The LD2 results
+placeholder is selected in the local overlay. Scale and scatter producer
+links name `pars_out`, since their output names are fixed by their tasks.
+Task configuration readers still require their inline blocks; source-id-only
+selection is available directly through the dataset loaders.
+
+Checksums serve three separate roles.
+
+- Producer: `UTILS.WRITE_SHA256_SIDECAR(file)` hashes a completed product and
+  writes `<file>.sha256` with the lowercase digest, two spaces, the basename
+  and a line feed. Its return value is the digest for the producer run record.
+  This format matches `NORMALIZE_EFFECTIVE_DENSITY_DATA`. Producer tasks are
+  responsible for calling the writer and saving its returned digest.
+- Consumer: a nonempty source digest is checked for local, cached and
+  downloaded files. A mismatch stops with `ChecksumMismatch`. An empty
+  digest skips verification; a nonempty URL then warns with `MissingChecksum`.
+  Validation reuses its cache, including `.pfal-cache` when the corresponding
+  `.sootmosaic-cache` file is absent. A bad cache fails again on the next call.
+  LD2, scale and scatter download whenever the configured source file is
+  missing, even when a separate cache exists. A bad local source stays in
+  place and fails again. With no explicit cache, LD2 downloads to its source
+  path; scale and scatter use their respective data folders.
+- Provenance: source metadata retains URL, DOI and the configured digest.
+  Validation records the actual source digest independently of verification.
+  The loaders' optional third output records registry and local-overlay
+  configuration digests, the dictionary digest and inline overrides. Existing
+  inline calls return an empty provenance structure and retain their source
+  metadata shape. LD2 workspace saves retain `dataset_src.doi`. The general
+  run record also carries profile and instrument configuration provenance
+  when those readers supply it.
+
+At deposit time, published digests belong in the tracked registry. Empty
+digests for products awaiting deposit do not assert that their bytes are
+verified. `QA.TEST_DATASET_SOURCE` uses a local copy function in place of a
+download and creates every writable fixture under `tempname`.
+
 ## Configuration and Running
 
 Each configurable workflow has an example JSON file committed under `config/`.
