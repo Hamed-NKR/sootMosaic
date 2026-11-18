@@ -1,74 +1,78 @@
 {
-    "model_profile":  "current",
-    "dataset":  {
-                    "id":  "scaled_aggs_for_LD2_from_main_scatter",
-                    "file":  "../../data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat",
-                    "variable":  "pars_out"
-                },
-    "results":  {
-                    "root":  "../../results/main_ld2_from_main_scatter",
-                    "run_label":  "LD2__scaled_aggs_for_LD2_from_main_scatter",
-                    "checkpoint_prefix":  "LD2__from_main_scatter__checkpoint",
-                    "final_prefix":  "LD2__from_main_scatter__final"
-                },
-    "simulation":  {
-                       "k_max":  1000000,
-                       "r_n_agg":  [
-                                       1.0,
-                                       0.4,
-                                       0.2,
-                                       0.1,
-                                       0.05
-                                   ],
-                       "checkpoint_interval":  1000,
-                       "rng_seed":  []
-                   },
-    "projection":  {
-                       "n_mc":  100,
-                       "n_ang":  5
-                   },
-    "transport":  {
-                      "domain":  {
-                                     "volume_fraction":  0.0001,
-                                     "size":  [
-                                                  5E-06,
-                                                  5E-06,
-                                                  5E-06
-                                              ]
-                                 },
-                      "fluid":  {
-                                    "temperature":  298,
-                                    "pressure":  101325
-                                },
-                      "fluid_options":  {
-                                            "amb":  "sutherland"
-                                        },
-                      "mobility_options":  {
-                                               "c_dt":  100,
-                                               "step_frac":  0.5,
-                                               "step_policy":  "warn",
-                                               "mtd":  "interp",
-                                               "slip":  "kim2005",
-                                               "continuum_diameter":  "sorensen_backbone",
-                                               "root_solve":  "bracketed",
-                                               "projection":  "isotropic",
-                                               "proj_cache":  true,
-                                               "proj_points":  1024,
-                                               "proj_orientations":  64,
-                                               "proj_replicates":  4,
-                                               "proj_tol":  0.01
-                                           },
-                      "location_options":  {
-                                               "vf":  "on"
-                                           },
-                      "growth_options":  {
-                                             "indupdate":  "off"
-                                         },
-                      "diagnostics_options":  {
-                                                  "knudsen":  true
-                                              },
-                      "velocity_options":  {
-                                               "sampler":  "maxwell_boltzmann"
-                                           }
-                  }
+  "model_profile": "current",
+  "dataset": {
+    "id": "scaled_aggs_for_LD2_from_main_scatter",
+    "file": "../../data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat",
+    "variable": "pars_out",
+    "url": "",
+    "doi": "",
+    "sha256": "",
+    "cache_file": ""
+  },
+  "results": {
+    "root": "../../results/main_ld2_from_main_scatter",
+    "run_label": "LD2__scaled_aggs_for_LD2_from_main_scatter",
+    "checkpoint_prefix": "LD2__from_main_scatter__checkpoint",
+    "final_prefix": "LD2__from_main_scatter__final"
+  },
+  "simulation": {
+    "k_max": 1000000,
+    "r_n_agg": [
+      1.0,
+      0.4,
+      0.2,
+      0.1,
+      0.05
+    ],
+    "checkpoint_interval": 1000,
+    "rng_seed": []
+  },
+  "projection": {
+    "n_mc": 100,
+    "n_ang": 5
+  },
+  "transport": {
+    "domain": {
+      "volume_fraction": 0.0001,
+      "size": [
+        5e-06,
+        5e-06,
+        5e-06
+      ]
+    },
+    "fluid": {
+      "temperature": 298,
+      "pressure": 101325
+    },
+    "fluid_options": {
+      "amb": "sutherland"
+    },
+    "mobility_options": {
+      "c_dt": 100,
+      "step_frac": 0.5,
+      "step_policy": "warn",
+      "mtd": "interp",
+      "slip": "kim2005",
+      "continuum_diameter": "sorensen_backbone",
+      "root_solve": "bracketed",
+      "projection": "isotropic",
+      "proj_cache": true,
+      "proj_points": 1024,
+      "proj_orientations": 64,
+      "proj_replicates": 4,
+      "proj_tol": 0.01
+    },
+    "location_options": {
+      "vf": "on"
+    },
+    "growth_options": {
+      "indupdate": "off"
+    },
+    "diagnostics_options": {
+      "knudsen": true
+    },
+    "velocity_options": {
+      "sampler": "maxwell_boltzmann"
+    }
+  }
 }

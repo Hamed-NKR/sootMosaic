@@ -2,12 +2,16 @@
   "sources": {
     "ld2": {
       "id": "latest_main_scatter_ld2",
-      "file": "../../results/main_ld2_from_main_scatter/LD2__scaled_aggs_for_LD2_from_main_scatter__2026-05-16/LD2__from_main_scatter__final__2026-06-28_20-05-29.mat",
+      "file": "../../results/main_ld2_from_main_scatter/LD2_RESULTS_PLACEHOLDER.mat",
       "url": "",
       "doi": "",
       "sha256": "",
       "cache_file": "../../.sootmosaic-cache/main_valid/ld2_results.mat",
-      "variables": ["parsdata", "fl", "r_n_agg"]
+      "variables": [
+        "parsdata",
+        "fl",
+        "r_n_agg"
+      ]
     },
     "tem": {
       "id": "processed_tem_analysis",
@@ -16,7 +20,9 @@
       "doi": "",
       "sha256": "",
       "cache_file": "../../.sootmosaic-cache/main_valid/tem_analysis_results.mat",
-      "variables": ["aggregate_table"]
+      "variables": [
+        "aggregate_table"
+      ]
     },
     "effective_density": {
       "id": "normalized_odias_effective_density",
@@ -25,7 +31,10 @@
       "doi": "",
       "sha256": "",
       "cache_file": "../../.sootmosaic-cache/main_valid/effective_density_validation_data.mat",
-      "variables": ["effective_density_data", "metadata"]
+      "variables": [
+        "effective_density_data",
+        "metadata"
+      ]
     }
   },
   "conditions": [
@@ -33,8 +42,13 @@
       "id": "low_agglomeration",
       "label": "Low agglomeration",
       "enabled": true,
-      "include": {"dpp_vs_da": true, "rho_eff_vs_dm": true},
-      "ld2_fractions": [1.0],
+      "include": {
+        "dpp_vs_da": true,
+        "rho_eff_vs_dm": true
+      },
+      "ld2_fractions": [
+        1.0
+      ],
       "tem_entry_id": "2024_08_19_low_agglomeration",
       "effective_density_condition_id": "low_agglomeration",
       "style": {
@@ -53,8 +67,14 @@
       "id": "high_agglomeration",
       "label": "High agglomeration",
       "enabled": true,
-      "include": {"dpp_vs_da": true, "rho_eff_vs_dm": true},
-      "ld2_fractions": [0.1, 0.05],
+      "include": {
+        "dpp_vs_da": true,
+        "rho_eff_vs_dm": true
+      },
+      "ld2_fractions": [
+        0.1,
+        0.05
+      ],
       "tem_entry_id": "2025_02_06_high_agglomeration",
       "effective_density_condition_id": "high_agglomeration",
       "style": {
@@ -73,7 +93,10 @@
       "id": "moderate_collapse",
       "label": "Moderate collapse",
       "enabled": false,
-      "include": {"dpp_vs_da": false, "rho_eff_vs_dm": true},
+      "include": {
+        "dpp_vs_da": false,
+        "rho_eff_vs_dm": true
+      },
       "ld2_fractions": [],
       "tem_entry_id": "",
       "effective_density_condition_id": "moderate_collapse",
@@ -93,7 +116,10 @@
       "id": "extensive_collapse",
       "label": "Extensive collapse",
       "enabled": false,
-      "include": {"dpp_vs_da": false, "rho_eff_vs_dm": true},
+      "include": {
+        "dpp_vs_da": false,
+        "rho_eff_vs_dm": true
+      },
       "ld2_fractions": [],
       "tem_entry_id": "",
       "effective_density_condition_id": "extensive_collapse",
@@ -110,7 +136,9 @@
       }
     }
   ],
-  "physics": {"material_density_kg_m3": 1860},
+  "physics": {
+    "material_density_kg_m3": 1860
+  },
   "references": {
     "dpp_vs_da": {
       "enabled": true,
@@ -182,7 +210,10 @@
     "axes": {
       "box": true,
       "layer": "top",
-      "tick_length": [0.02, 0.02],
+      "tick_length": [
+        0.02,
+        0.02
+      ],
       "tick_label_rotation": 0,
       "label_position_mode": "auto",
       "x_label_offset": 0.055,
@@ -206,12 +237,22 @@
       "interpreter": "none"
     },
     "dpp_vs_da": {
-      "position": [50, 50, 900, 500],
+      "position": [
+        50,
+        50,
+        900,
+        500
+      ],
       "x_limits": [],
       "y_limits": []
     },
     "rho_eff_vs_dm": {
-      "position": [150, 150, 900, 500],
+      "position": [
+        150,
+        150,
+        900,
+        500
+      ],
       "x_limits": [],
       "y_limits": []
     }

@@ -375,13 +375,19 @@ config/
 |   |-- main_ld2_from_main_scale_config.example.json
 |   `-- main_ld2_from_main_scatter_config.example.json
 |-- main_tem_analysis/
-|   |-- main_tem_analysis_config.example.json
-|   |-- main_tem_analysis_config.local.json
-|   |-- main_tem_analysis_config.local.file.json
-|   `-- main_tem_analysis_config.local.webtest.json
+|   `-- main_tem_analysis_config.example.json
 `-- main_valid/
     `-- main_valid_config.example.json
 ```
+
+The tree lists tracked examples only. Local copies are ignored.
+In the validation example, `sources.ld2.file` names
+`../../results/main_ld2_from_main_scatter/LD2_RESULTS_PLACEHOLDER.mat`.
+Set this placeholder to the selected LD2 result in the local config.
+For TEM, `entries[].entry_dir` and `outputs.data_root` are independent
+paths resolved relative to the config folder. Input file names within an
+entry are resolved relative to its `entry_dir`; `outputs.data_root`
+selects the output data folder.
 
 Config selection follows the script loaders:
 
