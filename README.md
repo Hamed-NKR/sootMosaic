@@ -650,6 +650,35 @@ Serve `data/main_valid_webtest/server/` on localhost port 8765, select
 `main_valid_config.local.webtest.json`, and run `main_valid_v3` to exercise the
 URL fallback without transferring the full experimental workspace.
 
+## Inversion configuration and instrument registry
+
+`UTILS.LOAD_MAIN_INV_CONFIG(file, data, campaign, opts)` reads the INV
+dictionary and resolves the `current` profile at stage INV. With no file
+argument it uses `SOOTMOSAIC_MAIN_INV_CONFIG`, then
+`config/main_inv/main_inv_config.local.json`, and falls back to the example
+when that default local file is absent. Local overlays use `extends`.
+The `article1_7658971` profile has no inversion stage and is refused.
+
+Pass scan values at the dictionary paths in their recorded units. A campaign
+is one table row with `values` and `reasons` structure cells, or a structure
+with those fields. Each campaign value needs a reason at the same path.
+Instrument-file settings take precedence over workbook cells; the reading
+record retains all differences. Other campaign fields use the recorded
+reading rule. Consumers use `cfg.si`, which is converted once after source
+selection; the original values remain beside it. Set `opts.RequiredPaths`
+to the inputs needed by the calling stage so missing data stop there.
+
+`config/instruments/instruments.json` holds cited instrument constants and
+`charging.json` holds named charge models. The primary model is
+`soft_xray_3082_tableB3`; the other two models are sensitivity cases.
+Source files and dictionaries have digest records. Charge coefficient tables
+remain empty with a `pending_patch_24` marker. Unquoted constants and open
+defaults remain documented placeholders in `cfg.pending`. Strict QA and
+release calls set `opts.Strict = true`, which rejects unknown keys and
+unresolved selected placeholders. Normal loads warn on unknown keys and
+allow inspection of the example. Explicit grid limits require
+`opts.TestFixture = true`. Configuration loading performs no inversion.
+
 ## Repository Map
 
 ```text

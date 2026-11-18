@@ -1,0 +1,461 @@
+{
+  "config_version": 1,
+  "model_profile": "current",
+  "mode": "tandem",
+  "campaigns": {
+    "table": "",
+    "ids": [],
+    "time_zone": "UTC"
+  },
+  "inputs": {
+    "smps_dir": "",
+    "aac_dir": "",
+    "database": "",
+    "database_reader": "sqlite",
+    "csv_fallback_dir": ""
+  },
+  "outputs": {
+    "root": "",
+    "source_id": "inv_effective_density",
+    "sha256_sidecar": true
+  },
+  "rng_seed": 1,
+  "instruments": {
+    "classifier": "3082",
+    "dma": "3081a",
+    "cpc": "3789",
+    "neutralizer": "3088",
+    "aac": "aac",
+    "impactor_nozzle_cm": null,
+    "impactor_flow_lpm": null
+  },
+  "checks": {
+    "gas_property_rel_tol": 0.005,
+    "flow_rel_tol": null,
+    "setpoint_rel_tol": null,
+    "impactor_d50_rel_tol": 0.1
+  },
+  "scan": {
+    "dma_sheath_flow_lpm": null,
+    "dma_aerosol_flow_lpm": null,
+    "counter_inlet_flow_lpm": null,
+    "dma_temperature_deg_c": null,
+    "dma_pressure_kpa": null,
+    "aac_temperature_deg_c": null,
+    "aac_pressure_kpa": null,
+    "logged_mean_free_path_nm": null,
+    "logged_viscosity_pa_s": null,
+    "reference_viscosity_pa_s": null,
+    "reference_mean_free_path_nm": null,
+    "reference_temperature_k": null,
+    "reference_pressure_kpa": null,
+    "reference_sutherland_k": null,
+    "up_time_s": null,
+    "retrace_time_s": null,
+    "voltage_low_v": null,
+    "voltage_high_v": null,
+    "delay_s": null,
+    "delay_adjustment_s": null,
+    "column_transit_s": null,
+    "channels_per_decade": null,
+    "impactor_d50_nm": null,
+    "equalizer_length_cm": null,
+    "equalizer_bore_cm": null,
+    "aac_setpoint_nm": null,
+    "aac_speed_rad_s": null,
+    "aac_sheath_flow_lpm": null,
+    "aac_sample_flow_lpm": null,
+    "aac_delay_s": null,
+    "aac_sampling_period_s": null,
+    "window_min_nm": null,
+    "window_max_nm": null,
+    "counting_flow_lpm": null,
+    "bin_time_s": 0.02,
+    "high_voltage_polarity": "negative",
+    "neutralizer_id": "3088",
+    "neutralizer_on": true,
+    "particle_polarity": "positive",
+    "dilution_factor": 1,
+    "software_dilution_factor": null,
+    "units": "",
+    "weight": "",
+    "timestamp": "",
+    "condition": "",
+    "group": "",
+    "mcc_on": [],
+    "dlc_on": [],
+    "valid": [],
+    "counts": [],
+    "dead_time_s": [],
+    "indices": [],
+    "dma_excess_flow_lpm": null
+  },
+  "transfer": {
+    "aac": {
+      "flow_balance": "balanced",
+      "model": "johnson2018_nonideal",
+      "width_a": null,
+      "width_b": null,
+      "width_c": null,
+      "width_error_percent": [],
+      "entrance_efficiency": null,
+      "effective_length_m": null,
+      "deposition_upper_weights": [],
+      "deposition_upper_rates": [],
+      "deposition_lower_coefficients": [],
+      "deposition_switch": null,
+      "width_diameter_unit_nm": null
+    },
+    "dma": {
+      "model": "stolzenburg2018_diffusing"
+    }
+  },
+  "charging": {
+    "model": "soft_xray_3082_tableB3",
+    "sensitivity_models": [
+      "kr85_wiedensohler",
+      "gopalakrishnan_2013"
+    ],
+    "max_charge": null,
+    "charge_limit_rule": "tail_converged",
+    "tail_tol": 0.001,
+    "range_policy": "warn",
+    "high_charge_switch_nm": 1000,
+    "above_range_model": "gunn",
+    "temperature_deg_c": null,
+    "coefficients": [],
+    "ion_mobility_ratio": null
+  },
+  "penetration": {
+    "model": "karlsson_martinsson2003",
+    "dma": "3081a",
+    "internal_paths": "3082",
+    "tubes": [],
+    "impactor_cut_factor_range": [
+      0.69,
+      1.3
+    ],
+    "impactor_sharpness_range": [
+      3,
+      9
+    ],
+    "dma_length_m": null,
+    "dma_electrostatic_factor": null,
+    "dma_equivalent_length_m": null,
+    "platform_neutralizer_length_m": null,
+    "inlet_hose_length_m": null,
+    "outlet_hose_length_m": null,
+    "impactor_length_m": null
+  },
+  "cpc": {
+    "efficiency_model": "unity",
+    "efficiency_file": "",
+    "unity_min_diameter_nm": null,
+    "unity_margin": null
+  },
+  "scan_response": {
+    "enabled": true,
+    "delay_reading": "mean_travel_time",
+    "desmear_check": "savitzky_golay",
+    "backsubstitution_check": true,
+    "tau_s_s": 0.233,
+    "tau_s_bracket_s": [
+      0.233,
+      0.39
+    ],
+    "sg_window": null,
+    "sg_order": null,
+    "counting_interval_s": null
+  },
+  "calibration": {
+    "k_dm": {
+      "enabled": true,
+      "offset": 1.27,
+      "coefficient": -3.598,
+      "exponent": -0.8376,
+      "out_of_range": "flag",
+      "reference_material": "PEG",
+      "source_id": "aac_k_calibration",
+      "data_file": "",
+      "range_nm": [
+        22,
+        600
+      ],
+      "reference_density_kg_m3": 1127,
+      "uncertainty": null,
+      "operating_condition": "",
+      "diameter_unit_nm": 1
+    }
+  },
+  "grid": {
+    "range_rule": "kernel_support",
+    "support_threshold": 0.001,
+    "resolution_rule": "converged",
+    "points_per_decade": 32,
+    "grid2d_points_per_decade": 12,
+    "statistic_tol_sd": 0.25,
+    "sd_rel_tol": 0.1,
+    "extent_step_decades": 0.15,
+    "refine_factor": 1.5,
+    "d_min_nm": null,
+    "d_max_nm": null,
+    "rho_bounds_kg_m3": [
+      20,
+      3000
+    ]
+  },
+  "inversion": {
+    "method": "tikhonov",
+    "prior_families": [
+      "tk0",
+      "tk1",
+      "tk2",
+      "exp"
+    ],
+    "prior_families_2d": [
+      "tk1",
+      "tk2"
+    ],
+    "family_rule": "pooled_evidence",
+    "family_scope": "instrument_mode",
+    "family_sensitivity": "per_scan_average",
+    "prior_mean": 0,
+    "stages": 1,
+    "nonnegative": true,
+    "lambda_selection": "evidence_marginal",
+    "lambda_hyperprior": "log_uniform",
+    "lambda_grid": {
+      "min": 1e-8,
+      "max": 1000,
+      "n": 111,
+      "scale": "lambda_ref",
+      "auto_widen": true,
+      "edge_points": 2,
+      "widen_decades": 2,
+      "refine_tol_sd": 0.01,
+      "tail_decades": 1
+    },
+    "length_scale_grid": {
+      "min_decades": 0.05,
+      "max_decades": 1,
+      "n": 20
+    },
+    "posterior": true,
+    "cross_checks": [
+      "twomey_markowski",
+      "gcv",
+      "l_curve",
+      "discrepancy",
+      "two_stage"
+    ],
+    "route_b_kernel_2d": false,
+    "twomey_iteration_limit": null,
+    "twomey_stopping_tol": null
+  },
+  "variance": {
+    "model": "poisson_two_pass",
+    "reduced_model": "pooled",
+    "aac_model": "pooled",
+    "floor_counts": 1,
+    "min_repeats": 2,
+    "unweighted_sensitivity": true,
+    "repeat_scope": "campaign_mode",
+    "repeat_treatment": "split_within_between",
+    "propagate_repeat_uncertainty": true
+  },
+  "observation": {
+    "route": "auto",
+    "route_a_analysis": "peak_fit_raw_concentration",
+    "mcc_off_charge_components": true,
+    "route_cross_check": true
+  },
+  "peak_fit": {
+    "components": "latent_population",
+    "weighting": "poisson_likelihood",
+    "sensitivity_weighting": [
+      "poisson_two_pass",
+      "unweighted"
+    ],
+    "window": "all_channels",
+    "first_width_min": 0.0409,
+    "gsd_bound": 0.04,
+    "window_gm_check": true,
+    "max_populations": 2,
+    "population_test": {
+      "method": "bootstrap_lrt",
+      "alpha": 0.01,
+      "replicates": 200
+    }
+  },
+  "moments": {
+    "range": "scan",
+    "interval_method": "delta",
+    "withhold_structured_intervals": true,
+    "edge_fraction_max": 0.05
+  },
+  "averaging": {
+    "interval_level": 0.95,
+    "support": "common"
+  },
+  "op_range": {
+    "dma": "3081a",
+    "aac": "aac",
+    "voltage_limits_v": [],
+    "speed_limits_rad_s": []
+  },
+  "gas": {
+    "dm_root_rel_tol": 1e-10,
+    "model": "",
+    "slip_model": "",
+    "kb_j_k": null,
+    "e_c": null,
+    "eps0_f_m": null
+  },
+  "report": {
+    "sensitivity_runs": [
+      "charge_models",
+      "tau_s_upper",
+      "unweighted_fit",
+      "prior_family",
+      "impactor_cut",
+      "impactor_sharpness"
+    ],
+    "u_budget": true,
+    "figures": true,
+    "above_window": true,
+    "above_window_status": "exploratory",
+    "route_b_requires_reduction_validation": true,
+    "route_b_requires_charge_setting": true,
+    "bound_level": 0.95,
+    "d_cap_nm": 1400,
+    "d_floor_nm": null
+  },
+  "nuisance": {
+    "enabled": false,
+    "window_start_max_nm": 30,
+    "cmd_bounds_nm": [
+      5,
+      16
+    ],
+    "gsd_bounds": [
+      1.1,
+      1.8
+    ]
+  },
+  "uncertainty": {
+    "nonlinear": "delta",
+    "sampler_check": "gibbs",
+    "mode": "parametric_bootstrap",
+    "kernel_draws": {
+      "method": "lhs",
+      "start": 20,
+      "doubling": true,
+      "sd_rel_tol": 0.05
+    },
+    "kernel_terms": [
+      "width_factor",
+      "aac_sizing",
+      "dma_flow",
+      "charge_model",
+      "tau_s",
+      "penetration"
+    ],
+    "draws_min": 300,
+    "interval_mc_rel_tol": 0.05
+  },
+  "diagnostics": {
+    "lambda_width_max_decades": 0.5,
+    "predictive_level": 0.998,
+    "predictive_replicates": 2000,
+    "residual_alpha": 0.01,
+    "predictive_p_bounds": [
+      0.005,
+      0.995
+    ],
+    "lambda_difference_decades": 1,
+    "statistic_difference_sd": 1,
+    "active_bound_share_max": 0.2,
+    "sampler_chains": 4,
+    "sampler_rhat_max": 1.01,
+    "sampler_unresolved_policy": "flag",
+    "updown_check": true,
+    "route_check": true,
+    "response_gain_min": 0.9,
+    "response_cosine_min": 0.5,
+    "nuisance_share_max": 0.01,
+    "bimodal_dip_sd": 2,
+    "bimodal_draw_share": 0.95
+  },
+  "exclusion": {
+    "invalid_record": true,
+    "flow_rel_tol": 0.05,
+    "settled_dates": [
+      "2025-02-04",
+      "2025-02-05"
+    ],
+    "selection": "campaign",
+    "flags_remove_data": false,
+    "charger_limit_cm3_inv": 1000000,
+    "counter_limit_cm3_inv": null
+  },
+  "smps_1d": {
+    "route": "auto",
+    "statistics": {
+      "average": "per_scan",
+      "primary": "moments"
+    },
+    "dlc_policy": "as_delivered"
+  },
+  "aac_1d": {
+    "route": "auto",
+    "transmission_dm_source": "tandem_fit",
+    "delay_reading": "logged",
+    "updown_check": true,
+    "row_operation": "both",
+    "counting_flow_lpm": null,
+    "scan_response": {
+      "tau_s_s": null
+    },
+    "tube": {
+      "length_m": null,
+      "bore_mm": null
+    },
+    "resolution_warn": null
+  },
+  "mass": {
+    "source": "smps_tandem"
+  },
+  "derived": {
+    "beta": null,
+    "delta": null,
+    "g_dma": null,
+    "charge_sum": null,
+    "k_dm": null,
+    "tau_s_over_tau_v": null,
+    "variance_a": null,
+    "variance_c": null,
+    "cmd_nm": null,
+    "mass_ugm3": null,
+    "sample_volume_m3": null,
+    "tau_v_s": null,
+    "diffusion_coordinate": "",
+    "penetration_endpoint": "",
+    "repeat_independence": "",
+    "synthetic_repeats": "",
+    "start_value": "",
+    "report_units": "",
+    "provenance_policy": ""
+  },
+  "statistics": {
+    "kurtosis": ""
+  },
+  "geometry": {
+    "dma_inner_radius_m": null,
+    "dma_outer_radius_m": null,
+    "dma_length_m": null,
+    "aac_inner_radius_m": null,
+    "aac_outer_radius_m": null,
+    "aac_length_m": null
+  },
+  "model_overrides": {}
+}

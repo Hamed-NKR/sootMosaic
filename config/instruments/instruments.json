@@ -1,0 +1,464 @@
+{
+  "config_version": 1,
+  "entries": [
+    {
+      "id": "3081a",
+      "kind": "dma",
+      "constants": {
+        "inner_radius_m": 0.00937,
+        "outer_radius_m": 0.01961,
+        "length_m": 0.44369,
+        "penetration_length_m": 7.1,
+        "electrostatic_penetration": 0.98,
+        "voltage_limits_v": []
+      },
+      "sources": [
+        {
+          "keys": [
+            "inner_radius_m"
+          ],
+          "citation": "3082 manual; W9 I10-I12",
+          "page": "not quoted in supplied design",
+          "note": ""
+        },
+        {
+          "keys": [
+            "outer_radius_m"
+          ],
+          "citation": "3082 manual; W9 I10-I12",
+          "page": "not quoted in supplied design",
+          "note": ""
+        },
+        {
+          "keys": [
+            "length_m"
+          ],
+          "citation": "3082 manual; W9 I10-I12",
+          "page": "not quoted in supplied design",
+          "note": ""
+        },
+        {
+          "keys": [
+            "penetration_length_m"
+          ],
+          "citation": "Karlsson and Martinsson (2003), Table 6",
+          "page": "621",
+          "note": "Proposed cylindrical T1-T3 proxy, not a calibration of 3081A; INV addendum C.11"
+        },
+        {
+          "keys": [
+            "electrostatic_penetration"
+          ],
+          "citation": "Karlsson and Martinsson (2003), Table 6",
+          "page": "621",
+          "note": "Proposed proxy; type in Table 1, p. 606"
+        },
+        {
+          "keys": [
+            "voltage_limits_v"
+          ],
+          "citation": "Kiasadegh et al. (2026), Table 1",
+          "page": "not quoted in supplied design",
+          "note": "Patch 31 supplies operating limits"
+        }
+      ],
+      "pending": [
+        "voltage_limits_v"
+      ]
+    },
+    {
+      "id": "3082",
+      "kind": "classifier",
+      "constants": {
+        "dma_equivalent_length_m": 9.1,
+        "platform_neutralizer_length_m": 1.51,
+        "inlet_hose_length_m": 0.33,
+        "outlet_hose_length_m": 0.25,
+        "impactor_length_m": 2.1
+      },
+      "sources": [
+        {
+          "keys": [
+            "dma_equivalent_length_m"
+          ],
+          "citation": "SMPS software manual version 11, Appendix B",
+          "page": "B-14",
+          "note": ""
+        },
+        {
+          "keys": [
+            "platform_neutralizer_length_m"
+          ],
+          "citation": "SMPS software manual version 11, Appendix B",
+          "page": "B-14",
+          "note": ""
+        },
+        {
+          "keys": [
+            "inlet_hose_length_m"
+          ],
+          "citation": "SMPS software manual version 11, Appendix B",
+          "page": "B-14",
+          "note": ""
+        },
+        {
+          "keys": [
+            "outlet_hose_length_m"
+          ],
+          "citation": "SMPS software manual version 11, Appendix B",
+          "page": "B-14",
+          "note": ""
+        },
+        {
+          "keys": [
+            "impactor_length_m"
+          ],
+          "citation": "SMPS software manual version 11, Appendix B",
+          "page": "B-14",
+          "note": ""
+        }
+      ],
+      "pending": []
+    },
+    {
+      "id": "3789",
+      "kind": "cpc",
+      "constants": {
+        "counting_flow_lpm": 0.3,
+        "single_count_limit_cm3_inv": null
+      },
+      "sources": [
+        {
+          "keys": [
+            "counting_flow_lpm"
+          ],
+          "citation": "CPC 3789 manual",
+          "page": "5-3",
+          "note": ""
+        },
+        {
+          "keys": [
+            "single_count_limit_cm3_inv"
+          ],
+          "citation": "CPC 3789 manual; W20 section 1.11",
+          "page": "not quoted in supplied design",
+          "note": "Patch 21 supplies sourced single-count range"
+        }
+      ],
+      "pending": [
+        "single_count_limit_cm3_inv"
+      ]
+    },
+    {
+      "id": "3088",
+      "kind": "neutralizer",
+      "constants": {},
+      "sources": [
+        {
+          "keys": [],
+          "citation": "3082 manual, Table B-3; Knobel et al. (2013)",
+          "page": "B-9 to B-11",
+          "note": "Soft x-ray neutralizer named by export header; no unquoted constants"
+        }
+      ],
+      "pending": []
+    },
+    {
+      "id": "aac",
+      "kind": "aac",
+      "constants": {
+        "inner_radius_m": 0.056,
+        "outer_radius_m": 0.06,
+        "length_m": 0.206,
+        "width_a": -1.73,
+        "width_b": -0.0316,
+        "width_c": 1.999,
+        "width_error_percent": [
+          -12.8,
+          17.4
+        ],
+        "entrance_efficiency": 0.8,
+        "effective_length_m": 46,
+        "deposition_upper_weights": [
+          0.819,
+          0.0975,
+          0.0325
+        ],
+        "deposition_upper_rates": [
+          11.5,
+          70.1,
+          179
+        ],
+        "deposition_lower_coefficients": [
+          1,
+          -5.5,
+          3.77,
+          0.814
+        ],
+        "deposition_switch": 0.007,
+        "speed_limits_rad_s": [],
+        "width_diameter_unit_nm": 1
+      },
+      "sources": [
+        {
+          "keys": [
+            "inner_radius_m"
+          ],
+          "citation": "AAC manual v2.43, Appendix F.1",
+          "page": "152",
+          "note": ""
+        },
+        {
+          "keys": [
+            "outer_radius_m"
+          ],
+          "citation": "AAC manual v2.43, Appendix F.1",
+          "page": "152",
+          "note": ""
+        },
+        {
+          "keys": [
+            "length_m"
+          ],
+          "citation": "AAC manual v2.43, Appendix F.1",
+          "page": "152",
+          "note": ""
+        },
+        {
+          "keys": [
+            "width_a"
+          ],
+          "citation": "Johnson et al. (2018), Table 1, AAC All",
+          "page": "not quoted in supplied design",
+          "note": "Width fit uses diameter in nm"
+        },
+        {
+          "keys": [
+            "width_b"
+          ],
+          "citation": "Johnson et al. (2018), Table 1, AAC All",
+          "page": "not quoted in supplied design",
+          "note": "Width fit uses diameter in nm"
+        },
+        {
+          "keys": [
+            "width_c"
+          ],
+          "citation": "Johnson et al. (2018), Table 1, AAC All",
+          "page": "not quoted in supplied design",
+          "note": "Width fit uses diameter in nm"
+        },
+        {
+          "keys": [
+            "width_error_percent"
+          ],
+          "citation": "Johnson et al. (2018)",
+          "page": "662",
+          "note": ""
+        },
+        {
+          "keys": [
+            "entrance_efficiency"
+          ],
+          "citation": "Johnson et al. (2018)",
+          "page": "not quoted in supplied design",
+          "note": ""
+        },
+        {
+          "keys": [
+            "effective_length_m"
+          ],
+          "citation": "Johnson et al. (2018)",
+          "page": "not quoted in supplied design",
+          "note": ""
+        },
+        {
+          "keys": [
+            "deposition_upper_weights"
+          ],
+          "citation": "Johnson et al. (2018), Eq. 13",
+          "page": "not quoted in supplied design",
+          "note": ""
+        },
+        {
+          "keys": [
+            "deposition_upper_rates"
+          ],
+          "citation": "Johnson et al. (2018), Eq. 13",
+          "page": "not quoted in supplied design",
+          "note": ""
+        },
+        {
+          "keys": [
+            "deposition_lower_coefficients"
+          ],
+          "citation": "Johnson et al. (2018), Eq. 14",
+          "page": "not quoted in supplied design",
+          "note": ""
+        },
+        {
+          "keys": [
+            "deposition_switch"
+          ],
+          "citation": "Johnson et al. (2018), Eqs. 13-14",
+          "page": "not quoted in supplied design",
+          "note": ""
+        },
+        {
+          "keys": [
+            "speed_limits_rad_s"
+          ],
+          "citation": "Kiasadegh et al. (2026), Table 1",
+          "page": "not quoted in supplied design",
+          "note": "Patch 31 supplies operating limits"
+        },
+        {
+          "keys": [
+            "width_diameter_unit_nm"
+          ],
+          "citation": "Johnson et al. (2018), Table 1",
+          "page": "not quoted in supplied design",
+          "note": "Unit reference for the diameter coordinate in nm; use d_si / diameter_unit_si"
+        }
+      ],
+      "pending": [
+        "speed_limits_rad_s"
+      ]
+    },
+    {
+      "id": "aac_prototype_tavakoli2013",
+      "kind": "aac",
+      "constants": {
+        "inner_radius_m": 0.043,
+        "outer_radius_m": 0.045,
+        "length_m": 0.21
+      },
+      "sources": [
+        {
+          "keys": [
+            "inner_radius_m"
+          ],
+          "citation": "Tavakoli and Olfert (2013), Table 1",
+          "page": "920",
+          "note": "Prototype, never selected by default"
+        },
+        {
+          "keys": [
+            "outer_radius_m"
+          ],
+          "citation": "Tavakoli and Olfert (2013), Table 1",
+          "page": "920",
+          "note": "Prototype, never selected by default"
+        },
+        {
+          "keys": [
+            "length_m"
+          ],
+          "citation": "Tavakoli and Olfert (2013), Table 1",
+          "page": "920",
+          "note": "Prototype, never selected by default"
+        }
+      ],
+      "pending": []
+    },
+    {
+      "id": "impactor_0071",
+      "kind": "impactor",
+      "constants": {
+        "nozzle_cm": 0.071,
+        "flow_range_lpm": [
+          0.6,
+          2.1
+        ],
+        "stk50": 0.23
+      },
+      "sources": [
+        {
+          "keys": [
+            "nozzle_cm"
+          ],
+          "citation": "3082 manual, Tables 2-10 and 4-1",
+          "page": "2-15; 4-7",
+          "note": ""
+        },
+        {
+          "keys": [
+            "flow_range_lpm"
+          ],
+          "citation": "3082 manual, Tables 2-10 and 4-1",
+          "page": "2-15; 4-7",
+          "note": ""
+        },
+        {
+          "keys": [
+            "stk50"
+          ],
+          "citation": "3082 manual, Eq. B-1",
+          "page": "B-4",
+          "note": ""
+        }
+      ],
+      "pending": []
+    },
+    {
+      "id": "impactor_pending_2",
+      "kind": "impactor",
+      "constants": {
+        "nozzle_cm": null,
+        "flow_range_lpm": []
+      },
+      "sources": [
+        {
+          "keys": [
+            "nozzle_cm"
+          ],
+          "citation": "3082 manual, Table 2-10; W26/W27 section 5",
+          "page": "2-15",
+          "note": "Other nozzle not quoted in supplied designs; patch 25 manual transcription required"
+        },
+        {
+          "keys": [
+            "flow_range_lpm"
+          ],
+          "citation": "3082 manual, Table 2-10; W26/W27 section 5",
+          "page": "2-15",
+          "note": "Flow range not quoted in supplied designs; patch 25 manual transcription required"
+        }
+      ],
+      "pending": [
+        "nozzle_cm",
+        "flow_range_lpm"
+      ]
+    },
+    {
+      "id": "impactor_pending_3",
+      "kind": "impactor",
+      "constants": {
+        "nozzle_cm": null,
+        "flow_range_lpm": []
+      },
+      "sources": [
+        {
+          "keys": [
+            "nozzle_cm"
+          ],
+          "citation": "3082 manual, Table 2-10; W26/W27 section 5",
+          "page": "2-15",
+          "note": "Other nozzle not quoted in supplied designs; patch 25 manual transcription required"
+        },
+        {
+          "keys": [
+            "flow_range_lpm"
+          ],
+          "citation": "3082 manual, Table 2-10; W26/W27 section 5",
+          "page": "2-15",
+          "note": "Flow range not quoted in supplied designs; patch 25 manual transcription required"
+        }
+      ],
+      "pending": [
+        "nozzle_cm",
+        "flow_range_lpm"
+      ]
+    }
+  ]
+}
