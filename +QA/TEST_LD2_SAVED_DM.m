@@ -1,21 +1,23 @@
-function report = test_ld2_saved_dm(repoRoot)
+function report = TEST_LD2_SAVED_DM(repoRoot)
 % "TEST_LD2_SAVED_DM" checks that the saved mobility diameter of LD2 equals...
-%   ...the mobility diameter of the population at save time.
+%     ...the mobility diameter of the population at save time.
 % ----------------------------------------------------------------------- %
 %
-%   report = QA.TEST_LD2_SAVED_DM(repoRoot)
+% Inputs:
+%     repoRoot: sootMosaic root folder (default the folder above +QA)
+% ----------------------------------------------------------------------- %
 %
-%   Input
-%   - repoRoot, sootMosaic root folder (default, the folder above +QA)
+% Outputs:
+%     report: Structure array with fields name and pass, one entry per case
+% ----------------------------------------------------------------------- %
 %
-%   Output
-%   - report, struct array with fields name and pass, one entry per case
-%
-%   Cases 1 to 7 run UTILS.CHECK_SAVED_DM on synthetic populations. Cases...
-%   ...8 and 9 read the two LD2 save sites and test that each one stores...
-%   ...pars_LD2.dm, calls the check on that field after the store, and...
-%   ...never stores pars_LD2.da in dm. Any failed case stops with the...
-%   ...identifier sootMosaic:QA:LD2SavedDmFailed.
+% Cases 1 to 7 run UTILS.CHECK_SAVED_DM on synthetic populations. Cases...
+%     ...8 and 9 read the two LD2 save sites and test that each one stores...
+%     ...pars_LD2.dm, calls the check on that field after the store, and...
+%     ...never stores pars_LD2.da in dm. Any failed case stops with the...
+%     ...identifier sootMosaic:QA:LD2SavedDmFailed.
+% Usage with the root folder...
+%     ...report = QA.TEST_LD2_SAVED_DM(repoRoot)
 % ----------------------------------------------------------------------- %
 
 if nargin < 1 || isempty(repoRoot)

@@ -1,53 +1,61 @@
-function report = audit_aggregate_overlap(repoRoot, varargin)
-% AUDIT_AGGREGATE_OVERLAP  Geometry and index-integrity audit of the
-%   sootMosaic two-stage (scatter -> LD2) workflow.
+function report = AUDIT_AGGREGATE_OVERLAP(repoRoot, varargin)
+% "AUDIT_AGGREGATE_OVERLAP" audits geometry and index integrity of the...
+%     ...sootMosaic two-stage (scatter -> LD2) workflow.
+% ----------------------------------------------------------------------- %
 %
-%   report = QA.AUDIT_AGGREGATE_OVERLAP(repoRoot, Name, Value, ...)
+% Inputs:
+%     repoRoot: Root folder inferred, when omitted or empty, as the parent...
+%         ...of the directory containing this file
+%     varargin: Name and value options with defaults pointing at the...
+%         ...2026-05-16 from-main-scatter LD2 run
+%         PreScatterFile: data/main_scatter/LD1__gamma_1_35__merge.mat
+%         PostScatterFile:...
+%             ...data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat
+%         LD2FinalFile:...
+%             ...results/.../LD2__from_main_scatter__final__...
+%             ...2026-06-28_20-05-29.mat
+%         CheckpointFiles: 'auto' (all *checkpoint*.mat next to the final...
+%             ...file) or cellstr
+%         RelativeThresholds: [1e-12 1e-6 1e-3 1e-2]
+%         AnalyzeInteraggregate: true
+%         AnalyzePreScatter: true
+%         MatchPrePost: true
+%         RunPropertyTests: true
+%         RenderWorst: false
+%         MaxRender: 10
+%         SaveResults: false
+%         OutputDir: <repoRoot>/results/overlap_audit
+%         Seed: 20260718 (property-test RNG stream seed)
+%         Verbose: true
+% ----------------------------------------------------------------------- %
 %
-%   Measures primary-particle overlap (internal to each aggregate cell and
-%   between independent aggregate cells, with and without periodic
-%   minimum-image displacement) at every saved stage:
-%     1. candidate raw pre-scatter library (pp0),
-%     2. post-scatter library consumed by LD2 (pars_out.pp),
-%     3. parsdata(1:5) saved LD2 populations,
-%     4. every LD2 checkpoint (pars_LD2.pp),
-%     5. final pars_LD2.pp.
-%   It also audits column-1 primary IDs, column-6 subaggregate labels,
-%   aggregate-level array alignment, matches post-scatter aggregates back to
-%   the candidate pre-scatter library, verifies the post-scatter ->
-%   parsdata(1) transformation is rigid, localizes the earliest overlap in
-%   time, and runs isolated property tests against COL.CONNECT, COL.GROW,
-%   and COL.UNITE using in-memory aggregate fixtures.
+% Outputs:
+%     report: Geometry and index-integrity audit results
+% ----------------------------------------------------------------------- %
 %
-%   Overlap detection is independent of COL.OVR. The implementation uses an
-%   exact voxel-hash broad phase validated against brute force and requires
-%   no additional toolboxes.
-%
-%   Options (defaults point at the 2026-05-16 from-main-scatter LD2 run):
-%     'PreScatterFile'       data/main_scatter/LD1__gamma_1_35__merge.mat
-%     'PostScatterFile'      data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat
-%     'LD2FinalFile'         results/.../LD2__from_main_scatter__final__2026-06-28_20-05-29.mat
-%     'CheckpointFiles'      'auto' (all *checkpoint*.mat next to the final file) or cellstr
-%     'RelativeThresholds'   [1e-12 1e-6 1e-3 1e-2]
-%     'AnalyzeInteraggregate' true
-%     'AnalyzePreScatter'    true
-%     'MatchPrePost'         true
-%     'RunPropertyTests'     true
-%     'RenderWorst'          false
-%     'MaxRender'            10
-%     'SaveResults'          false
-%     'OutputDir'            <repoRoot>/results/overlap_audit
-%     'Seed'                 20260718 (property-test RNG stream seed)
-%     'Verbose'              true
-%
-%   Example:
-%     repoRoot = 'C:\path\to\sootMosaic';
-%     addpath(repoRoot);
-%     report = QA.audit_aggregate_overlap(repoRoot, 'AnalyzeInteraggregate', true);
-%
-%   When repoRoot is omitted or empty it is inferred as the parent folder of
-%   the directory containing this file.
-
+% Primary-particle overlap measured within each aggregate cell and between...
+%     ...independent aggregate cells, with and without periodic minimum-...
+%     ...image displacement, at every saved stage.
+%     1. Candidate raw pre-scatter library (pp0)
+%     2. Post-scatter library consumed by LD2 (pars_out.pp)
+%     3. parsdata(1:5) saved LD2 populations
+%     4. Every LD2 checkpoint (pars_LD2.pp)
+%     5. Final pars_LD2.pp
+% Audits of column-1 primary IDs, column-6 subaggregate labels and...
+%     ...aggregate-level array alignment. Post-scatter aggregates matched...
+%     ...back to the candidate pre-scatter library, post-scatter ->...
+%     ...parsdata(1) transformation verified as rigid, and earliest overlap...
+%     ...localized in time. Isolated property tests against COL.CONNECT,...
+%     ...COL.GROW and COL.UNITE using in-memory aggregate fixtures.
+% Overlap detection independent of COL.OVR, using an exact voxel-hash broad...
+%     ...phase validated against brute force, with no additional toolboxes.
+% Usage with name and value options...
+%     ...report = QA.AUDIT_AGGREGATE_OVERLAP(repoRoot, Name, Value, ...)
+% Example with the root folder added to the path...
+%     ...repoRoot = 'C:\path\to\sootMosaic'
+%     ...addpath(repoRoot)
+%     ...report = QA.AUDIT_AGGREGATE_OVERLAP(repoRoot,...
+%     ...    'AnalyzeInteraggregate', true)
 % ----------------------------------------------------------------------- %
 
 if nargin < 1 || isempty(repoRoot)
@@ -224,7 +232,7 @@ function opts = parse_options(repoRoot, varargin)
 %PARSE_OPTIONS Parse file locations, analysis controls, and output options.
 %   Defaults reproduce the archived scatter-to-LD2 run used by this audit.
 p = inputParser;
-p.FunctionName = 'audit_aggregate_overlap';
+p.FunctionName = 'AUDIT_AGGREGATE_OVERLAP';
 dataDir = fullfile(repoRoot, 'data', 'main_scatter');
 resDir = fullfile(repoRoot, 'results', 'main_ld2_from_main_scatter', ...
     'LD2__scaled_aggs_for_LD2_from_main_scatter__2026-05-16');
