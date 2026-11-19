@@ -99,7 +99,7 @@ for aggregate_index = 1:n
     snapshot.da(aggregate_index) = ...
         (62 + 24 * aggregate_index + 8 * snapshot_index) * 1e-9;
     snapshot.dg(aggregate_index) = 1.38 * snapshot.da(aggregate_index);
-    snapshot.dm(aggregate_index) = snapshot.da(aggregate_index); % Known LD2 writer behavior.
+    snapshot.dm(aggregate_index) = snapshot.da(aggregate_index); % Synthetic placeholder, validation recomputes dm without a saved model.
 end
 
 end
