@@ -105,10 +105,10 @@ cfg.charge_models = cell(size(ids));
 for k = 1:numel(ids)
     item = pick(charging.models, ids{k});
     cfg.charge_models{k} = item;
-    if strcmp(item.coefficients_state, 'pending_patch_24') && ...
+    if strcmp(item.coefficients_state, 'pending') && ...
             isempty(item.coefficients)
         pending(['charging.' item.id '.coefficients'], ...
-            'Patch 24 supplies the cited coefficient table.');
+            'The cited coefficient table is unavailable.');
     elseif ~strcmp(item.coefficients_state, 'ready') || ...
             isempty(item.coefficients)
         fail('InvalidChargeTable', 'Charge table marker and contents disagree.');
@@ -154,7 +154,7 @@ for k = 1:numel(rows)
             sources.data = 'kr85_wiedensohler';
         end
     end
-    sources.campaign = get_path(values, p);
+    sources.campaign = get_path(values, option(row, 'campaign_from', p));
     sources.derived = get_path(derived, p);
     sources.registry = get_path(registry, option(row, 'registry_path', ''));
     sources.profile = get_path(cfg.model_params, ...
@@ -167,7 +167,7 @@ for k = 1:numel(rows)
     if isempty(sources.config) && ~isempty(fallback)
         sources.config = get_path(registry, fallback);
     end
-    reason = get_path(reasons, p);
+    reason = get_path(reasons, option(row, 'campaign_from', p));
     if isempty(reason), reason = ''; end
     if ~isempty(sources.campaign) && ...
             ~(ischar(reason) && isrow(reason) && ~isempty(strtrim(reason)))

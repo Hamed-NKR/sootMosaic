@@ -5,7 +5,7 @@
       "id": "soft_xray_3082_tableB3",
       "ion_mobility_ratio": 0.975,
       "coefficients": [],
-      "coefficients_state": "pending_patch_24",
+      "coefficients_state": "pending",
       "citation": "3082 manual, Table B-3; Knobel et al. (2013)",
       "page": "B-9 to B-11",
       "ratio_note": "3082 manual Tables B-2 and B-3"
@@ -14,7 +14,7 @@
       "id": "kr85_wiedensohler",
       "ion_mobility_ratio": 0.875,
       "coefficients": [],
-      "coefficients_state": "pending_patch_24",
+      "coefficients_state": "pending",
       "citation": "Wiedensohler (1988); Wiedensohler et al. (2012), Table A7; 3082 manual Table B-2",
       "page": "681-682; manual page not quoted",
       "ratio_note": "3082 manual Tables B-2 and B-3"
@@ -23,10 +23,10 @@
       "id": "gopalakrishnan_2013",
       "ion_mobility_ratio": null,
       "coefficients": [],
-      "coefficients_state": "pending_patch_24",
+      "coefficients_state": "pending",
       "citation": "Gopalakrishnan et al. (2013)",
       "page": "not quoted in supplied design",
-      "ratio_note": "Not quoted; patch 24 supplies sourced model parameters"
+      "ratio_note": "The cited higher-charge model parameters are unavailable."
     }
   ]
 }

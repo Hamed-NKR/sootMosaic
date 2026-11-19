@@ -125,7 +125,7 @@
       "kind": "cpc",
       "constants": {
         "counting_flow_lpm": 0.3,
-        "single_count_limit_cm3_inv": null
+        "single_count_limit_cm3_inv": 200000
       },
       "sources": [
         {
@@ -140,14 +140,12 @@
           "keys": [
             "single_count_limit_cm3_inv"
           ],
-          "citation": "CPC 3789 manual; W20 section 1.11",
-          "page": "not quoted in supplied design",
-          "note": "Patch 21 supplies sourced single-count range"
+          "citation": "CPC 3789 operation manual revision C (2021)",
+          "page": "5-2",
+          "note": "Upper concentration for single particle counting"
         }
       ],
-      "pending": [
-        "single_count_limit_cm3_inv"
-      ]
+      "pending": []
     },
     {
       "id": "3088",

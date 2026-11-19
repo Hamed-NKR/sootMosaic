@@ -157,6 +157,13 @@ copyfile('config/main_inv/main_inv_config.example.json', ...
 cfg_inv = UTILS.LOAD_MAIN_INV_CONFIG;
 ```
 
+Select `mode` and its route. For database CSV input, export
+`CatenaDataRecord`, `CatenaHeaderRecord`, and `CatenaDeviceRecord` as same-named
+CSV files with column headers. Set `inputs.database_reader` to `csv` and
+`inputs.csv_fallback_dir` to their directory. Supply recorded scan settings,
+including `scan.counting_flow_lpm` for SMPS, and campaign dilution to the
+loader. Select SASS row handling with `aac_1d.row_operation`.
+
 ### 4. Data
 
 Generate simulation inputs in pipeline order and place measured inputs under
@@ -236,16 +243,23 @@ pairs in `results/main_valid/`. Its `runs/<timestamp>/` folder holds the
 resolved configuration, manifest, metrics, predictions, condition summaries,
 and `validation_results.mat`.
 
+Import files with the matching reader, then select campaign scans with
+`INV.SELECT_SCANS(imports, cases, cfg)`. Resolve each selected scan and its
+campaign record before calling `INV.OBSERVATION`. For AAC rows, convert
+recorded pressure from Pa to kPa for the loader. AAC route B also requires
+the correction factors described in `OBSERVATION`. Use `INV.POOL_SCANS` for
+compatible repeat summaries.
+
 ### 6. Checking the install
 
-Run all 14 QA functions. A pass prints one `PASS TEST_...`
+Run all 15 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 14)
+assert(numel(checks) == 15)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -502,11 +516,21 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `config/main_tem_analysis/` | TEM inputs, analysis, and figure settings |
 | `config/main_valid/` | Validation inputs, condition mappings, and exports |
 | `config/main_inv/` | Inversion configuration example and key dictionary |
+| `config/main_inv/main_inv_config.example.json` | Inversion configuration example |
+| `config/main_inv/main_inv.keys.json` | Inversion settings and reading rules |
+| `config/instruments/charging.json` | Published charge-model coefficients |
 | `config/instruments/` | Instrument constants, charge models, and dictionary |
 | `config/profiles/` | Model profiles and dictionary |
 | `config/sources/` | Dataset registry and dictionary |
 | `+COL/` | Collision detection, connection, and aggregate growth |
 | `+DEPOT/` | Additional simulation and analysis scripts |
+| `+INV/` | Instrument import and inversion functions |
+| `+INV/READ_SMPS.m` | Labeled SMPS exports |
+| `+INV/READ_SMPS_DB.m` | Raw SMPS database records and CSV imports |
+| `+INV/READ_AAC.m` | SASS and AACS scans with recorded row conditions |
+| `+INV/SELECT_SCANS.m` | Campaign scan selection, exclusions, and dilution records |
+| `+INV/OBSERVATION.m` | Route-specific observations and dilution conversion |
+| `+INV/POOL_SCANS.m` | Repeat summaries on common diameter bins |
 | `+PAR/` | Particle initialization, sizing, projection, and geometry |
 | `+QA/` | Synthetic tests and aggregate geometry checks |
 | `+TRANSP/` | Transport properties, mobility, marching, and boundaries |
@@ -560,3 +584,8 @@ Generated data, `results/`, `outputs/`, `.sootmosaic-cache/`, and
 12. Eggersdorfer, M. L., & Pratsinis, S. E. (2014). Agglomerates and
     aggregates of nanoparticles made in the gas phase. Advanced Powder
     Technology, 25(1), 71-90.
+13. Kiasadegh, M., Sipkens, T. A., Symonds, J. P. R., & Olfert, J. S.
+    (2026). Practical considerations for measuring effective density:
+    Operational tradeoffs in resolution, characteristic scan time, and
+    calibration. Aerosol Science and Technology, 60(7), 695-714.
+    DOI 10.1080/02786826.2026.2659050.

@@ -20,7 +20,7 @@ warning('on', 'sootMosaic:CONFIG_READ:UnknownKey');
 warning('on', 'sootMosaic:CONFIG_DATA_RULE:Mismatch');
 names = {'example without a local file', 'dictionary coverage both ways', ...
     'recorded units to SI', 'D data only and required missing value', ...
-    'D>C data and fallback', 'C ignores measured alternatives', ...
+    'recorded counting flow and AAC fallback', 'C ignores measured alternatives', ...
     'C~D comparison and tolerance', 'R selection and database geometry', ...
     'P current gas slip and constants', 'W>D>C campaign and reason', ...
     'instrument file wins over workbook', 'X supplied and configured refusal', ...
@@ -127,17 +127,18 @@ switch index
         fails(@() load_config(file, data, campaign, opts), ...
             'sootMosaic:LOAD_MAIN_INV_CONFIG:ConfiguredSource');
     case 5
-        file = overlay(opts, struct('scan', struct('counting_flow_lpm', .4)));
         data.scan.counting_flow_lpm = .3;
-        cfg = load_config(file, data, campaign, opts);
+        cfg = load_config(example, data, campaign, opts);
         near(cfg.scan.counting_flow_lpm, .3);
-        cfg = load_config(file, struct(), campaign, opts);
-        near(cfg.scan.counting_flow_lpm, .4);
         r = reading(cfg, 'scan.counting_flow_lpm');
-        check(r.from_config);
+        check(strcmp(r.source, 'data'));
         cfg = load_config(example, struct(), campaign, opts);
-        r = reading(cfg, 'scan.counting_flow_lpm');
+        check(isempty(cfg.scan.counting_flow_lpm));
+        r = reading(cfg, 'aac_1d.counting_flow_lpm');
         check(strcmp(r.source, 'registry'));
+        file = overlay(opts, struct('scan', struct('counting_flow_lpm', .4)));
+        fails(@() load_config(file, data, campaign, opts), ...
+            'sootMosaic:LOAD_MAIN_INV_CONFIG:ConfiguredSource');
     case 6
         data.scan_response.tau_s_s = 8;
         cfg = load_config(example, data, campaign, opts);
