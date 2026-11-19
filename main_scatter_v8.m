@@ -88,7 +88,7 @@ opts_nppcor = cfg_options.opts_nppcor; % 'on' rounds primary-particle counts
 % Load the source LD1 aggregate library through the local registry. This
 % keeps machine-specific file paths out of the script while preserving a
 % stable dataset identifier in version control.
-pars_raw.pp = UTILS.LOAD_SCATTER_LD1_DATASET(cfg_dataset);
+[pars_raw.pp, dataset_src] = UTILS.LOAD_SCATTER_LD1_DATASET(cfg_dataset);
 
 % % correct the structure if necessary
 % if logical(nnz(size(pars_raw.pp)))
@@ -608,7 +608,11 @@ scatter_metadata = struct();
 scatter_metadata.generated_at = char(datetime('now'));
 scatter_metadata.script = mfilename;
 scatter_metadata.config_file = cfg_scatter.config_file;
-scatter_metadata.dataset_id = cfg_dataset.id;
+if isfield(cfg_dataset, 'source_id') && ~isempty(cfg_dataset.source_id)
+    scatter_metadata.dataset_id = dataset_src.id;
+else
+    scatter_metadata.dataset_id = cfg_dataset.id;
+end
 scatter_metadata.scale_mode = opt_scale;
 scatter_metadata.npp_correction = opts_nppcor;
 scatter_metadata.n_agg_raw = n_agg_raw;

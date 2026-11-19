@@ -177,7 +177,10 @@ For unity counting efficiency, supply `cpc.unity_bound_min_diameter_nm`,
 Generate simulation inputs in pipeline order and place measured inputs under
 `data/`. `config/sources/sources.json` lists registered products, with `file`
 and `cache_file` relative to `data/`. Task `dataset` and `sources` blocks
-select input files. Dataset loader calls can select a registry entry through
+select input files. Scale, scatter and LD2 configurations can use only
+`source_id` in `dataset`; validation can use only `source_id` in each `sources`
+entry. Omitted source fields come from the registry.
+Dataset loader calls can select a registry entry through
 `struct('source_id', '<registered_id>')`, with inline fields taking precedence.
 
 For downloads, fill `url` with a direct MAT address, `doi` with the publication
@@ -260,14 +263,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 18 QA functions. A pass prints one `PASS TEST_...`
+Run all 19 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 18)
+assert(numel(checks) == 19)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);

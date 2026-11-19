@@ -136,19 +136,29 @@ end
 end
 
 function source = validate_source(source, label, config_dir)
-%VALIDATE_SOURCE Normalize source metadata and config-relative paths.
+% "validate_source" normalizes inline source fields and relative paths.
+% ----------------------------------------------------------------------- %
 
-source.id = require_text(source, 'id', [label, '.id']);
-source.file = resolve_config_path(require_text(source, 'file', ...
-    [label, '.file']), config_dir);
-source.url = optional_text(source, 'url', '');
-source.doi = optional_text(source, 'doi', '');
-source.sha256 = optional_text(source, 'sha256', '');
-source.cache_file = optional_text(source, 'cache_file', '');
-if ~isempty(source.cache_file)
+from_registry = isfield(source, 'source_id') && ~isempty(source.source_id);
+if ~from_registry || isfield(source, 'id')
+    source.id = require_text(source, 'id', [label, '.id']);
+end
+if ~from_registry || isfield(source, 'file')
+    source.file = resolve_config_path(require_text(source, 'file', ...
+        [label, '.file']), config_dir);
+end
+fields = {'url', 'doi', 'sha256', 'cache_file'};
+for i = 1:numel(fields)
+    name = fields{i};
+    if ~from_registry || isfield(source, name)
+        source.(name) = optional_text(source, name, '');
+    end
+end
+if isfield(source, 'cache_file') && ~isempty(source.cache_file)
     source.cache_file = resolve_config_path(source.cache_file, config_dir);
 end
-if ~isfield(source, 'variables') || isempty(source.variables)
+if (~from_registry || isfield(source, 'variables')) && ...
+        (~isfield(source, 'variables') || isempty(source.variables))
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:MissingSourceVariables', ...
         '%s.variables must list the required MAT variables.', label);
 end

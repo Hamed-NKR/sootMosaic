@@ -48,13 +48,23 @@ config_dir = fileparts(config_path);
 cfg.config_file = config_path;
 
 cfg.dataset = require_struct_field(cfg, 'dataset', 'dataset section');
-cfg.dataset.id = require_text_field(cfg.dataset, 'id', 'dataset.id');
-cfg.dataset.file = require_text_field(cfg.dataset, 'file', 'dataset.file');
-cfg.dataset.variable = require_text_field(cfg.dataset, 'variable', 'dataset.variable');
-cfg.dataset.url = optional_text_field(cfg.dataset, 'url');
-cfg.dataset.doi = optional_text_field(cfg.dataset, 'doi');
-cfg.dataset.sha256 = optional_text_field(cfg.dataset, 'sha256');
-cfg.dataset.cache_file = optional_text_field(cfg.dataset, 'cache_file');
+from_registry = isfield(cfg.dataset, 'source_id') && ...
+    ~isempty(cfg.dataset.source_id);
+fields = {'id', 'file', 'variable'};
+for i = 1:numel(fields)
+    name = fields{i};
+    if ~from_registry || isfield(cfg.dataset, name)
+        cfg.dataset.(name) = require_text_field(cfg.dataset, name, ...
+            ['dataset.', name]);
+    end
+end
+fields = {'url', 'doi', 'sha256', 'cache_file'};
+for i = 1:numel(fields)
+    name = fields{i};
+    if ~from_registry || isfield(cfg.dataset, name)
+        cfg.dataset.(name) = optional_text_field(cfg.dataset, name);
+    end
+end
 cfg.dataset.config_dir = config_dir;
 
 cfg.results = require_struct_field(cfg, 'results', 'results section');

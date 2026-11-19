@@ -34,9 +34,16 @@ cfg.config_file = config_path;
 % Validate the dataset section and attach the config directory so the
 % dataset loader can resolve relative paths without re-reading the JSON.
 cfg.dataset = require_struct_field(cfg, 'dataset', 'dataset section');
-cfg.dataset.id = require_text_field(cfg.dataset, 'id', 'dataset.id');
-cfg.dataset.file = require_text_field(cfg.dataset, 'file', 'dataset.file');
-cfg.dataset.variable = require_text_field(cfg.dataset, 'variable', 'dataset.variable');
+from_registry = isfield(cfg.dataset, 'source_id') && ...
+    ~isempty(cfg.dataset.source_id);
+fields = {'id', 'file', 'variable'};
+for i = 1:numel(fields)
+    name = fields{i};
+    if ~from_registry || isfield(cfg.dataset, name)
+        cfg.dataset.(name) = require_text_field(cfg.dataset, name, ...
+            ['dataset.', name]);
+    end
+end
 cfg.dataset.config_dir = fileparts(config_path);
 
 % Validate the correlation inputs that define the universal and Brasil

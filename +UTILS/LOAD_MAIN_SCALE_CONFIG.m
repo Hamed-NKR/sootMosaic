@@ -30,9 +30,16 @@ end
 cfg.config_file = config_path;
 
 cfg.dataset = require_struct_field(cfg, 'dataset', 'dataset section');
-cfg.dataset.id = require_text_field(cfg.dataset, 'id', 'dataset.id');
-cfg.dataset.file = require_text_field(cfg.dataset, 'file', 'dataset.file');
-cfg.dataset.variable = require_text_field(cfg.dataset, 'variable', 'dataset.variable');
+from_registry = isfield(cfg.dataset, 'source_id') && ...
+    ~isempty(cfg.dataset.source_id);
+fields = {'id', 'file', 'variable'};
+for i = 1:numel(fields)
+    name = fields{i};
+    if ~from_registry || isfield(cfg.dataset, name)
+        cfg.dataset.(name) = require_text_field(cfg.dataset, name, ...
+            ['dataset.', name]);
+    end
+end
 cfg.dataset.config_dir = fileparts(config_path);
 
 cfg.correlation = require_struct_field(cfg, 'correlation', 'correlation section');
