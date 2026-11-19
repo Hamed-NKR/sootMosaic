@@ -263,14 +263,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 20 QA functions. A pass prints one `PASS TEST_...`
+Run all 21 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 20)
+assert(numel(checks) == 21)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -395,6 +395,10 @@ simulation color. Example marker faces are `none`. Empty axis limits select
 automatic limits.
 
 ### Transport models and saved records
+
+LD2 final results contain one `r_n_agg` entry per retained snapshot. The
+requested schedule remains in `cfg_ld2.simulation.r_n_agg`; validation requests
+select only fractions present in the final result.
 
 The LD1 and LD2 configs set the gas temperature and pressure under
 `transport.fluid` and the property model under `transport.fluid_options.amb`.

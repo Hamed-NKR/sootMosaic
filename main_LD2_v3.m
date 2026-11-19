@@ -254,7 +254,7 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
 end
 
 % Remove unused elements from the data storage structures
-parsdata(ind_dat:end) = [];
+[parsdata, r_n_agg] = UTILS.TRIM_LD2_OUTPUT(parsdata, r_n_agg, ind_dat);
 ensdata.t(k:end) = [];
 ensdata.n_agg(k:end) = [];
 ensdata.tau(k:end,:) = [];

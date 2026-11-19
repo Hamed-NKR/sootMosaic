@@ -270,7 +270,12 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
 end
 
 % Remove unused elements from the data storage structures
-parsdata(ind_dat:end) = [];
+if exist('r_n_agg', 'var')
+    [parsdata, r_n_agg] = UTILS.TRIM_LD2_OUTPUT(parsdata, r_n_agg, ind_dat); %#ok<ASGLU>
+else
+    % Checkpoints without a saved schedule keep the snapshot trim only
+    parsdata(ind_dat:end) = []; %#ok<NASGU>
+end
 ensdata.t(k:end) = [];
 ensdata.n_agg(k:end) = [];
 ensdata.tau(k:end,:) = [];
