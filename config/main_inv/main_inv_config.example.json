@@ -153,8 +153,9 @@
   "cpc": {
     "efficiency_model": "unity",
     "efficiency_file": "",
-    "unity_min_diameter_nm": null,
-    "unity_margin": null
+    "unity_bound_min_diameter_nm": null,
+    "unity_bound_max_deficit": null,
+    "unity_bound_citation": null
   },
   "scan_response": {
     "enabled": true,

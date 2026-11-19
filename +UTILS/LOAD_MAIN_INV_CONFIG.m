@@ -311,6 +311,9 @@ for k = 1:numel(schema)
     unit_scale(schema{k}.unit);
     schema{k}.unit = 'none';
     schema{k}.status = 'keep';
+    if strcmp(schema{k}.type, 'text or none') && isempty(schema{k}.default)
+        schema{k}.default = '';
+    end
     if strcmp(schema{k}.type, 'number or none') && ...
             isfield(schema{k}, 'default') && isempty(schema{k}.default)
         schema{k}.default = 'none';
@@ -427,7 +430,7 @@ switch type
     case {'vector', 'matrix'}
         valid = isnumeric(value) && isreal(value);
         if isfield(row, 'value_kind'), valid = islogical(value); end
-    case 'text'
+    case {'text', 'text or none'}
         valid = ischar(value) && (isrow(value) || isempty(value));
     case 'logical', valid = islogical(value) && isscalar(value);
     case 'object', valid = isstruct(value) && isscalar(value);

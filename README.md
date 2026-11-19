@@ -169,6 +169,9 @@ For AAC setpoints, supply each scan's recorded `scan.aac_speed_rad_s`,
 `scan.aac_sheath_flow_lpm`. Leave the sheath-flow configuration at `null`;
 the AAC reader supplies `Sheath (lpm)` in `scan.conditions` for each row.
 
+For unity counting efficiency, supply `cpc.unity_bound_min_diameter_nm`,
+`cpc.unity_bound_max_deficit`, and `cpc.unity_bound_citation`.
+
 ### 4. Data
 
 Generate simulation inputs in pipeline order and place measured inputs under
@@ -257,14 +260,14 @@ compatible repeat summaries.
 
 ### 6. Checking the install
 
-Run all 16 QA functions. A pass prints one `PASS TEST_...`
+Run all 17 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 16)
+assert(numel(checks) == 17)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -540,6 +543,10 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `+INV/DM_FROM_Z.m` | Diameter from electrical mobility and charge state |
 | `+INV/AAC_SETPOINT.m` | Relaxation time and aerodynamic setpoint from AAC conditions |
 | `+INV/RHO_EFF.m` | Effective density from aerodynamic and mobility diameters |
+| `+INV/TFER_DMA.m` | Diffusing DMA transfer function |
+| `+INV/TFER_AAC.m` | AAC transfer function and transmission |
+| `+INV/PENETRATION.m` | Tube and classifier penetration |
+| `+INV/CPC_EFF.m` | Counting efficiency |
 | `+PAR/` | Particle initialization, sizing, projection, and geometry |
 | `+QA/` | Synthetic tests and aggregate geometry checks |
 | `+TRANSP/` | Transport properties, mobility, marching, and boundaries |

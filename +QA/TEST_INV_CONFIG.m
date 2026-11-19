@@ -21,7 +21,7 @@ warning('on', 'sootMosaic:CONFIG_DATA_RULE:Mismatch');
 names = {'example without a local file', 'dictionary coverage both ways', ...
     'recorded units to SI', 'D data only and required missing value', ...
     'recorded counting flow and AAC fallback', 'C ignores measured alternatives', ...
-    'C~D comparison and tolerance', 'R selection and database geometry', ...
+    'recorded DMA excess flow', 'R selection and database geometry', ...
     'P current gas slip and constants', 'W>D>C campaign and reason', ...
     'instrument file wins over workbook', 'X supplied and configured refusal', ...
     'strict placeholders', 'unknown keys normal and strict', ...
@@ -144,17 +144,18 @@ switch index
         cfg = load_config(example, data, campaign, opts);
         check(cfg.scan_response.tau_s_s == .233);
     case 7
-        file = overlay(opts, struct('checks', struct('flow_rel_tol', .05), ...
-            'scan', struct('dma_excess_flow_lpm', 2.5)));
-        data.scan.dma_excess_flow_lpm = 2.6;
-        cfg = load_config(file, data, campaign, opts);
+        data.scan.dma_sheath_flow_lpm = 3;
+        data.scan.dma_excess_flow_lpm = 3.05;
+        cfg = load_config(example, data, campaign, opts);
+        near(cfg.scan.dma_excess_flow_lpm, 3.05);
         r = reading(cfg, 'scan.dma_excess_flow_lpm');
-        check(cfg.scan.dma_excess_flow_lpm == 2.5);
-        check(~r.comparisons.exceeds_tolerance);
-        data.scan.dma_excess_flow_lpm = 3;
-        cfg = load_config(file, data, campaign, opts);
-        r = reading(cfg, 'scan.dma_excess_flow_lpm');
-        check(r.comparisons.exceeds_tolerance);
+        check(strcmp(r.source, 'data') && strcmp(r.code, 'D'));
+        data.scan = rmfield(data.scan, 'dma_excess_flow_lpm');
+        cfg = load_config(example, data, campaign, opts);
+        check(isempty(cfg.scan.dma_excess_flow_lpm));
+        file = overlay(opts, struct('scan', struct('dma_excess_flow_lpm', 3)));
+        fails(@() load_config(file, data, campaign, opts), ...
+            'sootMosaic:LOAD_MAIN_INV_CONFIG:ConfiguredSource');
     case 8
         cfg = load_config(example, data, campaign, opts);
         near(cfg.geometry.aac_inner_radius_m, .056);
@@ -317,7 +318,7 @@ switch index
         check(~cfg.exclusion.flags_remove_data && ~cfg.nuisance.enabled);
         check(cfg.moments.withhold_structured_intervals);
         check(cfg.diagnostics.predictive_replicates >= 2000);
-        check(isempty(cfg.cpc.unity_margin) && isempty(cfg.calibration.k_dm.uncertainty));
+        check(isempty(cfg.cpc.unity_bound_max_deficit) && isempty(cfg.calibration.k_dm.uncertainty));
     case 24
         rows = read_rows(fullfile(opts.RegistryDirectory, 'instruments.keys.json'));
         known = cellfun(@(r) r.path, rows, 'UniformOutput', false);

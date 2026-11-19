@@ -44,6 +44,7 @@ formulas only; no code text was copied.
   `+INV/POOL_SCANS.m` and `+INV/RHO_EFF.m`.
 - `main_aac_HN_1d.m`: `+INV/READ_AAC.m`.
 - `main_dma_HN_1d_v3.m`: `+INV/SELECT_SCANS.m` and `+INV/POOL_SCANS.m`.
+- `main_loss_HN.m`: `+INV/PENETRATION.m`.
 
 ## Import and relation methods
 
@@ -56,3 +57,20 @@ formulas only; no code text was copied.
 - `+INV/OBSERVATION.m`: Kiasadegh et al. (2026, Section 3.3);
   Sipkens et al. (2020, part I, Eq. 23); Johnson et al. (2018, Eqs. 9-11).
 - `+INV/GAS.m`: Kim et al. (2005, Eqs. 9, 11 and 34).
+
+## Transfer functions and losses, published methods
+
+The following files are reimplementations from published equations:
+
+- `+INV/TFER_DMA.m`: Stolzenburg (2018, Eqs. 10, 16, 18, 26, 29-34,
+  39-40 and A2-A5, A15); Sipkens et al. (2020, part I, Eqs. 5-9).
+- `+INV/TFER_AAC.m`: Johnson et al. (2018, Eqs. 2, 7, 12-15, Table 1);
+  Tavakoli and Olfert (2013, Eqs. 4-11).
+- `+INV/PENETRATION.m`: Johnson et al. (2018, Eqs. 12-14); Karlsson and
+  Martinsson (2003, Eqs. 13-14, Tables 1 and 6); Wiedensohler et al.
+  (2012, Table 1); SMPS software manual version 11 (Appendix B, p. B-14).
+- `+INV/CPC_EFF.m`: Johnson et al. (2018, Eq. 8); CPC 3789 operation
+  manual revision C (2021, Ch. 5).
+
+No code from the transfer-function package is included. These entries
+record method provenance and impose no additional code notice obligation.
