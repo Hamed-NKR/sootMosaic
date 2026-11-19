@@ -80,3 +80,84 @@ record method provenance and impose no additional code notice obligation.
 - `+INV/CHARGE_FRAC.m`: 3082 manual (2016, Eqs. B-2 and B-3,
   Tables B-2 and B-3); Wiedensohler et al. (2012, Table A7);
   Gopalakrishnan et al. (2013, Eq. 10, Table 2).
+
+## Two-dimensional inversion package
+
+Repository: https://github.com/tsipkens/bidias
+Commit: fa318b8c6b48b1b4f28bacb7713aba15ba43d52d (9 Apr 2024).
+License: MIT License.
+
+Adopted files:
+
+- `@Grid/Grid.m` into `+INV/@Grid/Grid.m`.
+- `@PartialGrid/PartialGrid.m` into `+INV/@PartialGrid/PartialGrid.m`.
+- The charge-sum and grid-factorization structure of
+  `+kernel/gen_pma_dma_grid.m` into `+INV/KERNEL_2D.m`.
+
+Modified 18 Nov 2026. Grids add one-dimensional coordinates, validation,
+preallocation and explicit whole-cell masks. The tandem kernel uses the AAC
+coordinate, recorded settings, mobility-dependent diffusion, interval
+averaging, exposure and the existing physical functions. Plotting and
+interactive output are omitted. Each adopted file includes the MIT notice.
+
+Method citation: Sipkens et al. (2020, part I), Journal of Aerosol Science
+140, 105484, doi:10.1016/j.jaerosci.2019.105484, Sec. 2.2 and Eqs. 23, 28.
+Code citation: Sipkens et al. (2020), doi:10.17632/sg2zj5yrvr.3.
+The source README requests both the method and code citations for adopted
+code. Its additional Twomey-Markowski citation, Buckley et al. (2017), is
+retained in the tandem kernel provenance. No mass-analyzer transfer code
+is adopted. The pinned source has no `+kernel/build.m`.
+MIT License
+
+Copyright (c) 2019 Timothy A. Sipkens
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## One-dimensional inversion package
+
+Repository: https://github.com/tsipkens/odias
+Commit: 8de95745486b01cf5ede0b186d044656eb3fde33 (8 Jan 2024).
+License: GNU General Public License, version 3 (GPL-3).
+
+`+kernel/gen_smps.m` is adopted into `+INV/KERNEL_1D.m`; its charge
+accumulation is shared in `+INV/private/kernel_dma.m`. Both are modified
+18 Nov 2026. Named charge options, adaptive tails, existing physical calls,
+penetration, the aerodynamic impactor, log quadrature, raw-observation
+checks and exposure after interval averaging replace the source wrappers.
+Display, progress reporting and response thresholding are omitted.
+
+The source file carries an authorship line, represented by the author-year
+attribution Sipkens (2020), and has no copyright or license block. The
+repository GPL-3 text is the repository `LICENSE`.
+The modified source is shipped with this distribution. The combined work
+containing the adopted GPL-3 kernel is distributed under GPL-3; existing
+MIT notices remain attached to their respective components.
+
+Methods: Sipkens et al. (2020, part I, Eqs. 23 and 28) and Chen et al.
+(2024, Eqs. 3 and 5). The source README contains credits but no additional
+formal citation request for this kernel.
+
+## Grid support and scan-response methods
+
+`+INV/SCAN_RESPONSE.m` is reimplemented from Chen et al. (2024,
+Eqs. 2, 5, 22-26, 33 and 36-39) and Collins et al. (2002, Eqs. 9-14).
+`+INV/GRID_RULE.m` and `+INV/GRID_CONVERGE.m` implement the supplied support
+and convergence rules using Sipkens et al. (2020, part I, Sec. 2.2),
+Johnson et al. (2018, Eqs. 1 and 7) and 3082 manual (2016, Eq. B-1).
+No external source text is adopted into these three files.

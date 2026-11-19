@@ -134,6 +134,7 @@
     "dma": "3081a",
     "internal_paths": "3082",
     "tubes": [],
+    "impactor_sharpness_1": 9,
     "impactor_cut_factor_range": [
       0.69,
       1.3

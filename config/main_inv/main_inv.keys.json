@@ -1,4 +1,5 @@
 [
+  {"path":"penetration.impactor_sharpness_1","type":"number","unit":"none","default":9,"reading_rule":"C","design_row":"IM4b","status":"new","since":1,"reader":"LOAD_MAIN_INV_CONFIG","citation":"W26/W27 section 3.5; assumed sharp comparator in [3,9]; support benchmark 16.8 um","min":0},
   {"path":"config_version","type":"integer","unit":"none","default":1,"reading_rule":"C","design_row":"schema","status":"new","since":1,"reader":"LOAD_MAIN_INV_CONFIG","citation":"W9 section 1.7","min":1,"max":1},
   {"path":"model_profile","type":"text","unit":"none","default":"current","reading_rule":"C","design_row":"P","status":"new","since":1,"reader":"LOAD_MAIN_INV_CONFIG","citation":"W9 section 2.2; article1_7658971 has no INV stage"},
   {"path":"mode","type":"text","unit":"none","default":"tandem","reading_rule":"C","design_row":"O12/M1","status":"new","since":1,"reader":"LOAD_MAIN_INV_CONFIG","citation":"INV addendum section G","allowed":["tandem","smps_1d","aac_1d"]},

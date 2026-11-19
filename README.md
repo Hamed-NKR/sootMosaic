@@ -164,6 +164,13 @@ CSV files with column headers. Set `inputs.database_reader` to `csv` and
 including `scan.counting_flow_lpm` for SMPS, and campaign dilution to the
 loader. Select SASS row handling with `aac_1d.row_operation`.
 
+Use `INV.GRID_RULE` to build the grid, `INV.KERNEL_1D` or
+`INV.KERNEL_2D` for the forward matrix, and `INV.GRID_CONVERGE`
+for grid checks. Run `QA.TEST_INV_KERNEL`.
+
+Grid and kernel references: [method](https://doi.org/10.1016/j.jaerosci.2019.105484)
+and [code](https://doi.org/10.17632/sg2zj5yrvr.3).
+
 For AAC setpoints, supply each scan's recorded `scan.aac_speed_rad_s`,
 `scan.aac_temperature_deg_c`, `scan.aac_pressure_kpa`, and
 `scan.aac_sheath_flow_lpm`. Leave the sheath-flow configuration at `null`;
@@ -263,14 +270,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 22 QA functions. A pass prints one `PASS TEST_...`
+Run all 23 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 22)
+assert(numel(checks) == 23)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -564,6 +571,13 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `+INV/PENETRATION.m` | Tube and classifier penetration |
 | `+INV/CPC_EFF.m` | Counting efficiency |
 | `+INV/CHARGE_FRAC.m` | Bipolar charge fractions and adaptive charge tails |
+| `+INV/@Grid/` | One- and two-dimensional grids and quadrature widths |
+| `+INV/@PartialGrid/` | Grids with selected cells |
+| `+INV/GRID_RULE.m` | Kernel support, impactor settings, and reporting bands |
+| `+INV/GRID_CONVERGE.m` | Grid comparisons for statistics and intervals |
+| `+INV/KERNEL_1D.m` | Raw SMPS forward kernel |
+| `+INV/SCAN_RESPONSE.m` | Scan averaging, delay, and response checks |
+| `+INV/KERNEL_2D.m` | Raw AAC-DMA forward kernel |
 | `+PAR/` | Particle initialization, sizing, projection, and geometry |
 | `+QA/` | Synthetic tests and aggregate geometry checks |
 | `+TRANSP/` | Transport properties, mobility, marching, and boundaries |

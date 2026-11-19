@@ -399,64 +399,68 @@
       "pending": []
     },
     {
-      "id": "impactor_pending_2",
+      "id": "impactor_00457",
       "kind": "impactor",
       "constants": {
-        "nozzle_cm": null,
-        "flow_range_lpm": []
+        "nozzle_cm": 0.0457,
+        "flow_range_lpm": [
+          0.2,
+          0.8
+        ],
+        "stk50": 0.23
       },
       "sources": [
         {
           "keys": [
-            "nozzle_cm"
+            "nozzle_cm",
+            "flow_range_lpm"
           ],
-          "citation": "3082 manual, Table 2-10; W26/W27 section 5",
+          "citation": "3082 manual, Table 2-10",
           "page": "2-15",
-          "note": "Other nozzle not quoted in supplied designs; patch 25 manual transcription required"
+          "note": ""
         },
         {
           "keys": [
-            "flow_range_lpm"
+            "stk50"
           ],
-          "citation": "3082 manual, Table 2-10; W26/W27 section 5",
-          "page": "2-15",
-          "note": "Flow range not quoted in supplied designs; patch 25 manual transcription required"
+          "citation": "3082 manual, Eq. B-1",
+          "page": "B-4",
+          "note": ""
         }
       ],
-      "pending": [
-        "nozzle_cm",
-        "flow_range_lpm"
-      ]
+      "pending": []
     },
     {
-      "id": "impactor_pending_3",
+      "id": "impactor_00508",
       "kind": "impactor",
       "constants": {
-        "nozzle_cm": null,
-        "flow_range_lpm": []
+        "nozzle_cm": 0.0508,
+        "flow_range_lpm": [
+          0.3,
+          1.0
+        ],
+        "stk50": 0.23
       },
       "sources": [
         {
           "keys": [
-            "nozzle_cm"
+            "nozzle_cm",
+            "flow_range_lpm"
           ],
-          "citation": "3082 manual, Table 2-10; W26/W27 section 5",
+          "citation": "3082 manual, Table 2-10",
           "page": "2-15",
-          "note": "Other nozzle not quoted in supplied designs; patch 25 manual transcription required"
+          "note": ""
         },
         {
           "keys": [
-            "flow_range_lpm"
+            "stk50"
           ],
-          "citation": "3082 manual, Table 2-10; W26/W27 section 5",
-          "page": "2-15",
-          "note": "Flow range not quoted in supplied designs; patch 25 manual transcription required"
+          "citation": "3082 manual, Eq. B-1",
+          "page": "B-4",
+          "note": ""
         }
       ],
-      "pending": [
-        "nozzle_cm",
-        "flow_range_lpm"
-      ]
+      "pending": []
     }
   ]
 }
