@@ -177,6 +177,10 @@ before calling `INV.OBS_VARIANCE`, with a stable `source_id` beside each
 concentration profile, and for pooled data a positive variance floor per
 condition (scalar, channel vector or channels-by-scans matrix).
 
+Weight the kernel and observation with `INV.OBS_VARIANCE` before solving.
+Pass the returned final operator to `INV.POSTERIOR`. Combine statistic values
+and propagated covariances with `INV.POST_MIX`.
+
 For AAC setpoints, supply each scan's recorded `scan.aac_speed_rad_s`,
 `scan.aac_temperature_deg_c`, `scan.aac_pressure_kpa`, and
 `scan.aac_sheath_flow_lpm`. Leave the sheath-flow configuration at `null`;
@@ -276,14 +280,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 24 QA functions. A pass prints one `PASS TEST_...`
+Run all 25 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 24)
+assert(numel(checks) == 25)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -585,6 +589,19 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `+INV/SCAN_RESPONSE.m` | Scan averaging, delay, and response checks |
 | `+INV/KERNEL_2D.m` | Raw AAC-DMA forward kernel |
 | `+INV/OBS_VARIANCE.m` | Repeat-mean variances and pooled noise coefficients |
+| `+INV/TIKHONOV.m` | Nonnegative regularized distributions and explicit solve stages |
+| `+INV/TIKHONOV_LPR.m` | Difference penalties on full and partial grids |
+| `+INV/LSQ.m` | Weighted least-squares solves |
+| `+INV/EXP_DIST.m` | Distributions with an exponential distance prior |
+| `+INV/EXP_DIST_LPR.m` | Exponential distance covariance factors |
+| `+INV/TWOMEY.m` | Multiplicative inversion cross-check |
+| `+INV/TWOMARK.m` | Smoothed multiplicative inversion cross-check |
+| `+INV/MARKOWSKI.m` | Three-point distribution smoothing |
+| `+INV/MEAN_SQ_ERR.m` | Squared residual mean over nonzero observations |
+| `+INV/POSTERIOR.m` | Conditional covariance and precision |
+| `+INV/POST_MIX.m` | Weighted combinations of conditional moments |
+| `+INV/DELTA_PROP.m` | Fixed-window statistic propagation |
+| `+INV/TGIBBS.m` | Nonnegative Gaussian draws |
 | `+PAR/` | Particle initialization, sizing, projection, and geometry |
 | `+QA/` | Synthetic tests and aggregate geometry checks |
 | `+TRANSP/` | Transport properties, mobility, marching, and boundaries |

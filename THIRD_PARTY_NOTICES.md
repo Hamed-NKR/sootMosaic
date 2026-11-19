@@ -161,3 +161,47 @@ Eqs. 2, 5, 22-26, 33 and 36-39) and Collins et al. (2002, Eqs. 9-14).
 and convergence rules using Sipkens et al. (2020, part I, Sec. 2.2),
 Johnson et al. (2018, Eqs. 1 and 7) and 3082 manual (2016, Eq. B-1).
 No external source text is adopted into these three files.
+
+## Solver adaptations, 19 Nov 2026
+
+Repository: https://github.com/tsipkens/odias
+Commit: 8de95745486b01cf5ede0b186d044656eb3fde33.
+License: GNU General Public License, version 3 (GPL-3).
+The repository LICENSE contains the complete license text. The combined
+work is distributed under GPL-3; existing MIT notices remain attached.
+The modified source is included in this distribution.
+
+| Adopted source | Release file | Changes, 19 Nov 2026 |
+|---|---|---|
+| +invert/tikhonov.m | +INV/TIKHONOV.m | Explicit stages, zero mean, final reweighted operator, floor and diagnostics |
+| +invert/tikhonov_lpr.m | +INV/TIKHONOV_LPR.m | Both zero exterior boundaries, full and partial grid directional penalties |
+| +invert/lsq.m | +INV/LSQ.m | Zero lower bounds, feasible starts, validated solver and optimality retry |
+| +invert/exp_dist.m | +INV/EXP_DIST.m | Exact prior factor, validated scale, one-stage diagnostics |
+| +invert/exp_dist_lpr.m | +INV/EXP_DIST_LPR.m | Covariance factorization without cutoff, boundary overwrite or pseudoinverse |
+| +invert/twomey.m | +INV/TWOMEY.m | Package calls, finite zero rows, validation, no progress output |
+| +invert/twomark.m | +INV/TWOMARK.m | Package calls, one-dimensional input, diagnostics, no progress output |
+| +invert/markowski.m | +INV/MARKOWSKI.m | Explicit source stencil, assigned error output with squared units and empty-selection NaN, unused controls omitted, no progress output |
+| +tools/mean_sq_err.m | +INV/MEAN_SQ_ERR.m | Package name, identifiers, header layout and finite nonnegative column validation; source squared-residual mean over nonzero observations and empty-selection NaN retained |
+| +invert/tikhonov.m, precision expression | +INV/POSTERIOR.m | Actual final-stage precision, checked covariance solves |
+
+The adopted sources contain authorship lines but no per-file copyright or license blocks. Published-method citations replace personal credit lines in the release headers. No per-file copyright notice is omitted.
+
+Methods: Sipkens et al. (2020, part II, Eqs. 26, 38-39, 42-46);
+Huckle and Sedlacek (2012, Eqs. 1-2); Petters (2021, Eq. 6);
+Twomey (1975, Eq. 7); Markowski (1987, Eqs. 3-4, 7-8);
+Sipkens et al. (2020, part I, Sec. 4.2); Buckley et al. (2017).
+The Petters (2018) paper supplied for inspection is a different paper
+from the Petters (2021) method citation in the design.
+
++INV/POST_MIX.m, +INV/DELTA_PROP.m and +INV/TGIBBS.m are reimplementations,
+not adoptions. They implement total variance, fixed-window Jacobian
+propagation and nonnegative Gaussian sampling, respectively. Methods are
+Sipkens et al. (2020, part II, Eqs. 25-26), Bardsley and Fox (2012)
+and Robert (1995), with the combination rules specified in design 48.
+
+The stopping helper +tools/mean_sq_err.m has no per-file copyright or license block. It is adopted from the repository and full commit above under GPL-3 as +INV/MEAN_SQ_ERR.m.
+Its residual mean is unweighted, in squared observation units, and excludes
+zero observations. This source convention is distinct from the error-scaled
+stopping criterion of Markowski (1987, Eq. 8, p. 130).
+Twomey (1975, Eq. 7) supplies the multiplicative method.
+All changes to this helper are marked 19 Nov 2026 in its header.
