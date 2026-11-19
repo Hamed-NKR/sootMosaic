@@ -1,7 +1,6 @@
 clc
 clear
 close all
-warning('off')
 
 %% Initialize and define key parameters %%
 

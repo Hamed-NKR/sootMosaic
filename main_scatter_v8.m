@@ -1,7 +1,6 @@
 clc
 clear
 close all
-warning('off')
 
 % Production scatter-scaling workflow for experimentally constrained LD2
 % initial conditions. The default paper/thesis method is
@@ -75,7 +74,6 @@ n_ang = cfg_projection.n_ang; % number of viewing angles used for projection ave
 
 opt_scale = cfg_options.opt_scale; % 'bivariate', 'sequential', or 'ideal'
 if strcmp(opt_scale, 'sequential')
-    warning('on', 'sootMosaic:main_scatter_v8:SequentialScaleMode')
     warning('sootMosaic:main_scatter_v8:SequentialScaleMode', ...
         ['Scatter scaling is running in sequential mode. This is not ', ...
         'the thesis/paper bivariate initialization method.'])

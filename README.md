@@ -263,14 +263,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 19 QA functions. A pass prints one `PASS TEST_...`
+Run all 20 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 19)
+assert(numel(checks) == 20)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -302,6 +302,10 @@ assert(~isempty(result.metrics))
 Errors use `sootMosaic:<FUNCTION>:<Reason>`. Check the named function and the
 reported key or file. Capture an error identifier and message with
 `try, main_LD2_v3, catch err, disp(err.identifier), disp(err.message), end`.
+
+The scale, scatter and TEM scripts use the caller's warning settings.
+When enabled, `sootMosaic:main_tem_analysis_v1:MissingPrimaryCsv` reports a
+missing primary CSV skipped during TEM analysis.
 
 | Error or symptom | Action |
 | --- | --- |

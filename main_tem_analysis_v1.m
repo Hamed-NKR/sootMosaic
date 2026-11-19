@@ -1,7 +1,6 @@
-﻿clc
+clc
 clear
 close all
-warning('off')
 
 %% Load config
 
