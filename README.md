@@ -171,6 +171,12 @@ for grid checks. Run `QA.TEST_INV_KERNEL`.
 Grid and kernel references: [method](https://doi.org/10.1016/j.jaerosci.2019.105484)
 and [code](https://doi.org/10.17632/sg2zj5yrvr.3).
 
+Group `INV.OBSERVATION` results by campaign, mode, route and condition
+before calling `INV.OBS_VARIANCE`, with a stable `source_id` beside each
+`scan_index`. For the second raw-bin call, pass fitted counts with one
+concentration profile, and for pooled data a positive variance floor per
+condition (scalar, channel vector or channels-by-scans matrix).
+
 For AAC setpoints, supply each scan's recorded `scan.aac_speed_rad_s`,
 `scan.aac_temperature_deg_c`, `scan.aac_pressure_kpa`, and
 `scan.aac_sheath_flow_lpm`. Leave the sheath-flow configuration at `null`;
@@ -270,14 +276,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 23 QA functions. A pass prints one `PASS TEST_...`
+Run all 24 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 23)
+assert(numel(checks) == 24)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -578,6 +584,7 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `+INV/KERNEL_1D.m` | Raw SMPS forward kernel |
 | `+INV/SCAN_RESPONSE.m` | Scan averaging, delay, and response checks |
 | `+INV/KERNEL_2D.m` | Raw AAC-DMA forward kernel |
+| `+INV/OBS_VARIANCE.m` | Repeat-mean variances and pooled noise coefficients |
 | `+PAR/` | Particle initialization, sizing, projection, and geometry |
 | `+QA/` | Synthetic tests and aggregate geometry checks |
 | `+TRANSP/` | Transport properties, mobility, marching, and boundaries |
