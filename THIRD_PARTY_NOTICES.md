@@ -205,3 +205,26 @@ zero observations. This source convention is distinct from the error-scaled
 stopping criterion of Markowski (1987, Eq. 8, p. 130).
 Twomey (1975, Eq. 7) supplies the multiplicative method.
 All changes to this helper are marked 19 Nov 2026 in its header.
+
+## Regularization adaptations, 19 Nov 2026
+
+Repository: https://github.com/tsipkens/odias
+Commit: 8de95745486b01cf5ede0b186d044656eb3fde33.
+License: GNU General Public License, version 3 (GPL-3).
+The complete GPL-3 text is distributed in LICENSE with the modified source.
+Existing notices remain attached to their respective files.
+
+| Adopted source | Release file | Changes, 19 Nov 2026 |
+|---|---|---|
+| +invert/bayesf_precomp.m | +INV/BAYESF.m | Package solvers, proper zero-mean priors, unconstrained evidence, prior-whitened singular values, normalized lambda and length probabilities, pooled family scores, widening, refinement, tail diagnostics and report curves |
+| +tools/logdet.m | +INV/LOGDET.m | Package name, input validation and real positive-determinant contract; singular and negative determinants rejected; LU log-magnitude sum retained |
+
+The adopted sources contain authorship lines but no per-file copyright or license blocks. Published-method citations replace personal credit lines in the release headers. No per-file copyright notice is omitted.
+Method: Sipkens et al. (2020, part II, Eqs. 30-34).
+Every modification group is dated 19 Nov 2026 in the corresponding header.
+
++INV/LAMBDA_XCHECK.m is a reimplementation from Golub et al. (1979),
+Hansen (2000) and Groetsch (1984, Eq. 3.3.3), following design 48.
+No external source text is adopted into that file.
++QA/TEST_INV_REGULARIZATION.m contains original synthetic checks of
+Sipkens et al. (2020, part II, Eqs. 30-34) and those cross-check methods.
