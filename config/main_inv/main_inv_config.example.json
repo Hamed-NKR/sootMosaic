@@ -32,7 +32,7 @@
   "checks": {
     "gas_property_rel_tol": 0.005,
     "flow_rel_tol": 0.05,
-    "setpoint_rel_tol": null,
+    "setpoint_rel_tol": 0.05,
     "impactor_d50_rel_tol": 0.1
   },
   "scan": {

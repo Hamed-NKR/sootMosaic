@@ -164,6 +164,11 @@ CSV files with column headers. Set `inputs.database_reader` to `csv` and
 including `scan.counting_flow_lpm` for SMPS, and campaign dilution to the
 loader. Select SASS row handling with `aac_1d.row_operation`.
 
+For AAC setpoints, supply each scan's recorded `scan.aac_speed_rad_s`,
+`scan.aac_temperature_deg_c`, `scan.aac_pressure_kpa`, and
+`scan.aac_sheath_flow_lpm`. Leave the sheath-flow configuration at `null`;
+the AAC reader supplies `Sheath (lpm)` in `scan.conditions` for each row.
+
 ### 4. Data
 
 Generate simulation inputs in pipeline order and place measured inputs under
@@ -252,14 +257,14 @@ compatible repeat summaries.
 
 ### 6. Checking the install
 
-Run all 15 QA functions. A pass prints one `PASS TEST_...`
+Run all 16 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 15)
+assert(numel(checks) == 16)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -531,6 +536,10 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `+INV/SELECT_SCANS.m` | Campaign scan selection, exclusions, and dilution records |
 | `+INV/OBSERVATION.m` | Route-specific observations and dilution conversion |
 | `+INV/POOL_SCANS.m` | Repeat summaries on common diameter bins |
+| `+INV/GAS.m` | Gas viscosity, mean free path, and slip at recorded conditions |
+| `+INV/DM_FROM_Z.m` | Diameter from electrical mobility and charge state |
+| `+INV/AAC_SETPOINT.m` | Relaxation time and aerodynamic setpoint from AAC conditions |
+| `+INV/RHO_EFF.m` | Effective density from aerodynamic and mobility diameters |
 | `+PAR/` | Particle initialization, sizing, projection, and geometry |
 | `+QA/` | Synthetic tests and aggregate geometry checks |
 | `+TRANSP/` | Transport properties, mobility, marching, and boundaries |
@@ -540,6 +549,7 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `data/` | Measured inputs and generated handoff files |
 | `results/` | Generated workspaces, figures, and validation records |
 | `inputs/` | Tab-delimited parameter files |
+| `THIRD_PARTY_NOTICES.md` | Source and license notices for adapted code |
 
 Generated data, `results/`, `outputs/`, `.sootmosaic-cache/`, and
 `.pfal-cache/` are ignored by `.gitignore`.
@@ -589,3 +599,5 @@ Generated data, `results/`, `outputs/`, `.sootmosaic-cache/`, and
     Operational tradeoffs in resolution, characteristic scan time, and
     calibration. Aerosol Science and Technology, 60(7), 695-714.
     DOI 10.1080/02786826.2026.2659050.
+14. tandem (software), release v2.0.0.
+    https://github.com/cambustion/tandem.
