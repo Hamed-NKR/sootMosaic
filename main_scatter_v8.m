@@ -86,7 +86,8 @@ opts_nppcor = cfg_options.opts_nppcor; % 'on' rounds primary-particle counts
 % Load the source LD1 aggregate library through the local registry. This
 % keeps machine-specific file paths out of the script while preserving a
 % stable dataset identifier in version control.
-[pars_raw.pp, dataset_src] = UTILS.LOAD_SCATTER_LD1_DATASET(cfg_dataset);
+[pars_raw.pp, dataset_src, dataset_provenance] = ...
+    UTILS.LOAD_SCATTER_LD1_DATASET(cfg_dataset);
 
 % % correct the structure if necessary
 % if logical(nnz(size(pars_raw.pp)))
@@ -671,9 +672,9 @@ method_file = fullfile(dir_scatter_data, sprintf( ...
     'scaled_aggs_for_LD2_from_main_scatter_%s.mat', opt_scale));
 
 save(canonical_file, 'pars_out', 'scatter_metadata', ...
-    'scatter_summary', '-v7.3')
+    'scatter_summary', 'dataset_src', 'dataset_provenance', '-v7.3')
 save(method_file, 'pars_out', 'scatter_metadata', ...
-    'scatter_summary', '-v7.3')
+    'scatter_summary', 'dataset_src', 'dataset_provenance', '-v7.3')
 
 %% Plot scaled aggregates
 
