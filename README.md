@@ -256,18 +256,18 @@ Import files with the matching reader, then select campaign scans with
 campaign record before calling `INV.OBSERVATION`. For AAC rows, convert
 recorded pressure from Pa to kPa for the loader. AAC route B also requires
 the correction factors described in `OBSERVATION`. Use `INV.POOL_SCANS` for
-compatible repeat summaries.
+compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 17 QA functions. A pass prints one `PASS TEST_...`
+Run all 18 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 17)
+assert(numel(checks) == 18)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -547,6 +547,7 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `+INV/TFER_AAC.m` | AAC transfer function and transmission |
 | `+INV/PENETRATION.m` | Tube and classifier penetration |
 | `+INV/CPC_EFF.m` | Counting efficiency |
+| `+INV/CHARGE_FRAC.m` | Bipolar charge fractions and adaptive charge tails |
 | `+PAR/` | Particle initialization, sizing, projection, and geometry |
 | `+QA/` | Synthetic tests and aggregate geometry checks |
 | `+TRANSP/` | Transport properties, mobility, marching, and boundaries |

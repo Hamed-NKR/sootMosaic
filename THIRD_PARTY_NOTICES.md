@@ -74,3 +74,9 @@ The following files are reimplementations from published equations:
 
 No code from the transfer-function package is included. These entries
 record method provenance and impose no additional code notice obligation.
+
+## Charge methods
+
+- `+INV/CHARGE_FRAC.m`: 3082 manual (2016, Eqs. B-2 and B-3,
+  Tables B-2 and B-3); Wiedensohler et al. (2012, Table A7);
+  Gopalakrishnan et al. (2013, Eq. 10, Table 2).

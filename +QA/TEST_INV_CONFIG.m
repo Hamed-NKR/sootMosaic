@@ -241,7 +241,9 @@ switch index
         check(strcmp(cfg.charge_models{2}.id, 'kr85_wiedensohler'));
         near(cfg.charge_models{2}.ion_mobility_ratio, .875);
         check(strcmp(cfg.charge_models{3}.id, 'gopalakrishnan_2013'));
-        check(isempty(cfg.charge_model.coefficients));
+        check(isequal(size(cfg.charge_model.coefficients), [6 5]));
+        check(strcmp(cfg.charge_model.coefficients_state, 'ready'));
+        check(isequal(size(cfg.charge_models{3}.coefficients), [4 5]));
         data.scan.neutralizer_id = 'kr85';
         cfg = load_config(example, data, campaign, opts);
         r = reading(cfg, 'charging.model');
@@ -415,9 +417,9 @@ write_json(file, raw);
 file = fullfile(opts.RegistryDirectory, 'charging.json');
 raw = jsondecode(fileread(file));
 for k = 1:numel(raw.models)
-    raw.models(k).coefficients = [0 0];
-    raw.models(k).coefficients_state = 'ready';
-    raw.models(k).ion_mobility_ratio = 1;
+    if isempty(raw.models(k).ion_mobility_ratio)
+        raw.models(k).ion_mobility_ratio = 1;
+    end
 end
 write_json(file, raw);
 end
