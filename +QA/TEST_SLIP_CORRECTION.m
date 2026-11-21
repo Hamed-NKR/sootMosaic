@@ -378,6 +378,7 @@ ld1 = jsondecode(fileread(fullfile(repoRoot, 'config', 'main_ld1', ...
 ld1 = QA.LD1_CONFIG_EXPLICIT_CHOICES(ld1);
 ld2 = jsondecode(fileread(fullfile(repoRoot, 'config', 'main_ld2', ...
     'main_ld2_from_main_scatter_config.example.json')));
+ld2 = QA.LD2_CONFIG_EXPLICIT_CHOICES(ld2);
 f1 = @(c) UTILS.LOAD_MAIN_LD1_CONFIG(write_config(tmp, c));
 f2 = @(c) UTILS.LOAD_MAIN_LD2_CONFIG(write_config(tmp, c));
 cfg1 = f1(ld1);
@@ -427,6 +428,7 @@ c2.transport.mobility_options.slip = 'davies';
 % explicit fields of the task fixtures win over the profile
 ld2s = jsondecode(fileread(fullfile(repoRoot, 'config', 'main_ld2', ...
     'main_ld2_from_main_scale_config.example.json')));
+ld2s = QA.LD2_CONFIG_EXPLICIT_CHOICES(ld2s);
 examples = {ld1, ld2, ld2s};
 loaders = {f1, f2, f2};
 presets = {'flame', 'room', 'room'};

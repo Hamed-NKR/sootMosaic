@@ -138,8 +138,10 @@ ld1 = jsondecode(fileread(fullfile(repoRoot, 'config', 'main_ld1', ...
 ld1 = QA.LD1_CONFIG_EXPLICIT_CHOICES(ld1);
 ld2 = jsondecode(fileread(fullfile(repoRoot, 'config', 'main_ld2', ...
     'main_ld2_from_main_scatter_config.example.json')));
+ld2 = QA.LD2_CONFIG_EXPLICIT_CHOICES(ld2);
 ld2s = jsondecode(fileread(fullfile(repoRoot, 'config', 'main_ld2', ...
     'main_ld2_from_main_scale_config.example.json')));
+ld2s = QA.LD2_CONFIG_EXPLICIT_CHOICES(ld2s);
 f1 = @(c) UTILS.LOAD_MAIN_LD1_CONFIG(write_config(tmp, c));
 f2 = @(c) UTILS.LOAD_MAIN_LD2_CONFIG(write_config(tmp, c));
 examples = {ld1, ld2, ld2s};
@@ -179,9 +181,7 @@ for i = 1 : 3
     ok_bad = ok_bad && raises_error(@() loaders{i}(c), sprintf( ...
         'sootMosaic:LOAD_MAIN_%s_CONFIG:InvalidChoice', stage{i}));
     c.transport.velocity_options = 'maxwell_boltzmann';
-    section_id = sprintf( ...
-        'sootMosaic:LOAD_MAIN_%s_CONFIG:MissingSection', stage{i});
-    if i == 1, section_id = 'sootMosaic:CONFIG_READ:InvalidType'; end
+    section_id = 'sootMosaic:CONFIG_READ:InvalidType';
     ok_bad = ok_bad && raises_error(@() loaders{i}(c), section_id);
 end
 [names, pass] = add(names, pass, ...

@@ -27,6 +27,9 @@ copyfile(fullfile(repoRoot, 'config', 'profiles'), ...
 mkdir(fullfile(folder, 'config', 'main_ld1'));
 copyfile(fullfile(repoRoot, 'config', 'main_ld1', 'main_ld1.keys.json'), ...
     fullfile(folder, 'config', 'main_ld1', 'main_ld1.keys.json'));
+mkdir(fullfile(folder, 'config', 'main_ld2'));
+copyfile(fullfile(repoRoot, 'config', 'main_ld2', 'main_ld2.keys.json'), ...
+    fullfile(folder, 'config', 'main_ld2', 'main_ld2.keys.json'));
 addpath(repoRoot);
 addpath(folder, '-begin');
 cd(folder);

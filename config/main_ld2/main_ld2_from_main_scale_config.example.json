@@ -1,4 +1,5 @@
 {
+  "config_version": 1,
   "model_profile": "current",
   "dataset": {
     "id": "scaled_aggs_for_LD2_from_main_scale",
@@ -44,23 +45,9 @@
       "temperature": 298,
       "pressure": 101325
     },
-    "fluid_options": {
-      "amb": "sutherland"
-    },
+    "fluid_options": {},
     "mobility_options": {
-      "c_dt": 100,
-      "step_frac": 0.5,
-      "step_policy": "warn",
-      "mtd": "interp",
-      "slip": "kim2005",
-      "continuum_diameter": "sorensen_backbone",
-      "root_solve": "bracketed",
-      "projection": "isotropic",
-      "proj_cache": true,
-      "proj_points": 1024,
-      "proj_orientations": 64,
-      "proj_replicates": 4,
-      "proj_tol": 0.01
+      "c_dt": 100
     },
     "location_options": {
       "vf": "on"
@@ -68,11 +55,7 @@
     "growth_options": {
       "indupdate": "off"
     },
-    "diagnostics_options": {
-      "knudsen": true
-    },
-    "velocity_options": {
-      "sampler": "maxwell_boltzmann"
-    }
+    "diagnostics_options": {},
+    "velocity_options": {}
   }
 }
