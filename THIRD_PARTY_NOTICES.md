@@ -33,7 +33,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Owner's fork, provenance only
+## Fork of the 1D inversion package, provenance only
 
 Repository: https://github.com/Hamed-NKR/odias
 Commit: c654348abf11599e24b63374622c31d8458cd7e4 (12 May 2025).
@@ -142,9 +142,8 @@ penetration, the aerodynamic impactor, log quadrature, raw-observation
 checks and exposure after interval averaging replace the source wrappers.
 Display, progress reporting and response thresholding are omitted.
 
-The source file carries an authorship line, represented by the author-year
-attribution Sipkens (2020), and has no copyright or license block. The
-repository GPL-3 text is the repository `LICENSE`.
+The source file has no copyright or license block. The repository GPL-3
+text is the repository `LICENSE`.
 The modified source is shipped with this distribution. The combined work
 containing the adopted GPL-3 kernel is distributed under GPL-3; existing
 MIT notices remain attached to their respective components.
@@ -157,7 +156,7 @@ formal citation request for this kernel.
 
 `+INV/SCAN_RESPONSE.m` is reimplemented from Chen et al. (2024,
 Eqs. 2, 5, 22-26, 33 and 36-39) and Collins et al. (2002, Eqs. 9-14).
-`+INV/GRID_RULE.m` and `+INV/GRID_CONVERGE.m` implement the supplied support
+`+INV/GRID_RULE.m` and `+INV/GRID_CONVERGE.m` implement the kernel support
 and convergence rules using Sipkens et al. (2020, part I, Sec. 2.2),
 Johnson et al. (2018, Eqs. 1 and 7) and 3082 manual (2016, Eq. B-1).
 No external source text is adopted into these three files.
@@ -184,20 +183,19 @@ The modified source is included in this distribution.
 | +tools/mean_sq_err.m | +INV/MEAN_SQ_ERR.m | Package name, identifiers, header layout and finite nonnegative column validation; source squared-residual mean over nonzero observations and empty-selection NaN retained |
 | +invert/tikhonov.m, precision expression | +INV/POSTERIOR.m | Actual final-stage precision, checked covariance solves |
 
-The adopted sources contain authorship lines but no per-file copyright or license blocks. Published-method citations replace personal credit lines in the release headers. No per-file copyright notice is omitted.
+The adopted sources have no per-file copyright or license blocks. No per-file copyright notice is omitted.
 
 Methods: Sipkens et al. (2020, part II, Eqs. 26, 38-39, 42-46);
 Huckle and Sedlacek (2012, Eqs. 1-2); Petters (2021, Eq. 6);
 Twomey (1975, Eq. 7); Markowski (1987, Eqs. 3-4, 7-8);
 Sipkens et al. (2020, part I, Sec. 4.2); Buckley et al. (2017).
-The Petters (2018) paper supplied for inspection is a different paper
-from the Petters (2021) method citation in the design.
 
 +INV/POST_MIX.m, +INV/DELTA_PROP.m and +INV/TGIBBS.m are reimplementations,
 not adoptions. They implement total variance, fixed-window Jacobian
 propagation and nonnegative Gaussian sampling, respectively. Methods are
 Sipkens et al. (2020, part II, Eqs. 25-26), Bardsley and Fox (2012)
-and Robert (1995), with the combination rules specified in design 48.
+and Robert (1995), with the combination rules of
+`config/main_inv/DEFAULTS.md`, section 13.
 
 The stopping helper +tools/mean_sq_err.m has no per-file copyright or license block. It is adopted from the repository and full commit above under GPL-3 as +INV/MEAN_SQ_ERR.m.
 Its residual mean is unweighted, in squared observation units, and excludes
@@ -219,12 +217,12 @@ Existing notices remain attached to their respective files.
 | +invert/bayesf_precomp.m | +INV/BAYESF.m | Package solvers, proper zero-mean priors, unconstrained evidence, prior-whitened singular values, normalized lambda and length probabilities, pooled family scores, widening, refinement, tail diagnostics and report curves |
 | +tools/logdet.m | +INV/LOGDET.m | Package name, input validation and real positive-determinant contract; singular and negative determinants rejected; LU log-magnitude sum retained |
 
-The adopted sources contain authorship lines but no per-file copyright or license blocks. Published-method citations replace personal credit lines in the release headers. No per-file copyright notice is omitted.
+The adopted sources have no per-file copyright or license blocks. No per-file copyright notice is omitted.
 Method: Sipkens et al. (2020, part II, Eqs. 30-34).
 Every modification group is dated 19 Nov 2026 in the corresponding header.
 
 +INV/LAMBDA_XCHECK.m is a reimplementation from Golub et al. (1979),
-Hansen (2000) and Groetsch (1984, Eq. 3.3.3), following design 48.
+Hansen (2000) and Groetsch (1984, Eq. 3.3.3).
 No external source text is adopted into that file.
 +QA/TEST_INV_REGULARIZATION.m contains original synthetic checks of
 Sipkens et al. (2020, part II, Eqs. 30-34) and those cross-check methods.

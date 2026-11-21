@@ -621,7 +621,7 @@ xlabel(tl4, '$d_\mathrm{a}$ [nm]', 'interpreter', 'latex', 'FontSize', 18)
 ylabel(tl4, '$d_\mathrm{pp}$ [nm]', 'interpreter',...
     'latex', 'FontSize', 18)
 
-%% a revised version of simulations against experiments (for thesis) %%
+%% Simulation and experiment comparison %%
 
 % initialize figure
 f5 = figure(5);

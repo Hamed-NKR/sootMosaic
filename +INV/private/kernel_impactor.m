@@ -2,7 +2,7 @@ function eta = kernel_impactor(dm, da, cfg, impactor, caller)
 % "kernel_impactor" applies the aerodynamic sigmoid cut to each cell.
 % ----------------------------------------------------------------------- %
 % Method: 3082 manual (2016, Eq. B-1); Johnson et al. (2018, Eq. 1).
-% The sigmoid is the assumed shape of the supplied grid design.
+% The sigmoid is an assumed shape (config/main_inv/DEFAULTS.md, section 12).
 keys = {'d50_m', 'cut_factor_1', 'sharpness_1'};
 for k = 1:numel(keys)
     key = keys{k};

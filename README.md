@@ -139,13 +139,17 @@ and remove `mtd`, `slip`, `continuum_diameter`, `root_solve`, `projection`,
 `proj_tol` from `transport.mobility_options`. Keep `c_dt` and the step
 settings. Inspect `cfg.model` and `cfg.model_params` from the task loader to
 see the resolved choices. Custom profiles go in `config/profiles/<name>.json`
-with `extends` naming the parent profile.
+with `extends` naming the parent profile. `config/profiles/DEFAULTS.md`
+explains the project defaults of the profile dictionary.
 
 Inversion (INV) configuration holds inputs, scan settings, and model choices.
 The instrument registry holds instrument constants and charge models. Copy the
 example below, then fill `campaigns.table`, applicable `inputs` paths,
 `outputs.root`, and instrument IDs. Set only fields marked `configurable` in
-`config/main_inv/main_inv.keys.json`. Measured scan values are passed in the
+`config/main_inv/main_inv.keys.json`. The citation field identifies each
+row's reference, record, registry entry, or project default.
+`config/main_inv/DEFAULTS.md` explains the project defaults. Measured scan
+values are passed in the
 second argument of `UTILS.LOAD_MAIN_INV_CONFIG(file, data, campaign, opts)`.
 Keep other defaults, including `model_profile` of
 `current`. Loading returns settings, instrument entries, International System
@@ -576,9 +580,11 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `config/main_inv/` | Inversion configuration example and key dictionary |
 | `config/main_inv/main_inv_config.example.json` | Inversion configuration example |
 | `config/main_inv/main_inv.keys.json` | Inversion settings and reading rules |
+| `config/main_inv/DEFAULTS.md` | Reasoning and sources of the inversion defaults |
 | `config/instruments/charging.json` | Published charge-model coefficients |
 | `config/instruments/` | Instrument constants, charge models, and dictionary |
 | `config/profiles/` | Model profiles and dictionary |
+| `config/profiles/DEFAULTS.md` | Reasoning and sources of the profile defaults |
 | `config/sources/` | Dataset registry and dictionary |
 | `+COL/` | Collision detection, connection, and aggregate growth |
 | `+DEPOT/` | Additional simulation and analysis scripts |
@@ -628,7 +634,7 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `+UTILS/` | Configuration, data loading, checkpoint resume, fitting, and plotting |
 | `+VIS/` | Visualization routines |
 | `@AGG/` | Aggregate class |
-| `data/` | Measured inputs and generated handoff files |
+| `data/` | Measured inputs and files passed between stages |
 | `results/` | Generated workspaces, figures, and validation records |
 | `inputs/` | Tab-delimited parameter files |
 | `THIRD_PARTY_NOTICES.md` | Source and license notices for adapted code |
@@ -683,3 +689,7 @@ Generated data, `results/`, `outputs/`, `.sootmosaic-cache/`, and
     DOI 10.1080/02786826.2026.2659050.
 14. tandem (software), release v2.0.0.
     https://github.com/cambustion/tandem.
+15. Sapkota, N., Sipkens, T. A., & Rogak, S. N. (2025). Charging equivalent
+    diameter relation for sodium chloride and soot aggregates using
+    electrical low-pressure impactor. Aerosol Science and Technology,
+    59(9), 1053-1064. DOI 10.1080/02786826.2025.2519093.

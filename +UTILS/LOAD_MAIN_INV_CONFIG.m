@@ -361,7 +361,7 @@ item = entries{index};
 end
 
 function note = source_note(item, key)
-note = 'Source value is not quoted in the supplied design.';
+note = 'No source value is recorded for this registry key.';
 for k = 1:numel(item.sources)
     row = item.sources{k};
     if any(strcmp(row.keys, key)), note = row.note; return; end

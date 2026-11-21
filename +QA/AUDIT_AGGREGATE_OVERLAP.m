@@ -230,7 +230,7 @@ end
 
 function opts = parse_options(repoRoot, varargin)
 %PARSE_OPTIONS Parse file locations, analysis controls, and output options.
-%   Defaults reproduce the archived scatter-to-LD2 run used by this audit.
+%   Default inputs are pre-scatter, post-scatter, and final LD2 files.
 p = inputParser;
 p.FunctionName = 'AUDIT_AGGREGATE_OVERLAP';
 dataDir = fullfile(repoRoot, 'data', 'main_scatter');

@@ -127,7 +127,8 @@ for c = 1:numel(cases)
     end
 end
 if isempty(cfg.exclusion.counter_limit_cm3_inv)
-    result.report{end+1} = 'Counter single-count limit unavailable; X3 counter check pending.';
+    result.report{end+1} = ['Counter single-count limit unavailable; ' ...
+        'X3 counter check not run.'];
 end
 
     function exclude(index, reason)
@@ -149,8 +150,8 @@ if isfield(scan, 'timestamp') && ~isempty(scan.timestamp)
     if ~isdatetime(stamp), stamp = datetime(stamp, 'ConvertFrom', 'datenum'); end
     stamp.Format = 'yyyy-MM-dd';
     date = char(stamp);
-    if any(strcmp(date, cfg.exclusion.settled_dates))
-        reason = 'X4: settled campaign date exclusion';
+    if any(strcmp(date, cfg.exclusion.dates))
+        reason = 'X4: excluded campaign date';
         return
     end
 end

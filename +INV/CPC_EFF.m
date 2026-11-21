@@ -8,7 +8,7 @@ function [eta, info] = CPC_EFF(dm_m, cfg)
 % Outputs:
 %     eta: Unity with the shape of dm_m (-)
 %     info: Efficiency deficit bound, citation and lower diameter (m)
-% Method: Johnson et al. (2018, Eq. 8); owner Q-N8 point 5.
+% Method: Johnson et al. (2018, Eq. 8), unity only inside a cited bound.
 
 try
     cpc = cfg.si.cpc;

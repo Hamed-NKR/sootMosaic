@@ -146,7 +146,7 @@ end
 % Mobility size
 npp = cat(1, pars.n);
 switch opts.mtd
-    case {'sorensen_eq17', 'continuum'} % 'continuum' is the earlier name
+    case {'sorensen_eq17', 'continuum'} % 'continuum' is an alias
         dm = TRANSP.CONTINUUM_DM(npp, cat(1, pars.dg), [], 'eq17');
     case 'sorensen_backbone'
         dm = TRANSP.CONTINUUM_DM(npp, cat(1, pars.dg), ...

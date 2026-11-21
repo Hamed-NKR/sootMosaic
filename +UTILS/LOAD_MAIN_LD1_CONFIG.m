@@ -22,7 +22,8 @@ if nargin < 2, opts = struct(); end
 if nargin < 1 || isempty(config_path)
     config_path = getenv('SOOTMOSAIC_MAIN_LD1_CONFIG');
     if isempty(config_path)
-        config_path = getenv('PFAL_MAIN_LD1_CONFIG'); % Permanent fallback
+        % alternative variable name
+        config_path = getenv('PFAL_MAIN_LD1_CONFIG');
     end
     if isempty(config_path)
         config_path = fullfile(repo_root(), 'config', 'main_ld1', ...
@@ -112,7 +113,7 @@ cfg.transport.mobility_options.mtd = optional_choice_field( ...
     known.mobility, 'transport.mobility_options.mtd');
 cfg.model.mobility = cfg.transport.mobility_options.mtd;
 if strcmp(cfg.model.mobility, 'continuum')
-    cfg.model.mobility = 'sorensen_eq17'; % Canonical method name
+    cfg.model.mobility = 'sorensen_eq17'; % alias of the method name
 end
 cfg.transport.mobility_options.continuum_diameter = optional_choice_field( ...
     cfg.transport.mobility_options, 'continuum_diameter', ...

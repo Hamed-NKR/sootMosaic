@@ -13,7 +13,7 @@ function result = LAMBDA_XCHECK(a, b, l, lambda_cm3)
 % Method: Golub et al. (1979), generalized cross-validation;
 %     ...Hansen (2000), log residual versus log prior curvature;
 %     ...Groetsch (1984, Eq. 3.3.3), discrepancy principle.
-% Reimplementation from the published methods specified in design 48.
+% Reimplementation from the published methods.
 % Choices use the unconstrained linear smoother and never replace evidence.
 % D6 also needs changes of reported statistics and is completed by DIAGNOSE.
 

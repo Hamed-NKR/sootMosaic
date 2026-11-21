@@ -24,7 +24,8 @@ if nargin < 2, opts = struct(); end
 if nargin < 1 || isempty(config_path)
     config_path = getenv('SOOTMOSAIC_MAIN_VALID_CONFIG');
     if isempty(config_path)
-        config_path = getenv('PFAL_MAIN_VALID_CONFIG'); % Permanent fallback
+        % alternative variable name
+        config_path = getenv('PFAL_MAIN_VALID_CONFIG');
     end
     if isempty(config_path)
         config_path = fullfile(repo_root(), 'config', 'main_valid', ...

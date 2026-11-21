@@ -9,8 +9,7 @@ function tab = TABGEN(dpp, dm, slip, coefficients)
 %   dm: Mobility diameter (nm)
 %     coefficients: Resolved slip section, or [a b c] (optional)
 %   slip: Slip correction model of TRANSP.CUNNINGHAM. Only...
-%       ...'per_caller_7658971' (the default) is available, other models...
-%       ...stop until the mass and density units of the table are reviewed
+%       ...'per_caller_7658971' is supported.
 % ----------------------------------------------------------------------- %
 %
 % Outputs:
@@ -35,13 +34,13 @@ magg_100 = 2.93e-6; % aggregate mass at 100 nm mobility diameter
 %%%%%%%%%%%%%%%%%%%%%%%%
 
 if ~exist('slip', 'var') || isempty(slip)
-    slip = 'per_caller_7658971'; % constants of each caller at 7658971
+    slip = 'per_caller_7658971'; % Per-caller slip coefficients
 end
 if ~(ischar(slip) || isStringScalar(slip)) || ...
         ~strcmp(slip, 'per_caller_7658971')
-    error('sootMosaic:TABGEN:ModelUnavailable', ['UTILS.TABGEN runs ', ...
-        'with the slip model per_caller_7658971 only. Other models wait ', ...
-        'for a review of the mass and density units of the table.'])
+    error('sootMosaic:TABGEN:ModelUnavailable', ...
+        ['UTILS.TABGEN supports only the ', ...
+        'per_caller_7658971 slip model.'])
 end
 
 da = exp(log(dpp/dpp_100) / D_TEM + log(100)); % projected area diameter (nm)

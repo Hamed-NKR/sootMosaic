@@ -17,24 +17,24 @@
           "keys": [
             "inner_radius_m"
           ],
-          "citation": "3082 manual; W9 I10-I12",
-          "page": "not quoted in supplied design",
+          "citation": "3082 manual, 3081A long DMA",
+          "page": "1-8",
           "note": ""
         },
         {
           "keys": [
             "outer_radius_m"
           ],
-          "citation": "3082 manual; W9 I10-I12",
-          "page": "not quoted in supplied design",
+          "citation": "3082 manual, 3081A long DMA",
+          "page": "1-8",
           "note": ""
         },
         {
           "keys": [
             "length_m"
           ],
-          "citation": "3082 manual; W9 I10-I12",
-          "page": "not quoted in supplied design",
+          "citation": "3082 manual, 3081A long DMA",
+          "page": "1-8",
           "note": ""
         },
         {
@@ -43,7 +43,7 @@
           ],
           "citation": "Karlsson and Martinsson (2003), Table 6",
           "page": "621",
-          "note": "Proposed cylindrical T1-T3 proxy, not a calibration of 3081A; INV addendum C.11"
+          "note": "Cylindrical type T1-T3 proxy, not a calibration of the 3081A"
         },
         {
           "keys": [
@@ -51,15 +51,15 @@
           ],
           "citation": "Karlsson and Martinsson (2003), Table 6",
           "page": "621",
-          "note": "Proposed proxy; type in Table 1, p. 606"
+          "note": "Cylindrical type T1-T3 proxy, type in Table 1, p. 606"
         },
         {
           "keys": [
             "voltage_limits_v"
           ],
           "citation": "Kiasadegh et al. (2026), Table 1",
-          "page": "not quoted in supplied design",
-          "note": "Patch 31 supplies operating limits"
+          "page": "701",
+          "note": "Operating limits of the cited table are not in the registry"
         }
       ],
       "pending": [
@@ -227,7 +227,7 @@
             "width_a"
           ],
           "citation": "Johnson et al. (2018), Table 1, AAC All",
-          "page": "not quoted in supplied design",
+          "page": "662",
           "note": "Width fit uses diameter in nm"
         },
         {
@@ -235,7 +235,7 @@
             "width_b"
           ],
           "citation": "Johnson et al. (2018), Table 1, AAC All",
-          "page": "not quoted in supplied design",
+          "page": "662",
           "note": "Width fit uses diameter in nm"
         },
         {
@@ -243,7 +243,7 @@
             "width_c"
           ],
           "citation": "Johnson et al. (2018), Table 1, AAC All",
-          "page": "not quoted in supplied design",
+          "page": "662",
           "note": "Width fit uses diameter in nm"
         },
         {
@@ -258,16 +258,16 @@
           "keys": [
             "entrance_efficiency"
           ],
-          "citation": "Johnson et al. (2018)",
-          "page": "not quoted in supplied design",
+          "citation": "Johnson et al. (2018), Sect. 4.1.1",
+          "page": "662",
           "note": ""
         },
         {
           "keys": [
             "effective_length_m"
           ],
-          "citation": "Johnson et al. (2018)",
-          "page": "not quoted in supplied design",
+          "citation": "Johnson et al. (2018), Sect. 4.1.1",
+          "page": "662",
           "note": ""
         },
         {
@@ -275,7 +275,7 @@
             "deposition_upper_weights"
           ],
           "citation": "Johnson et al. (2018), Eq. 13",
-          "page": "not quoted in supplied design",
+          "page": "661",
           "note": ""
         },
         {
@@ -283,15 +283,15 @@
             "deposition_upper_rates"
           ],
           "citation": "Johnson et al. (2018), Eq. 13",
-          "page": "not quoted in supplied design",
+          "page": "661",
           "note": ""
         },
         {
           "keys": [
             "deposition_lower_coefficients"
           ],
-          "citation": "Johnson et al. (2018), Eq. 14",
-          "page": "not quoted in supplied design",
+          "citation": "Johnson et al. (2018), Eq. 13",
+          "page": "661",
           "note": ""
         },
         {
@@ -299,7 +299,7 @@
             "deposition_switch"
           ],
           "citation": "Johnson et al. (2018), Eqs. 13-14",
-          "page": "not quoted in supplied design",
+          "page": "661",
           "note": ""
         },
         {
@@ -307,15 +307,15 @@
             "speed_limits_rad_s"
           ],
           "citation": "Kiasadegh et al. (2026), Table 1",
-          "page": "not quoted in supplied design",
-          "note": "Patch 31 supplies operating limits"
+          "page": "701",
+          "note": "Operating limits of the cited table are not in the registry"
         },
         {
           "keys": [
             "width_diameter_unit_nm"
           ],
-          "citation": "Johnson et al. (2018), Table 1",
-          "page": "not quoted in supplied design",
+          "citation": "Johnson et al. (2018), Eq. 15",
+          "page": "662",
           "note": "Unit reference for the diameter coordinate in nm; use d_si / diameter_unit_si"
         }
       ],

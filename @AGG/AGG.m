@@ -228,8 +228,7 @@ classdef AGG
         % "COMPILEPP" compiles a primary particle information set across...
         %   ...multiple aggregates.
         %
-        % Note: This will be useful for some functions that aim to be...
-        %   ...able to run in both "structure" and "class" modes.
+        % Returns primary-particle data as one numeric array.
         % --------------------------------------------------------------- %
         %
         % objs: Aggregate objects

@@ -154,7 +154,7 @@ end
         a = smps_fixture('select.csv', 'dW/dlogDp', 'Number', 3, false, false);
         cases = repmat(case_row(1, [1 2], 'g1'), 1, 3);
         cases(2).group = 'removed'; cases(2).exclude = true;
-        cases(2).reason = 'settled exclusion'; cases(3).group = 'g2';
+        cases(2).reason = 'campaign exclusion'; cases(3).group = 'g2';
         out = INV.SELECT_SCANS(a, cases, cfg);
         check(isequal(out.case_indices, [1 3]));
         check(isequal(out.group_labels, {'g1', 'g2'}));

@@ -44,7 +44,7 @@ end
 dg = dg(:); % one orientation for every per-aggregate input
 da = da(:);
 if ~exist('slip', 'var') || isempty(slip)
-    slip = 'per_caller_7658971'; % constants of each caller at 7658971
+    slip = 'per_caller_7658971'; % Per-caller slip coefficients
 end
 if ~exist('opts', 'var') || isempty(opts)
     opts = struct();

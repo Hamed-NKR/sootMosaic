@@ -22,7 +22,8 @@ if nargin < 2, opts = struct(); end
 if nargin < 1 || isempty(config_path)
     config_path = getenv('SOOTMOSAIC_MAIN_LD2_CONFIG');
     if isempty(config_path)
-        config_path = getenv('PFAL_MAIN_LD2_CONFIG'); % Permanent fallback
+        % alternative variable name
+        config_path = getenv('PFAL_MAIN_LD2_CONFIG');
     end
     if isempty(config_path)
         error('sootMosaic:LOAD_MAIN_LD2_CONFIG:MissingConfigSelection', ...
@@ -103,7 +104,7 @@ end
 
 if isfield(cfg.transport, 'user_defined')
     error('sootMosaic:LOAD_MAIN_LD2_CONFIG:LegacyTransportConfig', ...
-        ['LD2 configs no longer use transport.user_defined. Use ' ...
+        ['LD2 configs do not support transport.user_defined. Use ' ...
         'transport.domain.volume_fraction, transport.domain.size, and ' ...
         'transport.fluid.temperature instead.']);
 end
@@ -140,7 +141,7 @@ cfg.transport.mobility_options.mtd = optional_choice_field( ...
     known.mobility, 'transport.mobility_options.mtd');
 cfg.model.mobility = cfg.transport.mobility_options.mtd;
 if strcmp(cfg.model.mobility, 'continuum')
-    cfg.model.mobility = 'sorensen_eq17'; % Canonical method identifier
+    cfg.model.mobility = 'sorensen_eq17'; % alias of the method name
 end
 cfg.transport.mobility_options.continuum_diameter = optional_choice_field( ...
     cfg.transport.mobility_options, 'continuum_diameter', ...

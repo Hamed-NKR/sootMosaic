@@ -4,9 +4,7 @@ close all
 
 %% Initialize and define key parameters %%
 
-% Load configurable inputs for the scale workflow from the local JSON
-% registry. User-tuned defaults are kept out of the MATLAB source while the
-% scaling/filtering algorithm below remains unchanged.
+% Load configurable inputs for the scale workflow from the local JSON registry.
 cfg_scale = UTILS.LOAD_MAIN_SCALE_CONFIG;
 cfg_dataset = cfg_scale.dataset;
 cfg_uc = cfg_scale.correlation.universal;
@@ -77,7 +75,7 @@ if iscell(pars_raw.pp)
     pars_raw.pp = pars_raw.pp(~cellfun('isempty', pars_raw.pp));
 
     % Merge pp info from different times only when the imported library has
-    % the extra historical nesting layer.
+    % an extra nesting layer.
     while ~isempty(pars_raw.pp) && all(cellfun(@iscell, pars_raw.pp))
         pars_raw.pp = cat(1, pars_raw.pp{:});
         pars_raw.pp = pars_raw.pp(:);

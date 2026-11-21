@@ -30,11 +30,11 @@ end
 
 load(checkpoint_path);
 
-% Restore the random number generator so that the resumed run continues the
-% random sequence of the uninterrupted run. Checkpoints written before the
-% generator state was stored fall back to a seed derived from the configured
-% seed and the checkpoint iteration, which is reproducible but not identical
-% to the uninterrupted run. Without either, the run stays unseeded.
+% Restore a nonempty checkpoint rng_state to continue the saved random
+% sequence. Without it, a nonempty simulation.rng_seed seeds the generator
+% using mod(simulation.rng_seed + k, 2^32). This fallback is reproducible but
+% does not restore the saved random sequence. Without either, this block
+% leaves the generator unchanged.
 if exist('rng_state', 'var') && ~isempty(rng_state) %#ok<NODEF> loaded from the checkpoint
     rng(rng_state);
 elseif exist('cfg_sim', 'var') && isfield(cfg_sim, 'rng_seed') && ... %#ok<NODEF>
@@ -72,8 +72,7 @@ if ~isfield(fl, 'p') || isempty(fl.p) %#ok<NODEF>
     fl.p = 101325;
 end
 
-% Checkpoints with model options but no slip correction model keep the
-% constants of each caller at 7658971, as the code that wrote them did.
+% Checkpoints without a slip correction model use per_caller_7658971.
 if ~isfield(cfg_ld2.model, 'slip_correction') || ...
         isempty(cfg_ld2.model.slip_correction)
     cfg_ld2.model.slip_correction = 'per_caller_7658971';
@@ -86,9 +85,8 @@ if exist('opts_mobil', 'var') && (~isfield(opts_mobil, 'slip') || ...
     opts_mobil.slip = cfg_ld2.model.slip_correction;
 end
 
-% Checkpoints with model options but no mobility options ran the method of
-% their mobility options with the continuum diameter 0.75 dg and fzero from
-% one start point, the settings of 7658971.
+% Checkpoints without mobility fields use their configured method,
+% a continuum diameter of 0.75 dg and one root-solver start point.
 if ~isfield(cfg_ld2.model, 'mobility') || isempty(cfg_ld2.model.mobility)
     if exist('opts_mobil', 'var') && isfield(opts_mobil, 'mtd') && ...
             ~isempty(opts_mobil.mtd)
@@ -112,9 +110,8 @@ if exist('opts_mobil', 'var')
     end
 end
 
-% Checkpoints with model options but no projected area options computed the
-% areas with PAR.PROJECTION at every call, with 100 points and 5
-% orientations, the settings of 7658971.
+% Checkpoints without projection fields use PAR.PROJECTION on each call,
+% with 100 points and 5 orientations.
 proj_fields = {'projection', 'proj_cache', 'proj_points', ...
     'proj_orientations', 'proj_replicates', 'proj_tol'};
 if ~isfield(cfg_ld2.model, 'projection') || isempty(cfg_ld2.model.projection)

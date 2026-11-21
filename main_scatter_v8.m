@@ -25,7 +25,7 @@ cfg_projection = cfg_scatter.projection;
 cfg_options = cfg_scatter.options;
 
 % Seed the random number generator only when options.rng_seed is set. An empty
-% value leaves the generator untouched, as before.
+% value leaves the generator untouched.
 if ~isempty(cfg_options.rng_seed)
     rng(cfg_options.rng_seed);
 end

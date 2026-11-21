@@ -15,8 +15,8 @@ function [grid, info] = GRID_RULE(obs, cfg, rho_kg_m3, draw, aac_setpoints_m)
 % ----------------------------------------------------------------------- %
 % Method: Sipkens et al. (2020, part I, Sec. 2.2, Eqs. 23 and 28);
 %     ...Johnson et al. (2018, Eqs. 1 and 7); 3082 manual (2016, Eq. B-1,...
-%     ...Table 2-10). Support and convergence rules follow designs 48 and 53.
-% Reimplementation from the published methods and supplied grid rules.
+%     ...Table 2-10). Support and convergence rules are described in...
+%     ...config/main_inv/DEFAULTS.md, sections 7 and 12.
 
 if nargin < 4, draw = struct(); end
 if nargin < 5, aac_setpoints_m = []; end

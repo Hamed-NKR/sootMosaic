@@ -338,7 +338,7 @@ simulation = struct();
 simulation.da_nm = 1e9 * double(population.da(:));
 simulation.dpp_nm = 1e9 * double(population.dpp(:));
 
-% Later LD2 snapshots saved da into dm, so dm is deliberately never read.
+% Recalculate mobility diameter from dg, da, and the fluid properties.
 dm_m = TRANSP.DIAMOBIL(double(population.dg(:)), ...
     double(population.da(:)), fl);
 simulation.dm_nm = 1e9 * dm_m(:);

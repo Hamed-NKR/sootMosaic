@@ -20,8 +20,8 @@ end
 
 %% Process enabled TEM entries
 
-% Disabled entries remain in the saved configuration for future condition
-% expansion, but they do not participate in data loading or analysis.
+% Disabled entries remain in the saved configuration, but they do not
+% participate in data loading or analysis.
 active_entries = cfg_tem.entries([cfg_tem.entries.enabled]);
 n_entries = numel(active_entries);
 entry_result_cells = cell(n_entries, 1);

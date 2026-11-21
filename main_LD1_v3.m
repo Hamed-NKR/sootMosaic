@@ -5,7 +5,7 @@ close all
 
 %% Load first-stage LD configuration %%
 
-% First-stage LD now reads all user-tuned parameters from JSON so the
+% First-stage LD reads user-tuned parameters from JSON so the
 % aggregate-library run can be reproduced without editing this script.
 cfg_ld1 = UTILS.LOAD_MAIN_LD1_CONFIG;
 cfg_results = cfg_ld1.results;

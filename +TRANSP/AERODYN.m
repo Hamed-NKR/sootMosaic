@@ -12,10 +12,9 @@ function dae = AERODYN(pp, dm, rho0, fl, slip, params)
 %   fl: fluid flow characteristics structure (lambda in m), needed by...
 %       ...the 'kim2005' slip correction
 %   slip: Slip correction model of TRANSP.CUNNINGHAM, default...
-%       ...'per_caller_7658971'. That model keeps the equation of...
-%       ...commit 7658971, with rho0 as the reference density as well, so...
-%       ...a sphere at dm = d has dae = d. The other models use the...
-%       ...aerodynamic reference density of 1000 kg/m3.
+%       ...'per_caller_7658971'. That model uses rho0 as the reference...
+%       ...density, so a sphere at dm = d has dae = d. The other models...
+%       ...use the aerodynamic reference density of 1000 kg/m3.
 % ----------------------------------------------------------------------- %
 % 
 % Outputs:
@@ -26,7 +25,7 @@ if nargin < 6 || isempty(params)
     params = UTILS.MODEL_DEFAULTS('article1_7658971');
 end
 if ~exist('slip', 'var') || isempty(slip)
-    slip = 'per_caller_7658971'; % constants of each caller at 7658971
+    slip = 'per_caller_7658971'; % Per-caller slip coefficients
 end
 if exist('fl', 'var') && isfield(fl, 'lambda') && ~isempty(fl.lambda)
     lambda = fl.lambda;
@@ -53,7 +52,7 @@ m = zeros(length(dae0),1); % allocate aggregate mass array
 legacy = strcmp(slip, 'per_caller_7658971');
 opts_fz = optimset('TolX', eps);
 if legacy
-    rho_ref = rho0; % reference density of the 7658971 equation
+    rho_ref = rho0; % reference density of the article1_7658971 equation
 else
     rho_ref = params.constants.rho_aero_ref_kg_m3; % Density (kg/m3)
 end

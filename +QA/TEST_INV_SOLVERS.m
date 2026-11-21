@@ -430,14 +430,13 @@ function upstream_demo()
 % Method: Twomey (1975, Eq. 7); Markowski (1987, Eq. 7).
 % Fixture: main_dma.m and +tools/gen_data.m from odias, GPL-3,
 %     ...commit 8de95745486b01cf5ede0b186d044656eb3fde33.
-% The synthetic kernel replaces the unported upstream kernel generator.
+% This test uses a synthetic kernel.
 [a, b, d_nm, setpoint_nm] = demo_fixture();
 xi = demo_initial(a, b, d_nm, setpoint_nm);
 [x_two, two] = INV.TWOMEY(a, b, xi, [], true);
 [x_twomark, twomark] = INV.TWOMARK(a, b, xi);
 indices_count = [1 30 80 140 200 260 300 325 350 400 450 500]';
-% Expected values from the upstream get_init, twomey and twomark at the
-%     ...commit above, run on this fixture.
+% Fixed regression outputs of get_init, twomey and twomark on this fixture.
 expected_init_samples_cm3_inv = [0; 0; 0.00028096570491423657; ...
     0.063569903132393871; 0.51768099393896871; 0.51775175620656344; ...
     0.87251892310574553; 0.99603885471551856; 0; 0; 0; 0];
@@ -494,7 +493,7 @@ end
 function xi = demo_initial(a, b, d_nm, setpoint_nm)
 % Method: Twomey (1975, Eq. 7), starting from a response-normalized...
 %     ...linear interpolation as in the pinned +invert/get_init.m demo rule.
-% get_init is not a port-design file; this helper is local to the QA case.
+% get_init is not a package file; this helper is local to the QA case.
 response = a*ones(numel(d_nm), 1);
 xi = interp1(setpoint_nm, full(b)./response, d_nm);
 xi(~isfinite(xi)) = 0;

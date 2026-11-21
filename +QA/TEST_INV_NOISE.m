@@ -87,7 +87,7 @@ end
 
     function poisson_quantiles()
         % Checking deterministic quantile arithmetic with counting alone
-        % Sampling-error validation remains assigned to patch 31a
+        % Sampling-error validation is outside this test
         g = raw_group([0 0 0 1 1 1 2 3], 2, 'one');
         c = cfg; c.variance.min_repeats = 9;
         [r, m] = INV.OBS_VARIANCE({g}, c);

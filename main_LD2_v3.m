@@ -16,7 +16,7 @@ cfg_projection = cfg_ld2.projection;
 cfg_transport = cfg_ld2.transport;
 
 % Seed the random number generator only when simulation.rng_seed is set. An
-% empty value leaves the generator untouched, as before. The seed is applied
+% empty value leaves the generator untouched. The seed is applied
 % before any random draw and the loaded dataset does not reset it.
 if ~isempty(cfg_sim.rng_seed)
     rng(cfg_sim.rng_seed);

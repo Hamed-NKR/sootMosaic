@@ -394,7 +394,7 @@
   "exclusion": {
     "invalid_record": true,
     "flow_rel_tol": 0.05,
-    "settled_dates": [
+    "dates": [
       "2025-02-04",
       "2025-02-05"
     ],
