@@ -93,9 +93,10 @@ size-dependent factor corrects systematic density bias and tends to 1.27 at
 large diameters. Kiasadegh et al. (2026, Eqs. 33-34) describe the
 density-ratio correction. PEG reference measurements appear in Sapkota et al.
 (2025, Aerosol Sci. Technol. 59, 1053-1064, Supplement S3, Figure S3). The
-configured range of 22 to 600 nm approximates the reference-data range.
+configured range of 21.8 to 596 nm spans the smallest and largest PEG points.
 Results outside that range are flagged. Calibration uncertainty is specified
-for each campaign.
+for each campaign as a relative one-sigma value. It is systematic across the
+campaign and is doubled outside the configured range.
 
 `calibration.k_dm.source_id` identifies the campaign calibration record. The
 example does not include that record. `calibration.k_dm.uncertainty` is empty

@@ -74,5 +74,19 @@
     "doi": "",
     "sha256": "",
     "deposit": "not_deposited"
+  },
+  "aac_k_calibration": {
+    "file": "calibration/aac_k_calibration.mat",
+    "variables": [
+      "dm_nm",
+      "k"
+    ],
+    "producer": "",
+    "kind": "processed_measurement",
+    "cache_file": "",
+    "url": "",
+    "doi": "10.1080/02786826.2025.2519093",
+    "sha256": "",
+    "deposit": "not_deposited"
   }
 }

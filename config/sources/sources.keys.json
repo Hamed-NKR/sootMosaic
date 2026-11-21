@@ -64,5 +64,16 @@
   {"path":"inv_effective_density.kind","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","required":true,"allowed":["simulation_product","processed_measurement","raw_measurement"]},
   {"path":"inv_effective_density.producer","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","default":""},
   {"path":"inv_effective_density.deposit","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","default":"not_deposited"},
-  {"path":"inv_effective_density.where","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","allowed":["file","web"]}
+  {"path":"inv_effective_density.where","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","allowed":["file","web"]},
+  {"path":"aac_k_calibration.file","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","required":true},
+  {"path":"aac_k_calibration.url","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","default":""},
+  {"path":"aac_k_calibration.doi","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","default":""},
+  {"path":"aac_k_calibration.sha256","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","default":""},
+  {"path":"aac_k_calibration.cache_file","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","default":""},
+  {"path":"aac_k_calibration.variable","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE"},
+  {"path":"aac_k_calibration.variables","type":"list of text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE"},
+  {"path":"aac_k_calibration.kind","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","required":true,"allowed":["simulation_product","processed_measurement","raw_measurement"]},
+  {"path":"aac_k_calibration.producer","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","default":""},
+  {"path":"aac_k_calibration.deposit","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","default":"not_deposited"},
+  {"path":"aac_k_calibration.where","type":"text","unit":"none","status":"new","since":1,"reader":"LOAD_DATASET_SOURCE","allowed":["file","web"]}
 ]

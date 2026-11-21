@@ -195,6 +195,11 @@ for route A counts the `INV.BAYESF` selection of the same scan as its check.
 Pass distributions, their scan limits and the same-scan `INV.PEAK_FIT`
 result to `INV.MOMENTS`.
 
+Pass mobility diameters and the resolved configuration to `INV.CALIB_K`, and
+divide each measured effective density by the returned factor once.
+Pass a number distribution, its density relation and the configuration to
+`INV.MASS`.
+
 For AAC setpoints, supply each scan's recorded `scan.aac_speed_rad_s`,
 `scan.aac_temperature_deg_c`, `scan.aac_pressure_kpa`, and
 `scan.aac_sheath_flow_lpm`. Leave the sheath-flow configuration at `null`;
@@ -294,14 +299,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 33 QA functions. A pass prints one `PASS TEST_...`
+Run all 34 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 33)
+assert(numel(checks) == 34)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -636,6 +641,8 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `+INV/PEAK_FIT.m` | Latent lognormal peak fitting |
 | `+INV/MOMENTS.m` | Scan-window moments and tail bounds |
 | `+INV/STAT_RESPONSE.m` | Statistic response diagnostics |
+| `+INV/CALIB_K.m` | Density calibration factor, range flags, and source record |
+| `+INV/MASS.m` | Mass concentration from number distributions |
 | `+PAR/` | Particle initialization, sizing, projection, and geometry |
 | `+QA/` | Synthetic tests and aggregate geometry checks |
 | `+TRANSP/` | Transport properties, mobility, marching, and boundaries |

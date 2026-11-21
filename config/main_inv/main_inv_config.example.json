@@ -183,12 +183,12 @@
       "source_id": "aac_k_calibration",
       "data_file": "",
       "range_nm": [
-        22,
-        600
+        21.8,
+        596
       ],
       "reference_density_kg_m3": 1127,
       "uncertainty": null,
-      "operating_condition": "",
+      "operating_condition": "PEG classified by the AAC and scanned by an SMPS (3081 DMA, 3789 CPC), scan mode as dm, same AAC unit assumed, flows not published.",
       "diameter_unit_nm": 1
     }
   },

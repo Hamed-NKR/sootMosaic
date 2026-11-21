@@ -81,6 +81,18 @@ record method provenance and impose no additional code notice obligation.
   Tables B-2 and B-3); Wiedensohler et al. (2012, Table A7);
   Gopalakrishnan et al. (2013, Eq. 10, Table 2).
 
+## Density calibration and mass methods
+
+- `+INV/CALIB_K.m`: Perraud, Smith and Olfert (2023, supplement
+  Fig. S5); Kiasadegh et al. (2026, Eqs. 33 and 34); Sapkota et al.
+  (2025, SI Sec. S3 and Fig. S3) for the PEG points and the fitted factor.
+  Earlier calibration code was read as a model of the density-ratio
+  correction of Perraud, Smith and Olfert (2023) and Kiasadegh et al.
+  (2026, Eqs. 33-34), no code text adopted.
+- `+INV/MASS.m`: Tavakoli and Olfert (2014, Eqs. 3-5 and 7).
+
+Both files are reimplementations. No external code text is included.
+
 ## Two-dimensional inversion package
 
 Repository: https://github.com/tsipkens/bidias
