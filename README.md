@@ -200,6 +200,11 @@ divide each measured effective density by the returned factor once.
 Pass a number distribution, its density relation and the configuration to
 `INV.MASS`.
 
+Pass per-scan statistics or distributions and the resolved configuration to
+`INV.GROUP_AVG`. Pass the flows, temperature and pressure to `INV.OP_RANGE` to
+screen setpoints before a run. Sheath flows outside the instrument range are
+refused.
+
 For AAC setpoints, supply each scan's recorded `scan.aac_speed_rad_s`,
 `scan.aac_temperature_deg_c`, `scan.aac_pressure_kpa`, and
 `scan.aac_sheath_flow_lpm`. Leave the sheath-flow configuration at `null`;
@@ -299,14 +304,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 34 QA functions. A pass prints one `PASS TEST_...`
+Run all 35 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 34)
+assert(numel(checks) == 35)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -643,6 +648,8 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `+INV/STAT_RESPONSE.m` | Statistic response diagnostics |
 | `+INV/CALIB_K.m` | Density calibration factor, range flags, and source record |
 | `+INV/MASS.m` | Mass concentration from number distributions |
+| `+INV/GROUP_AVG.m` | Group means of per-scan results with Student t or day random-effects intervals |
+| `+INV/OP_RANGE.m` | DMA, AAC and tandem operating ranges at given flows |
 | `+PAR/` | Particle initialization, sizing, projection, and geometry |
 | `+QA/` | Synthetic tests and aggregate geometry checks |
 | `+TRANSP/` | Transport properties, mobility, marching, and boundaries |
@@ -708,3 +715,5 @@ Generated data, `results/`, `outputs/`, `.sootmosaic-cache/`, and
     diameter relation for sodium chloride and soot aggregates using
     electrical low-pressure impactor. Aerosol Science and Technology,
     59(9), 1053-1064. DOI 10.1080/02786826.2025.2519093.
+16. Kiasadegh, M. (2025). ACORC: Aerosol Classifier Operational Range
+    Calculator (DMA, AAC, CPMA). Zenodo. DOI 10.5281/zenodo.15620940.

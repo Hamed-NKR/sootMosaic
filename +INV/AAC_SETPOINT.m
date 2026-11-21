@@ -21,6 +21,7 @@ function [tau_s, da_m] = AAC_SETPOINT(cfg, step_id)
 % Method: Tavakoli and Olfert (2013); Johnson et al. (2018, Eq. 2);
 %     ...Kiasadegh et al. (2026, Eqs. 6 and 14). Dimensions from the AAC...
 %     ...manual v2.43 (Appendix F.1, p. 152).
+% The numerical core is the shared private function aac_setpoint_physics.
 % Repository: https://github.com/cambustion/tandem
 % Source: src/aerosol_psd_fitting_tool.py
 % Commit: 0cc733cd4d2f80defd8ef5b93a3bb586778012df
@@ -61,39 +62,28 @@ pressure = required(cfg, 'scan', 'aac_pressure_kpa', step_id);
 qsh = required(cfg, 'scan', 'aac_sheath_flow_lpm', step_id);
 r1 = required(cfg, 'geometry', 'aac_inner_radius_m', step_id);
 r2 = required(cfg, 'geometry', 'aac_outer_radius_m', step_id);
-len = required(cfg, 'geometry', 'aac_length_m', step_id);
+required(cfg, 'geometry', 'aac_length_m', step_id);
 if r2 <= r1
     error('sootMosaic:AAC_SETPOINT:InvalidGeometry', ...
         'Step %s requires an outer radius greater than the inner.', step_id);
 end
 try
-    [mu, lambda, ~, params] = INV.GAS(temp, pressure, [], cfg);
+    [tau_s, da_m] = aac_setpoint_physics(omega, qsh, temp, pressure, cfg);
 catch err
-    error('sootMosaic:AAC_SETPOINT:InvalidGasState', ...
-        'Step %s: %s', step_id, err.message);
+    switch err.identifier
+        case 'sootMosaic:AAC_PHYSICS:GasState'
+            error('sootMosaic:AAC_SETPOINT:InvalidGasState', ...
+                'Step %s: %s', step_id, err.message);
+        case 'sootMosaic:AAC_PHYSICS:RootRange'
+            error('sootMosaic:AAC_SETPOINT:RootRange', ...
+                'Step %s exceeds the finite setpoint range.', step_id);
+        case 'sootMosaic:AAC_PHYSICS:RootConvergence'
+            error('sootMosaic:AAC_SETPOINT:RootConvergence', ...
+                'Step %s has no converged diameter bracket.', step_id);
+        otherwise
+            rethrow(err);
+    end
 end
-tau_s = (2 * qsh) / (pi * omega^2 * (r1 + r2)^2 * len);
-a = 18 * mu * tau_s / params.constants.rho_aero_ref_kg_m3;
-slip = params.slip;
-b = 2 * lambda * (slip.kim2005.a + slip.kim2005.b);
-% Bracketing d^2 Cc(d) = a, with 1 <= Cc(d) <= 1 + b/d
-hi = sqrt(a);
-lo = a / (hi + b);
-if ~isfinite(tau_s) || ~isfinite(hi) || lo <= 0
-    error('sootMosaic:AAC_SETPOINT:RootRange', ...
-        'Step %s exceeds the finite setpoint range.', step_id);
-end
-for iteration = 1:256
-    mid = lo + (hi - lo) / 2;
-    cc = TRANSP.CUNNINGHAM(mid, lambda, slip.model, '', slip);
-    if mid^2 * cc < a, lo = mid; else, hi = mid; end
-    if hi - lo <= 4 * eps(mid), break; end
-end
-if hi - lo > 4 * eps(mid)
-    error('sootMosaic:AAC_SETPOINT:RootConvergence', ...
-        'Step %s has no converged diameter bracket.', step_id);
-end
-da_m = lo + (hi - lo) / 2;
 logged = cfg.si.scan.aac_setpoint_nm;
 if ~isempty(logged)
     tol = cfg.checks.setpoint_rel_tol;

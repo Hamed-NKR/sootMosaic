@@ -507,6 +507,7 @@ scale = 1;
 offset = 0;
 switch unit
     case 'L/min', scale = 1e-3 / 60;
+    case 'rad/s per L/min', scale = 60 / 1e-3;
     case 'nm', scale = 1e-9;
     case 'cm', scale = 1e-2;
     case 'mm', scale = 1e-3;

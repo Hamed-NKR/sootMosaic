@@ -6,7 +6,8 @@ Repository: https://github.com/cambustion/tandem
 Source: `src/aerosol_psd_fitting_tool.py`, lines 48-60 and 169-259.
 Commit: `0cc733cd4d2f80defd8ef5b93a3bb586778012df` (29 Oct 2026).
 License: MIT License.
-Consumers: `+INV/DM_FROM_Z.m` and `+INV/AAC_SETPOINT.m`.
+Consumers: `+INV/DM_FROM_Z.m`, `+INV/AAC_SETPOINT.m` and its private
+function `+INV/private/aac_setpoint_physics.m`.
 Published methods: Sipkens et al. (2020, part I, Eqs. 7-9),
 Johnson et al. (2018, Eq. 2), and Kiasadegh et al. (2026, Eqs. 6 and 14).
 Kiasadegh et al. (2026) cites software release v2.0.0 (21e5a71).
@@ -92,6 +93,57 @@ record method provenance and impose no additional code notice obligation.
 - `+INV/MASS.m`: Tavakoli and Olfert (2014, Eqs. 3-5 and 7).
 
 Both files are reimplementations. No external code text is included.
+
+## Group averaging methods
+
+- `+INV/GROUP_AVG.m`: two-sided Student t interval on the scan count less
+  one; DerSimonian and Laird (1986, Eqs. 2-4 and the moment estimate of
+  the between-day variance, p. 183), the random-effects combination named
+  by Kiasadegh et al. (2026, Appendix), with a Student t interval on the
+  day count less one as a small-sample approximation; JCGM 100:2008
+  (Eq. G.2b) for the effective degrees of freedom of the combined term.
+  Earlier averaging code was read as a model of the call layout for
+  Student t group averages, no code text adopted.
+
+The file is a reimplementation. No external code text is included.
+
+## Operating range calculator
+
+Repository: https://github.com/MortezaKiasadegh/acorc
+Source: `script.js` (DMA and AAC range functions and the aerodynamic to
+mobility conversion), release v2.0.
+Commit: `21889c61289e16936d7b8256b839c4090351c192` (15 Oct 2025).
+License: MIT License.
+Consumer: `+INV/OP_RANGE.m`, adapted 20 Nov 2026 (bracketed roots, the
+speed limit at the given sheath flow, configured constants and geometry,
+no plotting, mass classifier or sheath flow sweep).
+Published methods: Kiasadegh et al. (2026, Sec. 2.4 and Table 1; SI
+Secs. S1.1 and S1.2, Eqs. S1-S7); Johnson et al. (2018, Eqs. 1 and 2).
+Code citation, as the repository `CITATION.cff` at this commit asks:
+Kiasadegh (2025), ACORC, Aerosol Classifier Operational Range Calculator
+(DMA, AAC, CPMA), Zenodo, doi:10.5281/zenodo.15620940.
+
+MIT License
+
+Copyright (c) 2025 Morteza Kiasadegh
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## Two-dimensional inversion package
 

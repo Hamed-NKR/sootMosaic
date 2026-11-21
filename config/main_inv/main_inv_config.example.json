@@ -306,7 +306,12 @@
     "dma": "3081a",
     "aac": "aac",
     "voltage_limits_v": [],
-    "speed_limits_rad_s": []
+    "dma_sheath_flow_limits_lpm": [],
+    "aac_sheath_flow_limits_lpm": [],
+    "speed_limits_rad_s": [],
+    "speed_limit_intercepts_rad_s": [],
+    "speed_limit_slopes_rad_s_per_lpm": [],
+    "speed_limit_switch_flow_lpm": null
   },
   "gas": {
     "dm_root_rel_tol": 1e-10,

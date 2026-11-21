@@ -10,7 +10,14 @@
         "length_m": 0.44369,
         "penetration_length_m": 7.1,
         "electrostatic_penetration": 0.98,
-        "voltage_limits_v": []
+        "voltage_limits_v": [
+          10,
+          10000
+        ],
+        "sheath_flow_limits_lpm": [
+          2,
+          30
+        ]
       },
       "sources": [
         {
@@ -57,14 +64,20 @@
           "keys": [
             "voltage_limits_v"
           ],
-          "citation": "Kiasadegh et al. (2026), Table 1",
-          "page": "701",
-          "note": "Operating limits of the cited table are not in the registry"
+          "citation": "3082 manual, Table A-3; Kiasadegh et al. (2026), SI Sec. S1.1; range calculator v2.0 (21889c6), 3082 inputs",
+          "page": "A-3",
+          "note": "Classifier voltage range 10 to 10,000 V DC of the 3082 platform that drives the DMA"
+        },
+        {
+          "keys": [
+            "sheath_flow_limits_lpm"
+          ],
+          "citation": "Kiasadegh et al. (2026), Table 1; 3082 manual, Table A-3",
+          "page": "701; A-3",
+          "note": "Sheath flow range 2 to 30 L/min"
         }
       ],
-      "pending": [
-        "voltage_limits_v"
-      ]
+      "pending": []
     },
     {
       "id": "3082",
@@ -194,7 +207,23 @@
           0.814
         ],
         "deposition_switch": 0.007,
-        "speed_limits_rad_s": [],
+        "speed_limits_rad_s": [
+          20,
+          733.0382858376184
+        ],
+        "sheath_flow_limits_lpm": [
+          2,
+          15
+        ],
+        "speed_limit_intercepts_rad_s": [
+          723.7,
+          875
+        ],
+        "speed_limit_slopes_rad_s_per_lpm": [
+          -9.87,
+          -25
+        ],
+        "speed_limit_switch_flow_lpm": 10,
         "width_diameter_unit_nm": 1
       },
       "sources": [
@@ -306,9 +335,27 @@
           "keys": [
             "speed_limits_rad_s"
           ],
-          "citation": "Kiasadegh et al. (2026), Table 1",
-          "page": "701",
-          "note": "Operating limits of the cited table are not in the registry"
+          "citation": "Lower limit: Kiasadegh et al. (2026), Table 1, and AAC manual v2.43, Sec. 2.1.5.4. Upper limit: AAC manual v2.43, Appendix F.1; Kiasadegh et al. (2026), SI Sec. S1.2; range calculator v2.0 (21889c6), AAC inputs",
+          "page": "701 and 31; 152",
+          "note": "Minimum stable speed 20 rad/s, maximum speed 7,000 rpm stored in rad/s"
+        },
+        {
+          "keys": [
+            "sheath_flow_limits_lpm"
+          ],
+          "citation": "Kiasadegh et al. (2026), Table 1; AAC manual v2.43, Sec. 2.1.5.4 and Appendix F.1",
+          "page": "701; 31, 152",
+          "note": "Sheath flow range 2 to 15 L/min"
+        },
+        {
+          "keys": [
+            "speed_limit_intercepts_rad_s",
+            "speed_limit_slopes_rad_s_per_lpm",
+            "speed_limit_switch_flow_lpm"
+          ],
+          "citation": "Kiasadegh et al. (2026), SI Sec. S1.2, Eq. S7; AAC manual v2.43, Appendix F.2.1",
+          "page": "SI p. 3; manual p. 153",
+          "note": "Upper speed min(max, intercept + slope Qsh), first line up to and including the switch flow, Qsh in L/min"
         },
         {
           "keys": [
@@ -319,9 +366,7 @@
           "note": "Unit reference for the diameter coordinate in nm; use d_si / diameter_unit_si"
         }
       ],
-      "pending": [
-        "speed_limits_rad_s"
-      ]
+      "pending": []
     },
     {
       "id": "aac_prototype_tavakoli2013",
