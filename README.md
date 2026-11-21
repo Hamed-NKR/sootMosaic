@@ -190,6 +190,11 @@ Pass weighted kernels, observations, and grids to `INV.BAYESF` for scans of
 one instrument mode. Use `INV.LOGDET` for log determinants and
 `INV.LAMBDA_XCHECK` for comparison scales.
 
+Pass scan observations and a resolved configuration to `INV.PEAK_FIT`, and
+for route A counts the `INV.BAYESF` selection of the same scan as its check.
+Pass distributions, their scan limits and the same-scan `INV.PEAK_FIT`
+result to `INV.MOMENTS`.
+
 For AAC setpoints, supply each scan's recorded `scan.aac_speed_rad_s`,
 `scan.aac_temperature_deg_c`, `scan.aac_pressure_kpa`, and
 `scan.aac_sheath_flow_lpm`. Leave the sheath-flow configuration at `null`;
@@ -289,14 +294,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 32 QA functions. A pass prints one `PASS TEST_...`
+Run all 33 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 32)
+assert(numel(checks) == 33)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -628,6 +633,9 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `+INV/BAYESF.m` | Regularization evidence, scale probabilities, and pooled prior selection |
 | `+INV/LOGDET.m` | Log determinants of matrices with positive determinants |
 | `+INV/LAMBDA_XCHECK.m` | Regularization scales from three comparison criteria |
+| `+INV/PEAK_FIT.m` | Latent lognormal peak fitting |
+| `+INV/MOMENTS.m` | Scan-window moments and tail bounds |
+| `+INV/STAT_RESPONSE.m` | Statistic response diagnostics |
 | `+PAR/` | Particle initialization, sizing, projection, and geometry |
 | `+QA/` | Synthetic tests and aggregate geometry checks |
 | `+TRANSP/` | Transport properties, mobility, marching, and boundaries |
