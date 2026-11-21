@@ -36,12 +36,26 @@ function [cfg, provenance] = CONFIG_READ(file, dictionary, opts)
 %         ...key may be empty text and the stored id keeps its input form.
 %         ...Type any with open true leaves nested metadata uninterpreted.
 %         ...Struct_fallback replaces non-struct input with an empty object;...
-%         ...struct arrays retain their decoded values without child checks.
+%         ...struct arrays retain their decoded values without child checks....
+%         ...Coerce "logical" applies logical() and accepts decoded...
+%         ...singleton arrays, as double does. Loader_fallback "missing",...
+%         ..."empty" or "non_object" leaves the key absent when it is...
+%         ...missing, also when it is null or empty, or also when it is not...
+%         ...a decoded object, so the loader applies its own fallback....
+%         ...Child rows and defaults apply only to a kept value....
+%         ...Array_fallback with struct_fallback replaces an object array...
+%         ...whose entries hold none of the child keys with an empty...
+%         ...object, so the child defaults apply.
 %     opts: Optional structure with Strict (false), MaxDepth (16 files),...
 %         ...SupportedVersion (1), Base (resolved lower-precedence object)...
 %         ...and Overrides (direct arguments, highest precedence)....
 %         ...QA and release callers set Strict to true. Base can hold the...
-%         ...resolved profile, with stage values merged over common values.
+%         ...resolved profile, with stage values merged over common values....
+%         ...KeywordNames (false) accepts member names in task files that...
+%         ...are language keywords, such as end, which jsondecode keeps....
+%         ...LoaderFallbacks (absent) is an object of values a loader...
+%         ...supplies, merged after the direct arguments with the source...
+%         ...<loader-fallback>.
 % ----------------------------------------------------------------------- %
 %
 % Outputs:
@@ -83,10 +97,15 @@ end
 strict = option(opts, 'Strict', false);
 max_depth = option(opts, 'MaxDepth', 16);
 version = option(opts, 'SupportedVersion', 1);
+keywords = option(opts, 'KeywordNames', false);
 if ~islogical(strict) || ~isscalar(strict) || ...
         ~positive_integer(max_depth) || ~positive_integer(version)
     error('sootMosaic:CONFIG_READ:InvalidOptions', ...
         'Strict must be logical; depth and version must be positive integers.');
+end
+if ~islogical(keywords) || ~isscalar(keywords)
+    error('sootMosaic:CONFIG_READ:InvalidOptions', ...
+        'KeywordNames must be a logical scalar.');
 end
 dict_source = struct('file', {}, 'sha256', {}, 'notes', {});
 if ischar(dictionary) || (isstring(dictionary) && isscalar(dictionary))
@@ -158,6 +177,14 @@ direct = prepare(direct);
 [cfg, direct_records] = UTILS.CONFIG_MERGE(cfg, direct, '<arguments>', ...
     '', id_paths);
 records = [records; base_records; chain_records; direct_records];
+if isfield(opts, 'LoaderFallbacks')
+    fallbacks = opts.LoaderFallbacks;
+    require_object(fallbacks, 'LoaderFallbacks');
+    fallbacks = prepare(fallbacks);
+    [cfg, fallback_records] = UTILS.CONFIG_MERGE(cfg, fallbacks, ...
+        '<loader-fallback>', '', id_paths);
+    records = [records; fallback_records];
+end
 unknowns(cfg, schema, '');
 [cfg, si] = validate_object(cfg, schema, '', id_paths);
 if ~isfield(cfg, 'config_version'), cfg.config_version = 1; end
@@ -177,9 +204,9 @@ cfg.provenance = provenance;
                 'The extends chain exceeds %d files.', max_depth);
         end
         if isempty(native_paths)
-            [value, notes] = read_json(name);
+            [value, notes] = read_json(name, keywords);
         else
-            [value, notes, decoded] = read_json(name);
+            [value, notes, decoded] = read_json(name, keywords);
             if iscell(value) && isscalar(value) && ...
                     isstruct(decoded) && isscalar(decoded)
                 value = value{1};
@@ -316,6 +343,23 @@ for k = 1:numel(names)
     path = join_path(prefix, key);
     if ~isempty(option(row, 'alias_of', '')), continue; end
     present = isfield(value, key);
+    fallback = option(row, 'loader_fallback', '');
+    if ~isempty(fallback)
+        if ~any(strcmp(fallback, {'missing', 'empty', 'non_object'}))
+            error('sootMosaic:CONFIG_READ:InvalidDictionary', ...
+                'Unknown loader_fallback %s for %s.', fallback, path);
+        end
+        % Leaving missing, empty or non-object input to the loader
+        if present
+            item = clean_nulls(value.(key));
+            if (strcmp(fallback, 'empty') && isempty(item)) || ...
+                    (strcmp(fallback, 'non_object') && ~isstruct(item))
+                value = rmfield(value, key);
+                present = false;
+            end
+        end
+        if ~present, continue; end
+    end
     if ~present
         if isfield(row, 'default')
             value.(key) = row.default;
@@ -337,6 +381,10 @@ for k = 1:numel(names)
     item = value.(key);
     if option(row, 'struct_fallback', false)
         if ~isstruct(item), item = struct(); end
+        if ~isscalar(item) && option(row, 'array_fallback', false) && ...
+                ~any(isfield(item, fieldnames(child.children)))
+            item = struct();
+        end
         if ~isscalar(item)
             value.(key) = clean_nulls(item);
             si.(key) = value.(key);
@@ -402,6 +450,9 @@ if strcmp(coerce, 'double')
     is_array = false;
 elseif strcmp(coerce, 'char')
     value = char(value);
+elseif strcmp(coerce, 'logical')
+    value = logical(value);
+    is_array = false;
 elseif ~isempty(coerce)
     error('sootMosaic:CONFIG_READ:InvalidDictionary', ...
         'Unknown conversion %s for %s.', coerce, path);
@@ -575,6 +626,7 @@ for k = 1:numel(names)
     child = tree.children.(key);
     if ~isempty(option(child.row, 'alias_of', '')), continue; end
     if option(child.row, 'defer_defaults', false), continue; end
+    if ~isempty(option(child.row, 'loader_fallback', '')), continue; end
     if isfield(child.row, 'default')
         value.(key) = child.row.default;
     elseif ~child.array
@@ -734,7 +786,8 @@ yes = startsWith(name, '/') || startsWith(name, '\') || ...
     ~isempty(regexp(name, '^[A-Za-z]:[\\/]', 'once'));
 end
 
-function valid_name(key)
+function valid_name(key, keywords)
+if nargin > 1 && keywords && iskeyword(key), return; end
 if isempty(key) || numel(key) > namelengthmax || ...
         ~strcmp(key, matlab.lang.makeValidName(key))
     error('sootMosaic:CONFIG_READ:InvalidName', ...
@@ -763,8 +816,9 @@ for k = 1:numel(paths)
 end
 end
 
-function [value, notes, native_value] = read_json(file)
+function [value, notes, native_value] = read_json(file, keywords)
 native_value = [];
+allow_keywords = nargin > 1 && keywords;
 if ~isfile(file)
     error('sootMosaic:CONFIG_READ:MissingFile', ...
         'Configuration file does not exist: %s', file);
@@ -816,7 +870,7 @@ if nargout > 2, native_value = jsondecode(text); end
                 catch err
                     error('sootMosaic:CONFIG_READ:InvalidJSON', '%s', err.message);
                 end
-                valid_name(key);
+                valid_name(key, allow_keywords);
                 index = index + 1;
                 if ~at(':'), invalid_json(); end
                 index = index + 1;

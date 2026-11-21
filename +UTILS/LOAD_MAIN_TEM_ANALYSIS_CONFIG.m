@@ -1,17 +1,48 @@
-function cfg = LOAD_MAIN_TEM_ANALYSIS_CONFIG(config_path)
-%LOAD_MAIN_TEM_ANALYSIS_CONFIG Load and validate the TEM analysis config.
-%   CFG = UTILS.LOAD_MAIN_TEM_ANALYSIS_CONFIG reads
-%   SOOTMOSAIC_MAIN_TEM_ANALYSIS_CONFIG. If empty, it reads
-%   PFAL_MAIN_TEM_ANALYSIS_CONFIG. If both are empty, it reads
-%   config/main_tem_analysis/main_tem_analysis_config.local.json.
+function cfg = LOAD_MAIN_TEM_ANALYSIS_CONFIG(config_path, opts)
+% "LOAD_MAIN_TEM_ANALYSIS_CONFIG" resolves and validates the TEM analysis task.
+% The task names no model_profile and resolves no profile....
+%     ...main_tem_analysis_v1 reads the native task fields, not cfg.si,...
+%     ...and no consumer reads plots.font.title_size or the entries keys...
+%     ...include_in_publication_plots and include_in_hybridity_scatter....
+%     ...cfg.si mirrors the resolved task, whose units all have factor 1.
+% ----------------------------------------------------------------------- %
 %
-%   Canonical configs define every publication choice explicitly. Legacy
-%   configs are upgraded in memory so older custom profiles remain usable.
+% Inputs:
+%     config_path: Task file, or empty for...
+%         ...SOOTMOSAIC_MAIN_TEM_ANALYSIS_CONFIG, then...
+%         ...PFAL_MAIN_TEM_ANALYSIS_CONFIG, then the local task file
+%     opts: Optional CONFIG_READ controls. QA calls set Strict to true....
+%         ...KeywordNames is always set, since aggregate id ranges name...
+%         ...their last id with the member end. LoaderFallbacks is set by...
+%         ...this loader only
+% ----------------------------------------------------------------------- %
+%
+% Outputs:
+%     cfg: Validated task. Output folders resolve from the folder of the...
+%         ...selected task file and entry files from entries.entry_dir
+% ----------------------------------------------------------------------- %
+%
+% A task without plots.figures, without its...
+%     ...subaggregate_count_distribution figure or without...
+%     ...plots.frequency_bins is read a second time with the figure and...
+%     ...bin sets of this loader as the LoaderFallbacks layer above the...
+%     ...direct arguments, so those sets take the same dictionary...
+%     ...defaults and checks as configured ones and the provenance keeps...
+%     ...the argument records. The second read repeats no unknown-key...
+%     ...warning.
+% ----------------------------------------------------------------------- %
 
+if nargin < 2, opts = struct(); end
+if isstruct(opts) && isscalar(opts)
+    opts.KeywordNames = true;
+    if isfield(opts, 'LoaderFallbacks')
+        opts = rmfield(opts, 'LoaderFallbacks');
+    end
+end
 if nargin < 1 || isempty(config_path)
     config_path = getenv('SOOTMOSAIC_MAIN_TEM_ANALYSIS_CONFIG');
     if isempty(config_path)
-        config_path = getenv('PFAL_MAIN_TEM_ANALYSIS_CONFIG'); % earlier name
+        config_path = getenv('PFAL_MAIN_TEM_ANALYSIS_CONFIG'); % Permanent fallback
     end
     if isempty(config_path)
         config_path = fullfile(repo_root(), 'config', 'main_tem_analysis', ...
@@ -28,151 +59,152 @@ if ~isfile(config_path)
         config_path);
 end
 
-try
-    cfg = jsondecode(fileread(config_path));
-catch err
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidConfig', ...
-        'Could not parse TEM analysis config "%s": %s', ...
-        config_path, err.message);
-end
-
+dictionary = fullfile(repo_root(), 'config', 'main_tem_analysis', ...
+    'main_tem_analysis.keys.json');
+cfg = UTILS.CONFIG_READ(config_path, dictionary, opts);
 config_dir = fileparts(config_path);
+
+% Reading again with the figure and bin sets of this loader where the...
+    % ...task gives none
+sets = fallback_sets(cfg.plots, validate_entries(cfg.entries, config_dir));
+fallback_bins = isfield(sets, 'frequency_bins');
+fallback_figures = isfield(sets, 'figures') && ~isfield(cfg.plots, 'figures');
+if ~isempty(fieldnames(sets))
+    opts.LoaderFallbacks = struct('plots', sets);
+    cfg = read_again(config_path, dictionary, opts);
+end
+read_cfg = cfg;
+
 cfg.config_file = config_path;
-
-cfg.analysis = require_struct_field(cfg, 'analysis', 'analysis section');
-cfg.analysis.coverage_threshold = require_positive_scalar_field( ...
-    cfg.analysis, 'coverage_threshold', 'analysis.coverage_threshold');
-cfg.analysis.logistic_bandwidth = require_positive_scalar_field( ...
-    cfg.analysis, 'logistic_bandwidth', 'analysis.logistic_bandwidth');
-cfg.analysis.primary_area_start_row = require_positive_integer_field( ...
-    cfg.analysis, 'primary_area_start_row', 'analysis.primary_area_start_row');
-cfg.analysis.random_resample_count = require_positive_integer_field( ...
-    cfg.analysis, 'random_resample_count', 'analysis.random_resample_count');
-cfg.analysis.random_seed = optional_nonnegative_integer_field( ...
-    cfg.analysis, 'random_seed');
-cfg.analysis.summary = validate_analysis_summary( ...
-    optional_struct_field(cfg.analysis, 'summary'));
-
-cfg.outputs = require_struct_field(cfg, 'outputs', 'outputs section');
-cfg.outputs.data_root = resolve_config_path(require_text_field( ...
-    cfg.outputs, 'data_root', 'outputs.data_root'), config_dir);
-cfg.outputs.results_root = resolve_config_path(require_text_field( ...
-    cfg.outputs, 'results_root', 'outputs.results_root'), config_dir);
-cfg.outputs.mat_file = require_text_field(cfg.outputs, ...
-    'mat_file', 'outputs.mat_file');
-cfg.outputs.model_inputs_csv = require_text_field(cfg.outputs, ...
-    'model_inputs_csv', 'outputs.model_inputs_csv');
-cfg.outputs.summary_csv = require_text_field(cfg.outputs, ...
-    'summary_csv', 'outputs.summary_csv');
-cfg.outputs.comparison_summary_csv = optional_text_field(cfg.outputs, ...
-    'comparison_summary_csv', 'experimental_condition_comparison.csv');
-
-if ~isfield(cfg, 'entries') || isempty(cfg.entries) || ...
-        ~(isstruct(cfg.entries) || iscell(cfg.entries))
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingEntries', ...
-        'The TEM analysis config must contain a non-empty entries array.');
-end
-entries_in = cfg.entries;
-entries_out = cell(numel(entries_in), 1);
-for i = 1:numel(entries_in)
-    if iscell(entries_in)
-        entry_in = entries_in{i};
-    else
-        entry_in = entries_in(i);
-    end
-    if ~isstruct(entry_in) || ~isscalar(entry_in)
-        error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidEntry', ...
-            'entries(%d) must be a JSON object.', i);
-    end
-    entries_out{i} = validate_entry(entry_in, i, config_dir);
-end
-cfg.entries = vertcat(entries_out{:});
-entry_ids = {cfg.entries.id};
-if numel(unique(entry_ids)) ~= numel(entry_ids)
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:DuplicateEntryId', ...
-        'Every entries.id value must be unique.');
-end
-if ~any([cfg.entries.enabled])
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:NoEnabledEntries', ...
-        'At least one TEM entry must be enabled.');
-end
-
-cfg.plots = validate_plots(cfg, entry_ids);
+cfg.analysis = validate_analysis(cfg.analysis);
+cfg.outputs = validate_outputs(cfg.outputs, config_dir);
+cfg.entries = validate_entries(cfg.entries, config_dir);
+cfg.plots = validate_plots(cfg.plots, {cfg.entries.id}, fallback_bins, ...
+    fallback_figures);
 cfg.entries = validate_stack_palette_lengths(cfg.entries, ...
     cfg.plots.frequency_bins);
 
+% Mirroring the resolved task with the SI numbers of the reader
+cfg.si = si_mirror(rmfield(cfg, {'si', 'provenance'}), read_cfg, read_cfg.si);
+
 end
 
-function summary = validate_analysis_summary(summary)
+function cfg = read_again(config_path, dictionary, opts)
+% "read_again" reads the task with the fallback sets of this loader.
+% ----------------------------------------------------------------------- %
 
-% Keep condition-comparison choices together while allowing established
-% external profiles to inherit the publication defaults in memory.
-if isfield(summary, 'confidence_level') && ...
-        ~isempty(summary.confidence_level)
-    summary.confidence_level = require_scalar_field(summary, ...
-        'confidence_level', 'analysis.summary.confidence_level');
-else
-    summary.confidence_level = 0.95;
+% The first read has warned once for each unknown key, so the second...
+    % ...read keeps only that warning off and restores its state on exit
+warning_id = 'sootMosaic:CONFIG_READ:UnknownKey';
+warning_state = warning('query', warning_id);
+restore_warning = onCleanup(@() warning(warning_state));
+warning('off', warning_id);
+cfg = UTILS.CONFIG_READ(config_path, dictionary, opts);
+clear restore_warning
+
 end
+
+function analysis = validate_analysis(analysis)
+% "validate_analysis" checks the coverage weighting and summary choices.
+% ----------------------------------------------------------------------- %
+
+analysis.coverage_threshold = positive_value(analysis.coverage_threshold, ...
+    'analysis.coverage_threshold');
+analysis.logistic_bandwidth = positive_value(analysis.logistic_bandwidth, ...
+    'analysis.logistic_bandwidth');
+analysis.random_seed = plain_empty(analysis.random_seed);
+
+summary = analysis.summary;
 if summary.confidence_level <= 0 || summary.confidence_level >= 1
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidConfidenceLevel', ...
         'analysis.summary.confidence_level must be strictly between 0 and 1.');
 end
-
-summary.morphology_center = lower(optional_text_field(summary, ...
-    'morphology_center', 'median'));
+summary.morphology_center = lower(char(summary.morphology_center));
 if ~ismember(summary.morphology_center, {'median','mean'})
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidSummaryCenter', ...
         'analysis.summary.morphology_center must be median or mean.');
 end
-
-summary.morphology_spread = lower(optional_text_field(summary, ...
-    'morphology_spread', 'iqr'));
+summary.morphology_spread = lower(char(summary.morphology_spread));
 if ~ismember(summary.morphology_spread, {'iqr','standard_deviation'})
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidSummarySpread', ...
         ['analysis.summary.morphology_spread must be iqr or ' ...
         'standard_deviation.']);
 end
-
-summary.morphology_interval = lower(optional_text_field(summary, ...
-    'morphology_interval', 'bootstrap_percentile'));
+summary.morphology_interval = lower(char(summary.morphology_interval));
 if ~strcmp(summary.morphology_interval, 'bootstrap_percentile')
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidSummaryInterval', ...
         ['analysis.summary.morphology_interval must be ' ...
         'bootstrap_percentile.']);
 end
-
-summary.frequency_interval = lower(optional_text_field(summary, ...
-    'frequency_interval', 'wilson'));
+summary.frequency_interval = lower(char(summary.frequency_interval));
 if ~strcmp(summary.frequency_interval, 'wilson')
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidFrequencyInterval', ...
         'analysis.summary.frequency_interval must be wilson.');
+end
+analysis.summary = summary;
+
+end
+
+function outputs = validate_outputs(outputs, config_dir)
+% "validate_outputs" resolves the output folders and file names.
+% ----------------------------------------------------------------------- %
+
+outputs.data_root = resolve_config_path(require_text_field( ...
+    outputs, 'data_root', 'outputs.data_root'), config_dir);
+outputs.results_root = resolve_config_path(require_text_field( ...
+    outputs, 'results_root', 'outputs.results_root'), config_dir);
+outputs.mat_file = require_text_field(outputs, ...
+    'mat_file', 'outputs.mat_file');
+outputs.model_inputs_csv = require_text_field(outputs, ...
+    'model_inputs_csv', 'outputs.model_inputs_csv');
+outputs.summary_csv = require_text_field(outputs, ...
+    'summary_csv', 'outputs.summary_csv');
+outputs.comparison_summary_csv = char(outputs.comparison_summary_csv);
+
+end
+
+function entries = validate_entries(entries_in, config_dir)
+% "validate_entries" checks every entry and returns a structure array.
+% ----------------------------------------------------------------------- %
+
+if isempty(entries_in)
+    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingEntries', ...
+        'The TEM analysis config must contain a non-empty entries array.');
+end
+entries_out = cell(numel(entries_in), 1);
+for i = 1:numel(entries_in)
+    entries_out{i} = validate_entry(entries_in{i}, i, config_dir);
+end
+entries = object_array(entries_out, ...
+    'sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InconsistentEntries', ...
+    'entries');
+entry_ids = {entries.id};
+if numel(unique(entry_ids)) ~= numel(entry_ids)
+    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:DuplicateEntryId', ...
+        'Every entries.id value must be unique.');
+end
+if ~any([entries.enabled])
+    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:NoEnabledEntries', ...
+        'At least one TEM entry must be enabled.');
 end
 
 end
 
 function entry = validate_entry(entry, index, config_dir)
-
-% Resolve dataset paths relative to the selected profile and validate the
-% complete condition-level scientific and presentation definition.
+% "validate_entry" resolves the entry files and its plot style.
+% ----------------------------------------------------------------------- %
 
 label = sprintf('entries(%d)', index);
 entry.id = require_text_field(entry, 'id', [label '.id']);
 entry.label = require_text_field(entry, 'label', [label '.label']);
-entry.entry_type = optional_text_field(entry, 'entry_type', '');
-entry.enabled = optional_logical_field(entry, 'enabled', true);
+entry.entry_type = char(entry.entry_type);
 entry.entry_dir = resolve_config_path(require_text_field(entry, ...
     'entry_dir', [label '.entry_dir']), config_dir);
 
-entry.aggregate = require_struct_field(entry, 'aggregate', ...
-    [label '.aggregate section']);
 entry.aggregate.file = resolve_entry_path(require_text_field( ...
     entry.aggregate, 'file', [label '.aggregate.file']), entry.entry_dir);
 entry.aggregate.variable = require_text_field(entry.aggregate, ...
     'variable', [label '.aggregate.variable']);
-
-entry.primary_particles = require_struct_field(entry, 'primary_particles', ...
-    [label '.primary_particles section']);
 entry.primary_particles.folder = resolve_entry_path(require_text_field( ...
     entry.primary_particles, 'folder', [label '.primary_particles.folder']), ...
     entry.entry_dir);
@@ -183,7 +215,7 @@ entry.primary_particles.area_column = require_text_field( ...
     entry.primary_particles, 'area_column', ...
     [label '.primary_particles.area_column']);
 
-if ~isfield(entry, 'aggregate_ids') || isempty(entry.aggregate_ids)
+if isempty(entry.aggregate_ids)
     entry.aggregate_ids = [];
 else
     entry.aggregate_ids = parse_aggregate_ids(entry.aggregate_ids, ...
@@ -191,9 +223,7 @@ else
 end
 if ~isfield(entry, 'primary_particle_aggregate_ids') || ...
         isempty(entry.primary_particle_aggregate_ids)
-    % Legacy profiles used aggregate_ids for both morphology and primary-
-    % particle processing. Preserve that behavior when the separate field is
-    % absent.
+    % Using the morphology ids for the primary particles as well
     entry.primary_particle_aggregate_ids = entry.aggregate_ids;
 else
     entry.primary_particle_aggregate_ids = parse_aggregate_ids( ...
@@ -208,24 +238,17 @@ if ~isempty(entry.aggregate_ids) && ...
         '%s.aggregate_ids.'], label, label);
 end
 
-% Canonical configs use style. Legacy plot.color/marker is upgraded here.
-if isfield(entry, 'style') && ~isempty(entry.style)
+% Taking the colour set of entry_type and the plot block without a style
+if isfield(entry, 'style')
     entry.style = validate_entry_style(entry.style, [label '.style']);
 else
-    legacy_plot = optional_struct_field(entry, 'plot');
-    legacy_color = optional_text_field(legacy_plot, 'color', '');
-    legacy_marker = optional_text_field(legacy_plot, 'marker', 'o');
-    entry.style = legacy_style(entry.entry_type, legacy_color, legacy_marker);
+    plot_cfg = optional_struct_field(entry, 'plot');
+    plot_color = optional_text_field(plot_cfg, 'color', '');
+    plot_marker = optional_text_field(plot_cfg, 'marker', 'o');
+    entry.style = legacy_style(entry.entry_type, plot_color, plot_marker);
 end
 
-entry.include_in_model_inputs = optional_logical_field(entry, ...
-    'include_in_model_inputs', true);
-entry.include_in_publication_plots = optional_logical_field(entry, ...
-    'include_in_publication_plots', true);
-entry.include_in_hybridity_scatter = optional_logical_field(entry, ...
-    'include_in_hybridity_scatter', true);
-
-if isfield(entry, 'model_filter') && ~isempty(entry.model_filter)
+if isfield(entry, 'model_filter')
     entry.model_filter = validate_filter(entry.model_filter, label);
 else
     entry.model_filter = struct();
@@ -234,11 +257,9 @@ end
 end
 
 function style = validate_entry_style(style, label)
+% "validate_entry_style" checks the colours and markers of one entry.
+% ----------------------------------------------------------------------- %
 
-if ~isstruct(style)
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidStyle', ...
-        '%s must be a struct.', label);
-end
 style.color = validate_hex_color(require_text_field(style, 'color', ...
     [label '.color']), [label '.color']);
 style.secondary_color = validate_hex_color(require_text_field(style, ...
@@ -249,20 +270,19 @@ style.box_face_color = optional_style_color(style, 'box_face_color', ...
 style.median_color = optional_style_color(style, 'median_color', ...
     style.secondary_color, label);
 style.marker = require_text_field(style, 'marker', [label '.marker']);
-style.marker_size = require_positive_scalar_field(style, 'marker_size', ...
+style.marker_size = positive_value(style.marker_size, ...
     [label '.marker_size']);
-style.line_width = require_positive_scalar_field(style, 'line_width', ...
-    [label '.line_width']);
-style.box_face_alpha = require_unit_interval_field(style, ...
-    'box_face_alpha', [label '.box_face_alpha']);
+style.line_width = positive_value(style.line_width, [label '.line_width']);
 style.stack_colors = validate_stack_colors(style, label);
 
 end
 
 function stack_colors = validate_stack_colors(style, label)
+% "validate_stack_colors" reads the per-bin colours of one entry.
+% ----------------------------------------------------------------------- %
 
-if ~isfield(style, 'stack_colors') || ~isstruct(style.stack_colors)
-    % Legacy profiles receive monochromatic stacks based on the condition color.
+if ~isfield(style, 'stack_colors')
+    % Giving every bin the colour of the entry
     stack_colors = struct('hybridity', {{style.color}}, ...
         'collapse', {{style.color}});
     return
@@ -275,6 +295,7 @@ stack_colors.collapse = validate_color_list(style.stack_colors, ...
 end
 
 function color = optional_style_color(style, field_name, default_color, label)
+% "optional_style_color" reads an optional colour or its default colour.
 
 color = default_color;
 if isfield(style, field_name) && ~isempty(style.(field_name))
@@ -285,8 +306,9 @@ end
 end
 
 function style = legacy_style(entry_type, explicit_color, marker)
+% "legacy_style" builds the style of an entry from its entry_type.
+% ----------------------------------------------------------------------- %
 
-% Backward compatibility only. Canonical configs never use this mapping.
 switch lower(char(entry_type))
     case {'low_agglomeration', 'low_agglom', 'lal'}
         color = '#0072B2'; secondary = '#005A9C';
@@ -312,9 +334,11 @@ style = struct('color', color, 'secondary_color', secondary, ...
 end
 
 function entries = validate_stack_palette_lengths(entries, frequency_bins)
+% "validate_stack_palette_lengths" gives one colour to each configured bin.
+% ----------------------------------------------------------------------- %
 
-% Each condition supplies one shade per category so every stack can remain
-% within its condition hue while preserving the configured category order.
+% Each condition supplies one shade per category so every stack stays...
+    % ...within its condition hue in the configured category order
 metric_names = {'hybridity','collapse'};
 for i = 1:numel(entries)
     for j = 1:numel(metric_names)
@@ -335,31 +359,35 @@ end
 
 end
 
-function plots = validate_plots(cfg, entry_ids)
+function plots = validate_plots(plots, entry_ids, fallback_bins, ...
+    fallback_figures)
+% "validate_plots" checks the export, style, bin and figure settings.
+% ----------------------------------------------------------------------- %
+%
+% Inputs:
+%     plots: plots section after the dictionary read
+%     entry_ids: Validated entry ids
+%     fallback_bins: Bins built by this loader, kept as one row each
+%     fallback_figures: Figures built by this loader, categories kept as...
+%         ...one row
+% ----------------------------------------------------------------------- %
 
-if ~isfield(cfg, 'plots') || ~isstruct(cfg.plots)
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingSection', ...
-        'The TEM analysis config is missing the plots section.');
+plots.visible = char(plots.visible);
+
+% Reading the export format and resolution keys as the defaults of the...
+    % ...pdf, png and png_resolution keys
+export_format = optional_text_field(plots, 'format', 'png');
+if ~isfield(plots, 'pdf'), plots.pdf = strcmpi(export_format, 'pdf'); end
+if ~isfield(plots, 'png'), plots.png = ~strcmpi(export_format, 'pdf'); end
+export_resolution = optional_positive_integer_field(plots, 'resolution', 300);
+if ~isfield(plots, 'png_resolution')
+    plots.png_resolution = export_resolution;
 end
-plots = cfg.plots;
-plots.enabled = require_logical_field(plots, 'enabled', 'plots.enabled');
-plots.visible = optional_text_field(plots, 'visible', 'on');
-plots.export = require_logical_field(plots, 'export', 'plots.export');
-
-% Validate the dual-format output schema while retaining legacy format and
-% resolution fields for older custom profiles.
-legacy_format = optional_text_field(plots, 'format', 'png');
-plots.pdf = optional_logical_field(plots, 'pdf', strcmpi(legacy_format, 'pdf'));
-plots.png = optional_logical_field(plots, 'png', ~strcmpi(legacy_format, 'pdf'));
-legacy_resolution = optional_positive_integer_field(plots, 'resolution', 300);
-plots.png_resolution = optional_positive_integer_field(plots, ...
-    'png_resolution', legacy_resolution);
-plots.png_source = lower(optional_text_field(plots, 'png_source', 'figure'));
+plots.png_source = lower(char(plots.png_source));
 if ~ismember(plots.png_source, {'figure','pdf'})
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidPNGSource', ...
         'plots.png_source must be figure or pdf.');
 end
-plots.save_figures = optional_logical_field(plots, 'save_figures', false);
 if plots.export && ~plots.pdf && ~plots.png && ~plots.save_figures
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:NoFigureFormat', ...
         'At least one of plots.pdf, plots.png, or plots.save_figures must be enabled.');
@@ -368,47 +396,27 @@ if plots.export && plots.png && strcmp(plots.png_source, 'pdf') && ~plots.pdf
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingPDFForPNG', ...
         'plots.pdf must be enabled when plots.png_source is pdf.');
 end
-plots.axis_line_width = optional_positive_scalar_field(plots, ...
-    'axis_line_width', 1.0, 'plots.axis_line_width');
-plots.axes = validate_axes_style(optional_struct_field(plots, 'axes'));
-plots.boxplot = validate_boxplot_style(optional_struct_field(plots, ...
-    'boxplot'));
+plots.axis_line_width = positive_value(plots.axis_line_width, ...
+    'plots.axis_line_width');
+plots.axes = validate_axes_style(plots.axes);
+plots.boxplot = validate_boxplot_style(plots.boxplot);
+plots.font = validate_font(plots.font);
+plots.reference = validate_reference(plots.reference);
 
-if isfield(plots, 'font')
-    plots.font = validate_font(plots.font);
-else
-    plots.font = struct('family', 'Segoe UI Semilight', 'fallback', 'Segoe UI', ...
-        'axis_size', 13, 'label_size', 18, 'legend_size', 15, ...
-        'title_size', 18, 'weight', 'normal', 'interpreter', 'tex');
+metric_names = {'hybridity', 'collapse'};
+for i = 1:numel(metric_names)
+    label = ['plots.frequency_bins.' metric_names{i}];
+    bins = object_array(plots.frequency_bins.(metric_names{i}), ...
+        'sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidBins', label);
+    if fallback_bins, bins = reshape(bins, 1, []); end
+    plots.frequency_bins.(metric_names{i}) = validate_bins(bins, label);
 end
-
-if isfield(plots, 'reference')
-    plots.reference = validate_reference(plots.reference);
-else
-    plots.reference = struct('color', '#7E2F8E', 'line_style', '-.', ...
-        'line_width', 2.5);
-end
-
-if ~isfield(plots, 'frequency_bins') || ~isstruct(plots.frequency_bins)
-    plots.frequency_bins = legacy_frequency_bins();
-end
-plots.frequency_bins.hybridity = validate_bins( ...
-    plots.frequency_bins.hybridity, 'plots.frequency_bins.hybridity');
-plots.frequency_bins.collapse = validate_bins( ...
-    plots.frequency_bins.collapse, 'plots.frequency_bins.collapse');
 validate_bin_coverage(plots.frequency_bins.hybridity, 1, Inf, ...
     'plots.frequency_bins.hybridity', true);
 validate_bin_coverage(plots.frequency_bins.collapse, 0, 1, ...
     'plots.frequency_bins.collapse', false);
 
-if ~isfield(plots, 'figures') || ~isstruct(plots.figures)
-    plots.figures = legacy_figures(cfg.entries);
-end
-if ~isfield(plots.figures, 'subaggregate_count_distribution')
-    plots.figures.subaggregate_count_distribution = ...
-        legacy_subaggregate_count_distribution(cfg.entries);
-end
-required_figures = {'dpp_vs_da_manual_tem', ...
+figure_ids = {'dpp_vs_da_manual_tem', ...
     'primary_particle_distributions', ...
     'appendix_a_primary_particle_distributions', ...
     'aggregate_metric_distributions', ...
@@ -416,14 +424,10 @@ required_figures = {'dpp_vs_da_manual_tem', ...
     'subaggregate_count_frequencies', ...
     'collapsed_subaggregate_frequencies', ...
     'dpp_vs_da_by_hybridity'};
-for i = 1:numel(required_figures)
-    id = required_figures{i};
-    if ~isfield(plots.figures, id)
-        error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingFigureConfig', ...
-            'plots.figures.%s is required.', id);
-    end
-    plots.figures.(id) = validate_figure_config( ...
-        plots.figures.(id), id, entry_ids);
+for i = 1:numel(figure_ids)
+    id = figure_ids{i};
+    plots.figures.(id) = validate_figure_config(plots.figures.(id), id, ...
+        entry_ids, fallback_figures);
 end
 arrow_cfg = plots.figures.subaggregate_count_frequencies.arrows;
 if arrow_cfg.target_bin_index > numel(plots.frequency_bins.hybridity)
@@ -435,64 +439,49 @@ end
 end
 
 function axes_style = validate_axes_style(axes_style)
+% "validate_axes_style" checks the shared axes appearance.
 
-axes_style.box = optional_logical_field(axes_style, 'box', true);
-axes_style.layer = optional_text_field(axes_style, 'layer', 'top');
-axes_style.tick_length = optional_numeric_vector(axes_style, 'tick_length', ...
-    [0.02 0.02], 2, 'plots.axes.tick_length');
-if any(axes_style.tick_length < 0)
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidAxisStyle', ...
-        'plots.axes.tick_length must contain nonnegative values.');
-end
-axes_style.tick_label_rotation = optional_nonnegative_scalar_field( ...
-    axes_style, 'tick_label_rotation', 0, ...
-    'plots.axes.tick_label_rotation');
-if axes_style.tick_label_rotation > 360
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidAxisStyle', ...
-        'plots.axes.tick_label_rotation must not exceed 360 degrees.');
-end
-axes_style.label_position_mode = optional_text_field(axes_style, ...
-    'label_position_mode', 'auto');
+axes_style.layer = char(axes_style.layer);
+axes_style.label_position_mode = char(axes_style.label_position_mode);
 if ~ismember(lower(axes_style.label_position_mode), {'auto','manual'})
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidAxisStyle', ...
         'plots.axes.label_position_mode must be auto or manual.');
 end
-axes_style.x_label_offset = optional_positive_scalar_field(axes_style, ...
-    'x_label_offset', 0.055, 'plots.axes.x_label_offset');
-axes_style.y_label_offset = optional_positive_scalar_field(axes_style, ...
-    'y_label_offset', 0.075, 'plots.axes.y_label_offset');
+axes_style.x_label_offset = positive_value(axes_style.x_label_offset, ...
+    'plots.axes.x_label_offset');
+axes_style.y_label_offset = positive_value(axes_style.y_label_offset, ...
+    'plots.axes.y_label_offset');
 
 end
 
 function boxplot_style = validate_boxplot_style(boxplot_style)
+% "validate_boxplot_style" checks the shared boxplot appearance.
 
-boxplot_style.symbol = optional_text_field(boxplot_style, 'symbol', 'o');
-boxplot_style.notch = optional_logical_field(boxplot_style, 'notch', true);
-boxplot_style.median_min_line_width = optional_positive_scalar_field( ...
-    boxplot_style, 'median_min_line_width', 2.0, ...
+boxplot_style.symbol = char(boxplot_style.symbol);
+boxplot_style.median_min_line_width = positive_value( ...
+    boxplot_style.median_min_line_width, ...
     'plots.boxplot.median_min_line_width');
-boxplot_style.outlier_marker_size = optional_positive_scalar_field( ...
-    boxplot_style, 'outlier_marker_size', 3, ...
-    'plots.boxplot.outlier_marker_size');
-boxplot_style.outlier_filled = optional_logical_field(boxplot_style, ...
-    'outlier_filled', false);
-boxplot_style.whisker_line_style = optional_text_field(boxplot_style, ...
-    'whisker_line_style', '-');
+boxplot_style.outlier_marker_size = positive_value( ...
+    boxplot_style.outlier_marker_size, 'plots.boxplot.outlier_marker_size');
+boxplot_style.whisker_line_style = char(boxplot_style.whisker_line_style);
 
 end
 
 function font = validate_font(font)
+% "validate_font" checks the shared typography.
 
 font.family = require_text_field(font, 'family', 'plots.font.family');
 font.fallback = require_text_field(font, 'fallback', 'plots.font.fallback');
-font.axis_size = require_positive_scalar_field(font, 'axis_size', ...
-    'plots.font.axis_size');
-font.label_size = require_positive_scalar_field(font, 'label_size', ...
-    'plots.font.label_size');
-font.legend_size = require_positive_scalar_field(font, 'legend_size', ...
+font.axis_size = positive_value(font.axis_size, 'plots.font.axis_size');
+font.label_size = positive_value(font.label_size, 'plots.font.label_size');
+font.legend_size = positive_value(font.legend_size, ...
     'plots.font.legend_size');
-font.title_size = optional_positive_scalar_field(font, 'title_size', ...
-    font.label_size, 'plots.font.title_size');
+if isfield(font, 'title_size')
+    font.title_size = positive_value(font.title_size, ...
+        'plots.font.title_size');
+else
+    font.title_size = font.label_size;
+end
 font.weight = require_text_field(font, 'weight', 'plots.font.weight');
 if ~ismember(lower(font.weight), {'normal','bold'})
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidFontWeight', ...
@@ -508,17 +497,19 @@ end
 end
 
 function reference = validate_reference(reference)
+% "validate_reference" checks the style of the reference correlation.
 
 reference.color = validate_hex_color(require_text_field(reference, ...
     'color', 'plots.reference.color'), 'plots.reference.color');
 reference.line_style = require_text_field(reference, 'line_style', ...
     'plots.reference.line_style');
-reference.line_width = require_positive_scalar_field(reference, ...
-    'line_width', 'plots.reference.line_width');
+reference.line_width = positive_value(reference.line_width, ...
+    'plots.reference.line_width');
 
 end
 
 function colors = validate_color_list(src, field_name, label)
+% "validate_color_list" reads a nonempty list of hexadecimal colours.
 
 if ~isfield(src, field_name) || isempty(src.(field_name))
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingColors', ...
@@ -532,10 +523,12 @@ end
 end
 
 function bins = validate_bins(bins, label)
+% "validate_bins" checks every interval and every pair of intervals.
+% ----------------------------------------------------------------------- %
 
-% Validate every interval independently, then compare all interval pairs so
-% boundary inclusivity cannot create an overlap that depends on bin order.
-
+% Validating every interval independently, then comparing all interval...
+    % ...pairs so boundary inclusivity cannot create an overlap that...
+    % ...depends on bin order
 if isempty(bins) || ~isstruct(bins)
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidBins', ...
         '%s must be a non-empty struct array.', label);
@@ -547,10 +540,6 @@ for i = 1:numel(bins)
     bins(i).label = require_text_field(bins(i), 'label', [item_label '.label']);
     bins(i).lower = optional_bound(bins(i), 'lower', -Inf, item_label);
     bins(i).upper = optional_bound(bins(i), 'upper', Inf, item_label);
-    bins(i).include_lower = require_logical_field(bins(i), ...
-        'include_lower', [item_label '.include_lower']);
-    bins(i).include_upper = require_logical_field(bins(i), ...
-        'include_upper', [item_label '.include_upper']);
     if bins(i).upper < bins(i).lower
         error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidBins', ...
             '%s upper bound must be >= lower bound.', item_label);
@@ -574,6 +563,7 @@ end
 end
 
 function tf = intervals_overlap(a, b)
+% "intervals_overlap" tests two intervals for a shared value.
 
 left = max(a.lower, b.lower);
 right = min(a.upper, b.upper);
@@ -593,6 +583,7 @@ end
 
 function validate_bin_coverage(bins, domain_lower, domain_upper, label, ...
     discrete_domain)
+% "validate_bin_coverage" checks that the bins cover their whole domain.
 
 [~, order] = sort([bins.lower]);
 bins = bins(order);
@@ -628,11 +619,12 @@ end
 end
 
 function value = optional_bound(src, field_name, default_value, label)
+% "optional_bound" reads an interval edge, unbounded when absent or null.
 
 value = default_value;
 if isfield(src, field_name) && ~isempty(src.(field_name))
     candidate = double(src.(field_name));
-    % MATLAB decodes JSON null in numeric struct arrays as NaN.
+    % A decoded null inside a numeric array is NaN
     if isscalar(candidate) && isnan(candidate)
         return
     end
@@ -645,14 +637,16 @@ end
 
 end
 
-function figure_cfg = validate_figure_config(figure_cfg, id, entry_ids)
+function figure_cfg = validate_figure_config(figure_cfg, id, entry_ids, ...
+    fallback_figures)
+% "validate_figure_config" checks the selection, axes and options of a figure.
+% ----------------------------------------------------------------------- %
 
-% Every figure receives an independent ordered condition selection, complete
-% axis definition, export name, layout style, and figure-specific options.
-
+% Every figure has its own ordered condition selection, axis definition,...
+    % ...export name, layout style and figure options. kde_enabled,...
+    % ...bar_line_width and legend_item_token_size are complete after...
+    % ...the dictionary read
 label = ['plots.figures.' id];
-figure_cfg.enabled = require_logical_field(figure_cfg, 'enabled', ...
-    [label '.enabled']);
 figure_cfg.condition_ids = require_text_list(figure_cfg, ...
     'condition_ids', [label '.condition_ids']);
 unknown = setdiff(figure_cfg.condition_ids, entry_ids);
@@ -663,70 +657,54 @@ if ~isempty(unknown)
 end
 figure_cfg.file_name = require_text_field(figure_cfg, 'file_name', ...
     [label '.file_name']);
-figure_cfg.position = require_numeric_vector(figure_cfg, 'position', 4, ...
-    [label '.position']);
-if any(~isfinite(figure_cfg.position)) || any(figure_cfg.position(3:4) <= 0)
+if any(figure_cfg.position(3:4) <= 0)
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidPosition', ...
         '%s.position must have positive width and height.', label);
 end
 figure_cfg.x_scale = require_scale(figure_cfg, 'x_scale', label);
 figure_cfg.y_scale = require_scale(figure_cfg, 'y_scale', label);
-figure_cfg.x_limits = optional_axis_vector(figure_cfg, 'x_limits', 2, label);
-figure_cfg.y_limits = optional_axis_vector(figure_cfg, 'y_limits', 2, label);
-figure_cfg.x_ticks = optional_axis_vector(figure_cfg, 'x_ticks', [], label);
-figure_cfg.y_ticks = optional_axis_vector(figure_cfg, 'y_ticks', [], label);
+figure_cfg.x_limits = axis_vector(figure_cfg, 'x_limits', 2, label);
+figure_cfg.y_limits = axis_vector(figure_cfg, 'y_limits', 2, label);
+figure_cfg.x_ticks = axis_vector(figure_cfg, 'x_ticks', [], label);
+figure_cfg.y_ticks = axis_vector(figure_cfg, 'y_ticks', [], label);
 validate_axis_definition(figure_cfg.x_scale, figure_cfg.x_limits, ...
     figure_cfg.x_ticks, [label '.x']);
 validate_axis_definition(figure_cfg.y_scale, figure_cfg.y_limits, ...
     figure_cfg.y_ticks, [label '.y']);
-figure_cfg.x_minor_ticks = optional_axis_vector(figure_cfg, ...
-    'x_minor_ticks', [], label);
+figure_cfg.x_minor_ticks = axis_vector(figure_cfg, 'x_minor_ticks', [], ...
+    label);
 validate_axis_definition(figure_cfg.x_scale, figure_cfg.x_limits, ...
     figure_cfg.x_minor_ticks, [label '.x_minor']);
-figure_cfg.bar_width = optional_positive_scalar_field(figure_cfg, ...
-    'bar_width', 0.4, [label '.bar_width']);
-figure_cfg.condition_spacing = optional_positive_scalar_field(figure_cfg, ...
-    'condition_spacing', 1.0, [label '.condition_spacing']);
+positive_keys = {'bar_width', 'condition_spacing', 'box_width', ...
+    'ensemble_box_width', 'aggregate_box_width', 'kde_offset', ...
+    'kde_width', 'group_padding'};
+for i = 1:numel(positive_keys)
+    key = positive_keys{i};
+    figure_cfg.(key) = positive_value(figure_cfg.(key), [label '.' key]);
+end
 figure_cfg.bar_edge_color = validate_named_or_hex_color( ...
-    optional_text_field(figure_cfg, 'bar_edge_color', 'none'), ...
-    [label '.bar_edge_color'], {'none'});
-figure_cfg.bar_line_width = optional_nonnegative_scalar_field(figure_cfg, ...
-    'bar_line_width', 0.5, [label '.bar_line_width']);
-figure_cfg.layout_padding = optional_text_field(figure_cfg, ...
-    'layout_padding', 'compact');
-figure_cfg.tile_spacing = optional_text_field(figure_cfg, ...
-    'tile_spacing', 'compact');
-figure_cfg.box_width = optional_positive_scalar_field(figure_cfg, ...
-    'box_width', 0.25, [label '.box_width']);
-figure_cfg.ensemble_box_width = optional_positive_scalar_field(figure_cfg, ...
-    'ensemble_box_width', 0.25, [label '.ensemble_box_width']);
-figure_cfg.aggregate_box_width = optional_positive_scalar_field(figure_cfg, ...
-    'aggregate_box_width', 0.3, [label '.aggregate_box_width']);
-figure_cfg.kde_enabled = optional_logical_field(figure_cfg, ...
-    'kde_enabled', false);
-figure_cfg.kde_offset = optional_positive_scalar_field(figure_cfg, ...
-    'kde_offset', 0.3, [label '.kde_offset']);
-figure_cfg.kde_width = optional_positive_scalar_field(figure_cfg, ...
-    'kde_width', 0.25, [label '.kde_width']);
-figure_cfg.group_padding = optional_positive_scalar_field(figure_cfg, ...
-    'group_padding', 0.3, [label '.group_padding']);
-figure_cfg.legend_item_token_size = optional_numeric_vector(figure_cfg, ...
-    'legend_item_token_size', [15 15], 2, ...
-    [label '.legend_item_token_size']);
-figure_cfg.axis_overrides = optional_struct_field(figure_cfg, 'axis_overrides');
-figure_cfg.categories = optional_struct_array_field(figure_cfg, 'categories');
+    char(figure_cfg.bar_edge_color), [label '.bar_edge_color'], {'none'});
+figure_cfg.layout_padding = char(figure_cfg.layout_padding);
+figure_cfg.tile_spacing = char(figure_cfg.tile_spacing);
+if ~isstruct(figure_cfg.axis_overrides)
+    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidStruct', ...
+        'The TEM analysis config field %s must be a struct.', ...
+        'axis_overrides');
+end
 
-if isfield(figure_cfg, 'legend') && isstruct(figure_cfg.legend)
-    legend_cfg = figure_cfg.legend;
-else
-    legend_cfg = struct();
+% Rebuilding the legend from its five keys. The dictionary leaves an...
+    % ...object array only when an entry holds one of them
+legend_cfg = figure_cfg.legend;
+if ~isscalar(legend_cfg)
+    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidLegend', ...
+        '%s.legend must be one object when it sets a legend key.', label);
 end
 figure_cfg.legend = struct( ...
-    'location', optional_text_field(legend_cfg, 'location', 'best'), ...
-    'orientation', optional_text_field(legend_cfg, 'orientation', 'vertical'), ...
-    'columns', optional_positive_integer_field(legend_cfg, 'columns', 1), ...
-    'box', optional_logical_field(legend_cfg, 'box', false), ...
-    'interpreter', optional_text_field(legend_cfg, 'interpreter', 'none'));
+    'location', char(legend_cfg.location), ...
+    'orientation', char(legend_cfg.orientation), ...
+    'columns', legend_cfg.columns, ...
+    'box', legend_cfg.box, ...
+    'interpreter', char(legend_cfg.interpreter));
 
 if strcmp(id, 'subaggregate_count_distribution')
     if figure_cfg.enabled && numel(figure_cfg.condition_ids) ~= 2
@@ -739,54 +717,26 @@ if strcmp(id, 'subaggregate_count_distribution')
         error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidMirroredLimits', ...
             '%s.x_limits must span zero.', label);
     end
-    figure_cfg.grid = validate_mirrored_grid( ...
-        optional_struct_field(figure_cfg, 'grid'), label);
-    figure_cfg.zero_line = validate_zero_line( ...
-        optional_struct_field(figure_cfg, 'zero_line'), label);
-    figure_cfg.stem_line_width = optional_positive_scalar_field(figure_cfg, ...
-        'stem_line_width', 1.5, [label '.stem_line_width']);
-    figure_cfg.marker_size = optional_positive_scalar_field(figure_cfg, ...
-        'marker_size', 7, [label '.marker_size']);
-    figure_cfg.marker_edge_width = optional_positive_scalar_field( ...
-        figure_cfg, 'marker_edge_width', 1.5, ...
-        [label '.marker_edge_width']);
+    figure_cfg.grid = validate_mirrored_grid(figure_cfg.grid, label);
+    figure_cfg.zero_line = validate_zero_line(figure_cfg.zero_line, label);
+    for key = {'stem_line_width', 'marker_size', 'marker_edge_width'}
+        figure_cfg.(key{1}) = positive_value(figure_cfg.(key{1}), ...
+            [label '.' key{1}]);
+    end
     figure_cfg.marker_face_color = validate_named_or_hex_color( ...
-        optional_text_field(figure_cfg, 'marker_face_color', 'none'), ...
-        [label '.marker_face_color'], {'none'});
+        char(figure_cfg.marker_face_color), [label '.marker_face_color'], ...
+        {'none'});
 else
     figure_cfg.grid = struct();
     figure_cfg.zero_line = struct();
 end
 
 if strcmp(id, 'dpp_vs_da_by_hybridity')
-    if isempty(figure_cfg.categories)
-        error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingCategories', ...
-            '%s.categories must be configured.', label);
-    end
-    if ~isfield(figure_cfg.categories, 'line_width')
-        [figure_cfg.categories.line_width] = deal(1.5);
-    end
-    for i = 1:numel(figure_cfg.categories)
-        category_label = sprintf('%s.categories(%d)', label, i);
-        c = figure_cfg.categories(i);
-        c.id = require_text_field(c, 'id', [category_label '.id']);
-        c.label = require_text_field(c, 'label', [category_label '.label']);
-        c.lower = optional_bound(c, 'lower', -Inf, category_label);
-        c.upper = optional_bound(c, 'upper', Inf, category_label);
-        c.include_lower = require_logical_field(c, 'include_lower', ...
-            [category_label '.include_lower']);
-        c.include_upper = require_logical_field(c, 'include_upper', ...
-            [category_label '.include_upper']);
-        c.color = validate_hex_color(require_text_field(c, 'color', ...
-            [category_label '.color']), [category_label '.color']);
-        c.marker = require_text_field(c, 'marker', [category_label '.marker']);
-        c.marker_size = require_positive_scalar_field(c, 'marker_size', ...
-            [category_label '.marker_size']);
-        c.line_width = require_positive_scalar_field(c, 'line_width', ...
-            [category_label '.line_width']);
-        figure_cfg.categories(i) = c;
-    end
-    validate_bins(figure_cfg.categories, [label '.categories']);
+    figure_cfg.categories = validate_categories(figure_cfg.categories, ...
+        label, fallback_figures);
+else
+    figure_cfg.categories = optional_struct_array_field(figure_cfg, ...
+        'categories');
 end
 
 if strcmp(id, 'subaggregate_count_frequencies')
@@ -797,46 +747,70 @@ end
 
 end
 
-function grid_cfg = validate_mirrored_grid(grid_cfg, label)
+function categories = validate_categories(items, label, fallback_figures)
+% "validate_categories" checks the subaggregate count categories.
+% ----------------------------------------------------------------------- %
 
-grid_cfg.x_major = optional_logical_field(grid_cfg, 'x_major', true);
-grid_cfg.x_minor = optional_logical_field(grid_cfg, 'x_minor', true);
-grid_cfg.y_major = optional_logical_field(grid_cfg, 'y_major', false);
-grid_cfg.y_minor = optional_logical_field(grid_cfg, 'y_minor', false);
-grid_cfg.major_color = validate_hex_color(optional_text_field(grid_cfg, ...
-    'major_color', '#D9D9D9'), [label '.grid.major_color']);
-grid_cfg.minor_color = validate_hex_color(optional_text_field(grid_cfg, ...
-    'minor_color', '#EEEEEE'), [label '.grid.minor_color']);
-grid_cfg.major_alpha = optional_unit_interval_field(grid_cfg, ...
-    'major_alpha', 0.65, [label '.grid.major_alpha']);
-grid_cfg.minor_alpha = optional_unit_interval_field(grid_cfg, ...
-    'minor_alpha', 0.50, [label '.grid.minor_alpha']);
-grid_cfg.major_line_style = optional_text_field(grid_cfg, ...
-    'major_line_style', '-');
-grid_cfg.minor_line_style = optional_text_field(grid_cfg, ...
-    'minor_line_style', ':');
+categories = object_array(items, ...
+    'sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidStruct', ...
+    [label '.categories']);
+if fallback_figures, categories = reshape(categories, 1, []); end
+if isempty(categories)
+    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingCategories', ...
+        '%s.categories must be configured.', label);
+end
+for i = 1:numel(categories)
+    category_label = sprintf('%s.categories(%d)', label, i);
+    c = categories(i);
+    c.id = require_text_field(c, 'id', [category_label '.id']);
+    c.label = require_text_field(c, 'label', [category_label '.label']);
+    c.lower = optional_bound(c, 'lower', -Inf, category_label);
+    c.upper = optional_bound(c, 'upper', Inf, category_label);
+    c.color = validate_hex_color(require_text_field(c, 'color', ...
+        [category_label '.color']), [category_label '.color']);
+    c.marker = require_text_field(c, 'marker', [category_label '.marker']);
+    c.marker_size = positive_value(c.marker_size, ...
+        [category_label '.marker_size']);
+    c.line_width = positive_value(c.line_width, ...
+        [category_label '.line_width']);
+    categories(i) = c;
+end
+validate_bins(categories, [label '.categories']);
+
+end
+
+function grid_cfg = validate_mirrored_grid(grid_cfg, label)
+% "validate_mirrored_grid" checks the grid of the mirrored distribution.
+
+grid_cfg.major_color = validate_hex_color(char(grid_cfg.major_color), ...
+    [label '.grid.major_color']);
+grid_cfg.minor_color = validate_hex_color(char(grid_cfg.minor_color), ...
+    [label '.grid.minor_color']);
+grid_cfg.major_line_style = char(grid_cfg.major_line_style);
+grid_cfg.minor_line_style = char(grid_cfg.minor_line_style);
 
 end
 
 function zero_line = validate_zero_line(zero_line, label)
+% "validate_zero_line" checks the zero line of the mirrored distribution.
 
-zero_line.color = validate_hex_color(optional_text_field(zero_line, ...
-    'color', '#4D4D4D'), [label '.zero_line.color']);
-zero_line.line_width = optional_positive_scalar_field(zero_line, ...
-    'line_width', 1.0, [label '.zero_line.line_width']);
-zero_line.line_style = optional_text_field(zero_line, ...
-    'line_style', '-');
+zero_line.color = validate_hex_color(char(zero_line.color), ...
+    [label '.zero_line.color']);
+zero_line.line_width = positive_value(zero_line.line_width, ...
+    [label '.zero_line.line_width']);
+zero_line.line_style = char(zero_line.line_style);
 
 end
 
 function arrow_cfg = validate_arrow_config(figure_cfg, label, entry_ids)
+% "validate_arrow_config" checks the arrows of the count frequencies.
+% ----------------------------------------------------------------------- %
 
-if isfield(figure_cfg, 'arrows') && isstruct(figure_cfg.arrows)
-    arrow_cfg = figure_cfg.arrows;
-else
-    arrow_cfg = struct();
+arrow_cfg = figure_cfg.arrows;
+if ~isscalar(arrow_cfg)
+    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidArrows', ...
+        '%s.arrows must be one object.', label);
 end
-arrow_cfg.enabled = optional_logical_field(arrow_cfg, 'enabled', true);
 if isfield(arrow_cfg, 'condition_ids') && ~isempty(arrow_cfg.condition_ids)
     arrow_cfg.condition_ids = require_text_list(arrow_cfg, ...
         'condition_ids', [label '.arrows.condition_ids']);
@@ -856,29 +830,19 @@ if ~isempty(outside_figure)
         '%s.arrows condition ids must be selected by the figure.', ...
         label);
 end
-arrow_cfg.target_bin_index = optional_positive_integer_field(arrow_cfg, ...
-    'target_bin_index', 1);
-arrow_cfg.tail_fraction = optional_unit_interval_field(arrow_cfg, ...
-    'tail_fraction', 1.0, [label '.arrows.tail_fraction']);
-arrow_cfg.shaft_length = optional_positive_scalar_field(arrow_cfg, ...
-    'shaft_length', 10, [label '.arrows.shaft_length']);
-arrow_cfg.minimum_head_clearance = optional_nonnegative_scalar_field( ...
-    arrow_cfg, 'minimum_head_clearance', 2, ...
-    [label '.arrows.minimum_head_clearance']);
-arrow_cfg.maximum_tail_y = optional_positive_scalar_field(arrow_cfg, ...
-    'maximum_tail_y', 98, [label '.arrows.maximum_tail_y']);
-arrow_cfg.line_width = optional_positive_scalar_field(arrow_cfg, ...
-    'line_width', 2.0, [label '.arrows.line_width']);
-arrow_cfg.color = validate_hex_color(optional_text_field(arrow_cfg, ...
-    'color', '#000000'), [label '.arrows.color']);
-arrow_cfg.head_marker = optional_text_field(arrow_cfg, ...
-    'head_marker', 'v');
-arrow_cfg.head_marker_size = optional_positive_scalar_field(arrow_cfg, ...
-    'head_marker_size', 8, [label '.arrows.head_marker_size']);
+for key = {'shaft_length', 'maximum_tail_y', 'line_width', ...
+        'head_marker_size'}
+    arrow_cfg.(key{1}) = positive_value(arrow_cfg.(key{1}), ...
+        [label '.arrows.' key{1}]);
+end
+arrow_cfg.color = validate_hex_color(char(arrow_cfg.color), ...
+    [label '.arrows.color']);
+arrow_cfg.head_marker = char(arrow_cfg.head_marker);
 
 end
 
 function validate_axis_definition(scale, limits, ticks, label)
+% "validate_axis_definition" checks ticks against the scale and limits.
 
 if ~isempty(ticks) && any(diff(ticks) <= 0)
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidAxisVector', ...
@@ -897,8 +861,9 @@ end
 end
 
 function value = require_scale(src, field_name, label)
+% "require_scale" reads linear or log in any letter case.
 
-value = optional_text_field(src, field_name, 'linear');
+value = char(src.(field_name));
 if ~ismember(lower(value), {'linear','log'})
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidScale', ...
         '%s.%s must be linear or log.', label, field_name);
@@ -906,15 +871,14 @@ end
 
 end
 
-function values = optional_axis_vector(src, field_name, expected_length, label)
+function values = axis_vector(src, field_name, expected_length, label)
+% "axis_vector" checks an optional axis vector of the dictionary.
 
-values = [];
-if ~isfield(src, field_name) || isempty(src.(field_name))
+values = plain_empty(src.(field_name));
+if isempty(values)
     return
 end
-values = double(src.(field_name)(:)).';
-if any(~isfinite(values)) || (~isempty(expected_length) && ...
-        numel(values) ~= expected_length)
+if ~isempty(expected_length) && numel(values) ~= expected_length
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidAxisVector', ...
         '%s.%s has invalid values or length.', label, field_name);
 end
@@ -925,36 +889,8 @@ end
 
 end
 
-function values = optional_numeric_vector(src, field_name, default_values, ...
-    expected_length, label)
-
-values = default_values;
-if isfield(src, field_name) && ~isempty(src.(field_name))
-    values = double(src.(field_name)(:)).';
-    if numel(values) ~= expected_length || any(~isfinite(values))
-        error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidVector', ...
-            '%s must contain %d finite numeric values.', ...
-            label, expected_length);
-    end
-end
-
-end
-
-function out = require_numeric_vector(src, field_name, length_value, label)
-
-if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingVector', ...
-        '%s is required.', label);
-end
-out = double(src.(field_name)(:)).';
-if numel(out) ~= length_value
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidVector', ...
-        '%s must contain %d values.', label, length_value);
-end
-
-end
-
 function values = require_text_list(src, field_name, label)
+% "require_text_list" reads a nonempty list of distinct texts.
 
 if ~isfield(src, field_name) || isempty(src.(field_name))
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingTextList', ...
@@ -968,7 +904,24 @@ end
 
 end
 
+function sets = fallback_sets(plots, entries)
+% "fallback_sets" builds the figure and bin sets a task does not give.
+
+sets = struct();
+if ~isfield(plots, 'frequency_bins')
+    sets.frequency_bins = legacy_frequency_bins();
+end
+if ~isfield(plots, 'figures')
+    sets.figures = legacy_figures(entries);
+elseif ~isfield(plots.figures, 'subaggregate_count_distribution')
+    sets.figures.subaggregate_count_distribution = ...
+        legacy_subaggregate_count_distribution(entries);
+end
+
+end
+
 function bins = legacy_frequency_bins()
+% "legacy_frequency_bins" builds the subaggregate count and collapse bins.
 
 bins.hybridity = struct( ...
     'id', {'eq_1','eq_2','three_to_five','six_to_ten','gt_10'}, ...
@@ -993,9 +946,8 @@ bins.collapse = struct( ...
 end
 
 function figures = legacy_figures(entries)
-
-% Construct a complete in-memory figure schema only for legacy profiles that
-% predate per-figure configuration. Canonical profiles define these fields.
+% "legacy_figures" builds the figure set of a task without plots.figures.
+% ----------------------------------------------------------------------- %
 
 ids = {entries([entries.enabled]).id};
 if isempty(ids)
@@ -1043,9 +995,11 @@ figures.dpp_vs_da_by_hybridity.categories = struct( ...
 end
 
 function figure_cfg = legacy_subaggregate_count_distribution(entries)
+% "legacy_subaggregate_count_distribution" builds the mirrored figure.
+% ----------------------------------------------------------------------- %
 
-% Older custom profiles remain valid while the mirrored figure stays opt-in
-% until its two comparison conditions are selected explicitly.
+% The mirrored figure stays disabled until its two comparison conditions...
+    % ...are selected
 ids = {entries([entries.enabled]).id};
 if isempty(ids)
     ids = {entries.id};
@@ -1079,21 +1033,18 @@ figure_cfg = struct( ...
 end
 
 function filter = validate_filter(filter, label)
+% "validate_filter" checks the model input filter of one entry.
 
-if ~isstruct(filter)
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidModelFilter', ...
-        '%s.model_filter must be a struct when provided.', label);
-end
 filter.field = require_text_field(filter, 'field', ...
     [label '.model_filter.field']);
 filter.operator = require_text_field(filter, 'operator', ...
     [label '.model_filter.operator']);
-filter.value = require_scalar_field(filter, 'value', ...
-    [label '.model_filter.value']);
 
 end
 
 function ids = parse_aggregate_ids(src, label)
+% "parse_aggregate_ids" reads ids as a list, a values object or a range.
+% ----------------------------------------------------------------------- %
 
 if isnumeric(src)
     ids = double(src(:));
@@ -1125,20 +1076,23 @@ ids = unique(ids(:), 'stable');
 
 end
 
-function out = require_struct_field(src, field_name, label)
+function items = object_array(items, identifier, label)
+% "object_array" joins decoded entries with equal keys into one array.
 
-% Required-struct helpers centralize type checks so loader errors identify the
-% exact configuration field instead of failing later in the analysis script.
-
-if ~isfield(src, field_name) || ~isstruct(src.(field_name))
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingSection', ...
-        'The TEM analysis config is missing the %s.', label);
+if isempty(items)
+    items = [];
+    return
 end
-out = src.(field_name);
+names = fieldnames(items{1});
+if any(cellfun(@(item) ~isempty(setxor(fieldnames(item), names)), items))
+    error(identifier, '%s entries must share their keys.', label);
+end
+items = vertcat(items{:});
 
 end
 
 function out = optional_struct_field(src, field_name)
+% "optional_struct_field" reads an optional object, empty when absent.
 
 if isfield(src, field_name) && ~isempty(src.(field_name))
     if ~isstruct(src.(field_name))
@@ -1153,6 +1107,7 @@ end
 end
 
 function out = optional_struct_array_field(src, field_name)
+% "optional_struct_array_field" reads an optional object array.
 
 out = struct([]);
 if isfield(src, field_name) && ~isempty(src.(field_name))
@@ -1166,6 +1121,7 @@ end
 end
 
 function out = require_text_field(src, field_name, label)
+% "require_text_field" reads a required nonempty value as text.
 
 if ~isfield(src, field_name) || isempty(src.(field_name))
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingText', ...
@@ -1176,6 +1132,7 @@ out = char(src.(field_name));
 end
 
 function out = optional_text_field(src, field_name, default_value)
+% "optional_text_field" reads optional text or its default.
 
 out = default_value;
 if isfield(src, field_name) && ~isempty(src.(field_name))
@@ -1185,6 +1142,7 @@ end
 end
 
 function values = require_scalar_field(src, field_name, label)
+% "require_scalar_field" reads a required finite numeric scalar.
 
 if ~isfield(src, field_name) || isempty(src.(field_name))
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingScalar', ...
@@ -1199,52 +1157,10 @@ end
 
 end
 
-function out = require_positive_scalar_field(src, field_name, label)
-
-out = require_scalar_field(src, field_name, label);
-if out <= 0
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidPositiveScalar', ...
-        'The TEM analysis config field %s must be positive.', label);
-end
-
-end
-
-function out = optional_positive_scalar_field(src, field_name, default_value, label)
-
-out = default_value;
-if isfield(src, field_name) && ~isempty(src.(field_name))
-    out = require_positive_scalar_field(src, field_name, label);
-end
-
-end
-
-function out = optional_nonnegative_scalar_field(src, field_name, ...
-    default_value, label)
-
-out = default_value;
-if isfield(src, field_name) && ~isempty(src.(field_name))
-    out = require_scalar_field(src, field_name, label);
-    if out < 0
-        error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidNonnegativeScalar', ...
-            'The TEM analysis config field %s must be nonnegative.', label);
-    end
-end
-
-end
-
-function out = optional_unit_interval_field(src, field_name, ...
-    default_value, label)
-
-out = default_value;
-if isfield(src, field_name) && ~isempty(src.(field_name))
-    out = require_unit_interval_field(src, field_name, label);
-end
-
-end
-
 function out = require_positive_integer_field(src, field_name, label)
+% "require_positive_integer_field" reads a required positive integer.
 
-out = require_positive_scalar_field(src, field_name, label);
+out = positive_value(require_scalar_field(src, field_name, label), label);
 if round(out) ~= out
     error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidInteger', ...
         'The TEM analysis config field %s must be a positive integer.', ...
@@ -1254,6 +1170,7 @@ end
 end
 
 function out = optional_positive_integer_field(src, field_name, default_value)
+% "optional_positive_integer_field" reads a positive integer or its default.
 
 out = default_value;
 if isfield(src, field_name) && ~isempty(src.(field_name))
@@ -1262,60 +1179,27 @@ end
 
 end
 
-function out = optional_nonnegative_integer_field(src, field_name)
+function out = positive_value(value, label)
+% "positive_value" checks a number that the dictionary made finite.
 
-out = [];
-if ~isfield(src, field_name) || isempty(src.(field_name))
-    return
+if value <= 0
+    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidPositiveScalar', ...
+        'The TEM analysis config field %s must be positive.', label);
 end
-out = double(src.(field_name));
-if ~isscalar(out) || ~isfinite(out) || out < 0 || round(out) ~= out
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidNonnegativeInteger', ...
-        'analysis.%s must be empty or a nonnegative integer scalar.', ...
-        field_name);
-end
+out = value;
 
 end
 
-function out = require_unit_interval_field(src, field_name, label)
+function out = plain_empty(value)
+% "plain_empty" returns an empty vector of the dictionary as [].
 
-out = require_scalar_field(src, field_name, label);
-if out < 0 || out > 1
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidUnitInterval', ...
-        '%s must be between 0 and 1.', label);
-end
-
-end
-
-function out = require_logical_field(src, field_name, label)
-
-if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:MissingLogical', ...
-        'The TEM analysis config is missing %s.', label);
-end
-out = logical(src.(field_name));
-if ~isscalar(out)
-    error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidLogical', ...
-        'The TEM analysis config field %s must be a scalar logical.', label);
-end
-
-end
-
-function out = optional_logical_field(src, field_name, default_value)
-
-out = default_value;
-if isfield(src, field_name) && ~isempty(src.(field_name))
-    out = logical(src.(field_name));
-    if ~isscalar(out)
-        error('sootMosaic:LOAD_MAIN_TEM_ANALYSIS_CONFIG:InvalidLogical', ...
-            'The TEM analysis config field %s must be a scalar logical.', ...
-            field_name);
-    end
-end
+out = value;
+if isempty(out), out = []; end
 
 end
 
 function value = validate_hex_color(value, label)
+% "validate_hex_color" reads a six-digit hexadecimal colour in upper case.
 
 value = upper(char(value));
 if isempty(regexp(value, '^#[0-9A-F]{6}$', 'once'))
@@ -1326,9 +1210,11 @@ end
 end
 
 function value = validate_named_or_hex_color(value, label, allowed_names)
+% "validate_named_or_hex_color" reads a named or hexadecimal colour.
+% ----------------------------------------------------------------------- %
 
-% Permit explicitly supported MATLAB color controls alongside hexadecimal
-% presentation colors without accepting ambiguous color abbreviations.
+% Permitting the supported named colour controls alongside hexadecimal...
+    % ...colours, without colour abbreviations
 value = char(value);
 if any(strcmpi(value, allowed_names))
     value = lower(value);
@@ -1338,7 +1224,30 @@ value = validate_hex_color(value, label);
 
 end
 
+function si = si_mirror(value, read_value, read_si)
+% "si_mirror" copies resolved values with the SI numbers of the reader.
+% Numbers the loader leaves unchanged keep their converted reader value.
+
+si = value;
+if isstruct(value) && isscalar(value) && isstruct(read_value) && ...
+        isscalar(read_value) && isstruct(read_si) && isscalar(read_si)
+    names = fieldnames(value);
+    for k = 1:numel(names)
+        key = names{k};
+        if isfield(read_value, key) && isfield(read_si, key)
+            si.(key) = si_mirror(value.(key), read_value.(key), ...
+                read_si.(key));
+        end
+    end
+elseif isnumeric(value) && strcmp(class(value), class(read_value)) && ...
+        isequal(value, read_value) && isnumeric(read_si)
+    si = read_si;
+end
+
+end
+
 function full_path = resolve_entry_path(path_value, entry_dir)
+% "resolve_entry_path" resolves a path from the entry folder.
 
 full_path = char(path_value);
 if is_absolute_path(full_path)
@@ -1350,6 +1259,7 @@ full_path = normalize_path(fullfile(entry_dir, full_path));
 end
 
 function full_path = resolve_config_path(path_value, config_dir)
+% "resolve_config_path" resolves a path from the task folder.
 
 full_path = char(path_value);
 if is_absolute_path(full_path)
@@ -1361,6 +1271,7 @@ full_path = normalize_path(fullfile(config_dir, full_path));
 end
 
 function tf = is_absolute_path(path_value)
+% "is_absolute_path" identifies an absolute path.
 
 tf = ~isempty(regexp(path_value, '^[A-Za-z]:[\\/]', 'once')) || ...
     strncmp(path_value, '\\', 2) || strncmp(path_value, '//', 2) || ...
@@ -1369,6 +1280,7 @@ tf = ~isempty(regexp(path_value, '^[A-Za-z]:[\\/]', 'once')) || ...
 end
 
 function path_value = normalize_path(path_value)
+% "normalize_path" collapses relative path segments when available.
 
 try
     path_value = char(java.io.File(path_value).getCanonicalPath());
@@ -1379,6 +1291,7 @@ end
 end
 
 function root_dir = repo_root()
+% "repo_root" locates the repository root.
 
 utils_dir = fileparts(mfilename('fullpath'));
 root_dir = fileparts(utils_dir);

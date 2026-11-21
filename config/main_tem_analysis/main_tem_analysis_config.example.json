@@ -1,4 +1,5 @@
 {
+  "config_version": 1,
   "analysis": {
     "coverage_threshold": 1.1,
     "logistic_bandwidth": 0.05,
