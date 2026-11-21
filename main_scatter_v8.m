@@ -1,7 +1,6 @@
 clc
 clear
 close all
-warning('off')
 
 % Production scatter-scaling workflow for experimentally constrained LD2
 % initial conditions. The default paper/thesis method is
@@ -24,6 +23,12 @@ cfg_dist = cfg_scatter.distribution;
 cfg_sampling = cfg_scatter.sampling;
 cfg_projection = cfg_scatter.projection;
 cfg_options = cfg_scatter.options;
+
+% Seed the random number generator only when options.rng_seed is set. An empty
+% value leaves the generator untouched.
+if ~isempty(cfg_options.rng_seed)
+    rng(cfg_options.rng_seed);
+end
 
 % Olfert and Rogak (2019)'s universal correlation
 D_TEM = cfg_uc.D_TEM; % exponent
@@ -69,8 +74,7 @@ n_ang = cfg_projection.n_ang; % number of viewing angles used for projection ave
 
 opt_scale = cfg_options.opt_scale; % 'bivariate', 'sequential', or 'ideal'
 if strcmp(opt_scale, 'sequential')
-    warning('on', 'PFAL:main_scatter_v8:SequentialScaleMode')
-    warning('PFAL:main_scatter_v8:SequentialScaleMode', ...
+    warning('sootMosaic:main_scatter_v8:SequentialScaleMode', ...
         ['Scatter scaling is running in sequential mode. This is not ', ...
         'the thesis/paper bivariate initialization method.'])
 end
@@ -82,7 +86,9 @@ opts_nppcor = cfg_options.opts_nppcor; % 'on' rounds primary-particle counts
 % Load the source LD1 aggregate library through the local registry. This
 % keeps machine-specific file paths out of the script while preserving a
 % stable dataset identifier in version control.
-pars_raw.pp = UTILS.LOAD_SCATTER_LD1_DATASET(cfg_dataset);
+[pars_raw.pp, dataset_src, dataset_provenance] = ...
+    UTILS.LOAD_SCATTER_LD1_DATASET(cfg_dataset);
+dataset_src.sha256 = UTILS.FILE_SHA256(dataset_src.file);
 
 % % correct the structure if necessary
 % if logical(nnz(size(pars_raw.pp)))
@@ -229,7 +235,7 @@ switch(opt_scale)
         dpp0_scat = uc(da_scat) * gm_dpp / uc(gm_da);
         
     otherwise
-        error('PFAL:main_scatter_v8:InvalidScaleMode', ...
+        error('sootMosaic:main_scatter_v8:InvalidScaleMode', ...
             'Invalid input for scaling method: %s', opt_scale)
 
 end
@@ -244,7 +250,7 @@ switch(opts_nppcor)
         npp_scat = npp0_scat;
         dpp_scat = dpp0_scat;
     otherwise
-        error('PFAL:main_scatter_v8:InvalidNppCorrectionMode', ...
+        error('sootMosaic:main_scatter_v8:InvalidNppCorrectionMode', ...
             'Invalid input for primary-particle-count correction: %s', ...
             opts_nppcor)
 end
@@ -600,9 +606,18 @@ sd_sigmapp_out = std(pars_out.dpp_g(:,2)); % arithmetic standard deviation of...
 
 scatter_metadata = struct();
 scatter_metadata.generated_at = char(datetime('now'));
-scatter_metadata.script = mfilename;
-scatter_metadata.config_file = cfg_scatter.config_file;
-scatter_metadata.dataset_id = cfg_dataset.id;
+scatter_metadata.script = [mfilename, '.m'];
+scatter_metadata.script_sha256 = ...
+    UTILS.FILE_SHA256([mfilename('fullpath'), '.m']);
+[~, config_name, config_ext] = fileparts(cfg_scatter.config_file);
+scatter_metadata.config_file = [config_name, config_ext];
+scatter_metadata.config_file_sha256 = ...
+    UTILS.FILE_SHA256(cfg_scatter.config_file);
+if isfield(cfg_dataset, 'source_id') && ~isempty(cfg_dataset.source_id)
+    scatter_metadata.dataset_id = dataset_src.id;
+else
+    scatter_metadata.dataset_id = cfg_dataset.id;
+end
 scatter_metadata.scale_mode = opt_scale;
 scatter_metadata.npp_correction = opts_nppcor;
 scatter_metadata.n_agg_raw = n_agg_raw;
@@ -612,6 +627,7 @@ scatter_metadata.universal = cfg_uc;
 scatter_metadata.brasil = cfg_bc;
 scatter_metadata.distribution = cfg_dist;
 scatter_metadata.projection = cfg_projection;
+scatter_metadata.rng_seed = cfg_options.rng_seed; % empty when unseeded
 scatter_metadata.rho_log_space = rho;
 scatter_metadata.sigma_cov_log_space = sigma_cov;
 scatter_metadata.method_note = ['bivariate: draws [log(da), log(dpp)] ', ...
@@ -661,10 +677,12 @@ canonical_file = fullfile(dir_scatter_data, ...
 method_file = fullfile(dir_scatter_data, sprintf( ...
     'scaled_aggs_for_LD2_from_main_scatter_%s.mat', opt_scale));
 
-save(canonical_file, 'pars_out', 'scatter_metadata', ...
-    'scatter_summary', '-v7.3')
-save(method_file, 'pars_out', 'scatter_metadata', ...
-    'scatter_summary', '-v7.3')
+UTILS.SAVE_PUBLIC_MAT(canonical_file, {'-v7.3'}, 'pars_out', ...
+    'scatter_metadata', 'scatter_summary', 'dataset_src', ...
+    'dataset_provenance')
+UTILS.SAVE_PUBLIC_MAT(method_file, {'-v7.3'}, 'pars_out', ...
+    'scatter_metadata', 'scatter_summary', 'dataset_src', ...
+    'dataset_provenance')
 
 %% Plot scaled aggregates
 

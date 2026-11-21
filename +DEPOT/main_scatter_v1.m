@@ -3,6 +3,9 @@ clear
 close all
 warning('off')
 
+% local data folders
+dir_data = ''; % set to the local data folder
+
 f1 = figure;
 f1.Position = [100, 100, 600, 600];
 set(f1, 'color', 'white');
@@ -15,7 +18,7 @@ plt_0 = plot(da0, dpp0, 'Color', [0.4940 0.1840 0.5560],...
     'LineStyle', '-.', 'LineWidth', 2);
 hold on
 
-load('D:\Hamed\CND\PhD\My Articles\DLCA1\Results\DAT\database.mat', 'parsdata_sigma')
+load(fullfile(dir_data, 'database.mat'), 'parsdata_sigma')
 
 da_uc = 1e9 * parsdata_sigma{4}(1).da;
 dpp_uc = 1e9 * parsdata_sigma{4}(1).dpp_g(:,1);

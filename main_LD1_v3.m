@@ -5,7 +5,7 @@ close all
 
 %% Load first-stage LD configuration %%
 
-% First-stage LD now reads all user-tuned parameters from JSON so the
+% First-stage LD reads user-tuned parameters from JSON so the
 % aggregate-library run can be reproduced without editing this script.
 cfg_ld1 = UTILS.LOAD_MAIN_LD1_CONFIG;
 cfg_results = cfg_ld1.results;
@@ -18,14 +18,14 @@ if ~isempty(cfg_sim.rng_seed)
 end
 
 [params0_ud, params0_const] = UTILS.LD1_PARAMS_FROM_CONFIG( ...
-    cfg_transport.domain, cfg_transport.particles, cfg_transport.fluid);
+    cfg_transport.domain, cfg_transport.particles, cfg_transport.fluid, ...
+    cfg_ld1.model_params.si.constants);
 
 % Initialize particle and fluid structures using the same table contract as
 % the legacy PFA first-stage workflow.
-[pars0, fl0] = TRANSP.INIT_DOM(params0_ud, params0_const);
-
+% The configured property model sets the fluid viscosity and mean free path.
 opts0_fl = cfg_transport.fluid_options;
-[fl0.mu, fl0.lambda] = TRANSP.FLPROPS(fl0, params0_const, opts0_fl);
+[pars0, fl0] = TRANSP.INIT_DOM(params0_ud, params0_const, opts0_fl);
 
 %% Initialize simulation variables %%
 
@@ -40,6 +40,8 @@ opts0_mobil = cfg_transport.mobility_options;
 opts0_grow = cfg_transport.growth_options;
 opts0_loc = cfg_transport.location_options;
 opts0_prj = cfg_projection.options;
+opts0_diag = cfg_transport.diagnostics_options;
+opts0_vel = cfg_transport.velocity_options;
 
 n0_mc_prj = cfg_projection.n_mc;
 n0_ang_prj = cfg_projection.n_ang;
@@ -77,6 +79,12 @@ ensdata0.dpp = zeros(j_max, 2 * n_trial);
 ensdata0.sigmapp = zeros(j_max, 2 * n_trial);
 ensdata0.da = zeros(j_max, 2 * n_trial);
 ensdata0.dm = zeros(j_max, 2 * n_trial);
+if opts0_diag.knudsen
+    % Pair and nearest-neighbor Knudsen numbers of TRANSP.KNUDSEN
+    ensdata0.kn_pair = zeros(j_max, 2 * n_trial);
+    ensdata0.knn = zeros(j_max, 2 * n_trial);
+    ensdata0.knn_defined = false(j_max, n_trial);
+end
 
 %% Perform first-stage Langevin dynamics simulations %%
 
@@ -97,12 +105,18 @@ for i = 1 : n_trial
 
     [pars0, params0_ud] = PAR.INIT_LOC(pars0, params0_ud, [], opts0_loc);
     fl0.size = params0_ud.Value(2:4);
+    opts0_grow.dom_size = params0_ud.Value(2:4); % periodic collision search
 
     pars0 = PAR.SIZING(pars0);
-    pars0 = TRANSP.MOBIL(pars0, fl0, params0_const, opts0_mobil);
+    [pars0, opts0_mobil] = TRANSP.MOBIL(pars0, fl0, params0_const, opts0_mobil);
     ensdata0 = record_ensemble(ensdata0, 1, i, pars0, opts0_mobil);
+    if opts0_diag.knudsen
+        ensdata0 = record_knudsen(ensdata0, 1, i, pars0, fl0, ...
+            params0_const, opts0_mobil);
+    end
 
-    pars0.v = PAR.INIT_VEL(pars0.pp, pars0.n, fl0.temp, params0_const);
+    pars0.v = PAR.INIT_VEL(pars0.pp, pars0.n, fl0.temp, params0_const, ...
+        opts0_vel.sampler);
 
     j = 2;
     jj = 1;
@@ -117,11 +131,11 @@ for i = 1 : n_trial
             round(0.9 * length(cat(1, pars0.n)))) && ...
             (length(pars0.n) > 1)
 
-        pars0 = TRANSP.MARCH(pars0, fl0, params0_const);
+        [pars0, delt0] = TRANSP.MARCH(pars0, fl0, params0_const);
         pars0 = TRANSP.PBC(params0_ud.Value(2:4), pars0);
         pars0 = COL.GROW(pars0, opts0_grow);
         pars0 = PAR.SIZING(pars0);
-        pars0 = TRANSP.MOBIL(pars0, fl0, params0_const, opts0_mobil);
+        [pars0, opts0_mobil] = TRANSP.MOBIL(pars0, fl0, params0_const, opts0_mobil);
 
         if (jj <= n_temporal) && ...
                 (sum(cat(1, pars0.n) >= npp0_temporal(jj)) >= ...
@@ -133,7 +147,11 @@ for i = 1 : n_trial
             jj = jj + 1;
         end
 
-        ensdata0 = record_ensemble(ensdata0, j, i, pars0, opts0_mobil);
+        ensdata0 = record_ensemble(ensdata0, j, i, pars0, opts0_mobil, delt0);
+        if opts0_diag.knudsen
+            ensdata0 = record_knudsen(ensdata0, j, i, pars0, fl0, ...
+                params0_const, opts0_mobil);
+        end
 
         UTILS.TEXTBAR([j, j_max]);
         j = j + 1;
@@ -161,7 +179,7 @@ pp0 = flatten_saved_pp(pp0_nested);
 pp0_n = flatten_saved_counts(pp0_n_nested);
 
 if isempty(pp0)
-    error('PFAL:main_LD1_v3:EmptyLibrary', ...
+    error('sootMosaic:main_LD1_v3:EmptyLibrary', ...
         'LD1 produced no aggregate snapshots. Increase j_max or inspect the config.')
 end
 
@@ -174,8 +192,13 @@ pars_ld1.dm = flatten_parsdata_field(parsdata0_nested, 'dm');
 ensdata0 = trim_empty_ensemble_rows(ensdata0);
 
 metadata = struct();
-metadata.source_script = mfilename('fullpath');
-metadata.config_file = cfg_ld1.config_file;
+script_file = [mfilename('fullpath'), '.m'];
+[~, script_name, script_ext] = fileparts(script_file);
+[~, config_name, config_ext] = fileparts(cfg_ld1.config_file);
+metadata.source_script = [script_name, script_ext];
+metadata.source_script_sha256 = UTILS.FILE_SHA256(script_file);
+metadata.config_file = [config_name, config_ext];
+metadata.config_file_sha256 = UTILS.FILE_SHA256(cfg_ld1.config_file);
 metadata.created_at = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss'));
 metadata.run_label = cfg_results.run_label;
 metadata.output_file = fullfile(cfg_results.root, cfg_results.library_file);
@@ -190,20 +213,23 @@ if ~isfolder(cfg_results.root)
     mkdir(cfg_results.root);
 end
 
-save(metadata.output_file, 'pp0', 'pp0_n', 'pars_ld1', 'ensdata0', ...
-    'parsdata0', 'pp0_nested', 'pp0_n_nested', 'parsdata0_nested', ...
-    'cfg_ld1', 'metadata', '-v7.3')
+% fl0 holds the gas temperature, pressure, viscosity and mean free path
+UTILS.SAVE_PUBLIC_MAT(metadata.output_file, {'-v7.3'}, 'pp0', 'pp0_n', ...
+    'pars_ld1', 'ensdata0', 'parsdata0', 'pp0_nested', 'pp0_n_nested', ...
+    'parsdata0_nested', 'fl0', 'cfg_ld1', 'metadata')
 
 fprintf('Saved LD1 aggregate library: %s\n', metadata.output_file)
 
 %% Local functions %%
 
-function ensdata0 = record_ensemble(ensdata0, row_idx, trial_idx, pars0, opts0_mobil)
+function ensdata0 = record_ensemble(ensdata0, row_idx, trial_idx, pars0, opts0_mobil, delt_step)
+% The clock starts at zero and advances by delt_step, the step MARCH took.
 col = 2 * (trial_idx - 1) + (1:2);
-ensdata0.t(row_idx, trial_idx) = min(pars0.delt);
-if row_idx > 1
+if row_idx == 1
+    ensdata0.t(row_idx, trial_idx) = 0;
+else
     ensdata0.t(row_idx, trial_idx) = ...
-        ensdata0.t(row_idx - 1, trial_idx) + min(pars0.delt);
+        ensdata0.t(row_idx - 1, trial_idx) + delt_step;
 end
 ensdata0.n_agg(row_idx, trial_idx) = length(pars0.n);
 ensdata0.tau(row_idx, col) = [mean(pars0.tau), std(pars0.tau)];
@@ -214,16 +240,30 @@ ensdata0.dpp(row_idx, col) = [geomean(pars0.dpp_g(:, 1)), ...
 ensdata0.sigmapp(row_idx, col) = [geomean(pars0.dpp_g(:, 2)), ...
     UTILS.GEOSTD(pars0.dpp_g(:, 2))];
 ensdata0.dm(row_idx, col) = [geomean(pars0.dm), UTILS.GEOSTD(pars0.dm)];
-if strcmp(opts0_mobil.mtd, 'interp') && isfield(pars0, 'da') && ~isempty(pars0.da)
+if any(strcmp(opts0_mobil.mtd, {'interp', 'free_molecular'})) && ...
+        isfield(pars0, 'da') && ~isempty(pars0.da)
     ensdata0.da(row_idx, col) = [geomean(pars0.da), UTILS.GEOSTD(pars0.da)];
 end
+end
+
+function ensdata0 = record_knudsen(ensdata0, row_idx, trial_idx, pars0, fl0, ...
+    params0_const, opts0_mobil)
+% Mean and standard deviation over the particles of the pair diffusive...
+    % ...and the nearest-neighbor Knudsen numbers, diagnostics only
+col = 2 * (trial_idx - 1) + (1:2);
+kn = TRANSP.KNUDSEN(pars0, fl0, params0_const, opts0_mobil);
+ensdata0.kn_pair(row_idx, col) = [mean(kn.kn_pair), std(kn.kn_pair)];
+ensdata0.knn(row_idx, col) = [mean(kn.knn), std(kn.knn)];
+ensdata0.knn_defined(row_idx, trial_idx) = kn.knn_defined;
 end
 
 function [pp0, pp0_n, parsdata0, seen_aggregates] = store_snapshot( ...
     pp0, pp0_n, parsdata0, seen_aggregates, pars0, storage_idx, trial_idx, ...
     n_temporal, n_initial, opts0_mobil, n0_mc_prj, n0_ang_prj, opts0_prj)
 
-if ~strcmp(opts0_mobil.mtd, 'interp')
+% Methods without da save PAR.PROJECTION areas with the projection section
+% of the config, not the projected area options of the mobility
+if ~any(strcmp(opts0_mobil.mtd, {'interp', 'free_molecular'}))
     pars0.da = 2 * sqrt(PAR.PROJECTION(pars0, [], n0_mc_prj, ...
         n0_ang_prj, [], opts0_prj) / pi);
 end
@@ -311,6 +351,11 @@ ensdata0.dpp(next_row:end, col) = 0;
 ensdata0.sigmapp(next_row:end, col) = 0;
 ensdata0.da(next_row:end, col) = 0;
 ensdata0.dm(next_row:end, col) = 0;
+if isfield(ensdata0, 'kn_pair')
+    ensdata0.kn_pair(next_row:end, col) = 0;
+    ensdata0.knn(next_row:end, col) = 0;
+    ensdata0.knn_defined(next_row:end, trial_idx) = false;
+end
 end
 
 function ensdata0 = trim_empty_ensemble_rows(ensdata0)
@@ -327,4 +372,9 @@ ensdata0.dpp = ensdata0.dpp(keep_rows, :);
 ensdata0.sigmapp = ensdata0.sigmapp(keep_rows, :);
 ensdata0.da = ensdata0.da(keep_rows, :);
 ensdata0.dm = ensdata0.dm(keep_rows, :);
+if isfield(ensdata0, 'kn_pair')
+    ensdata0.kn_pair = ensdata0.kn_pair(keep_rows, :);
+    ensdata0.knn = ensdata0.knn(keep_rows, :);
+    ensdata0.knn_defined = ensdata0.knn_defined(keep_rows, :);
+end
 end

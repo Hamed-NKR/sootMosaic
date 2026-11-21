@@ -1,10 +1,12 @@
-function [pars, fl] = INIT_DOM(params_ud, params_const)
+function [pars, fl] = INIT_DOM(params_ud, params_const, opts_fl)
 % "INIT_DOM" sets different fields of the domain data structures.
 % ----------------------------------------------------------------------- %
 % 
 % Inputs:
-%   params_ud: Table of constant parametrs
-%   params_const: ~ user-defined parameters
+%     params_ud: Table of user-defined parameters
+%     params_const: ~ constant physical properties
+%     opts_fl: Fluid property options passed to TRANSP.FLPROPS...
+%         ...(amb and gas section, optional, default the flame preset)
 % ----------------------------------------------------------------------- %
 % 
 % Outputs:
@@ -28,8 +30,12 @@ fl = struct('size', params_ud.Value(2:4), 'temp', params_ud.Value(11),...
     % mu: ~ viscosity
     % lambda: ~ mean free path
 
-[fl.mu, fl.lambda] = TRANSP.FLPROPS(fl,params_const); % Calculating the...
-    % ...fluid viscosity and mean free path
+% Calculating the fluid viscosity and mean free path with the given...
+    % ...property model
+if ~exist('opts_fl', 'var')
+    opts_fl = struct();
+end
+[fl.mu, fl.lambda] = TRANSP.FLPROPS(fl, params_const, opts_fl);
 
 % Declaring the particle structure
 pars = struct('pp', [], 'n', [], 'dv', [], 'dg', [], 'dm', [], 'da', [],...

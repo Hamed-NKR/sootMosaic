@@ -88,12 +88,12 @@ for i = 1 : n_col
     
 end
 
-i_temp = unique(i_list(:,2), 'stable'); % Extracting remaining old indices
-i_temp = [(1 : numel(i_temp))', i_temp]; % Adding new indices
-% Asigning new indices to the aggregate populations
-for i = 1 : n_par0
-    i_list(i,3) = i_temp(find(i_temp(:,2) == i_list(i,2), 1), 1);
-end
+% Assigning new indices from the cells that are removed (column 2 of...
+    % ...i_col), so the map also holds when the surviving index is larger
+i_keep = true(n_par0, 1);
+i_keep(i_col(:,2)) = false;
+i_new = cumsum(i_keep); % New index of each remaining old index
+i_list(:,3) = i_new(i_list(:,2));
 i_list(:,2) = [];
 
 if ~ isa(pars, 'AGG')

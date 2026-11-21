@@ -1,54 +1,80 @@
 {
-    "dataset":  {
-                    "id":  "scaled_aggs_for_LD2_from_main_scatter",
-                    "file":  "../../data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat",
-                    "variable":  "pars_out"
-                },
-    "results":  {
-                    "root":  "../../results/main_ld2_from_main_scatter",
-                    "run_label":  "LD2__scaled_aggs_for_LD2_from_main_scatter",
-                    "checkpoint_prefix":  "LD2__from_main_scatter__checkpoint",
-                    "final_prefix":  "LD2__from_main_scatter__final"
-                },
-    "simulation":  {
-                       "k_max":  1000000,
-                       "r_n_agg":  [
-                                       1.0,
-                                       0.4,
-                                       0.2,
-                                       0.1,
-                                       0.05
-                                   ],
-                       "checkpoint_interval":  1000
-                   },
-    "projection":  {
-                       "n_mc":  100,
-                       "n_ang":  5
-                   },
-    "transport":  {
-                      "domain":  {
-                                     "volume_fraction":  0.0001,
-                                     "size":  [
-                                                  5E-06,
-                                                  5E-06,
-                                                  5E-06
-                                              ]
-                                 },
-                      "fluid":  {
-                                    "temperature":  298
-                                },
-                      "fluid_options":  {
-                                            "amb":  "room"
-                                        },
-                      "mobility_options":  {
-                                               "c_dt":  100,
-                                               "mtd":  "interp"
-                                           },
-                      "location_options":  {
-                                               "vf":  "on"
-                                           },
-                      "growth_options":  {
-                                             "indupdate":  "off"
-                                         }
-                  }
+  "config_version": 1,
+  "model_profile": "current",
+  "dataset": {
+    "id": "scaled_aggs_for_LD2_from_main_scatter",
+    "file": "../../data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat",
+    "variable": "pars_out",
+    "url": "",
+    "doi": "",
+    "sha256": "",
+    "cache_file": ""
+  },
+  "results": {
+    "root": "../../results/main_ld2_from_main_scatter",
+    "run_label": "LD2__scaled_aggs_for_LD2_from_main_scatter",
+    "checkpoint_prefix": "LD2__from_main_scatter__checkpoint",
+    "final_prefix": "LD2__from_main_scatter__final"
+  },
+  "simulation": {
+    "k_max": 1000000,
+    "r_n_agg": [
+      1.0,
+      0.4,
+      0.2,
+      0.1,
+      0.05
+    ],
+    "checkpoint_interval": 1000,
+    "rng_seed": []
+  },
+  "projection": {
+    "n_mc": 100,
+    "n_ang": 5
+  },
+  "transport": {
+    "domain": {
+      "volume_fraction": 0.0001,
+      "size": [
+        5e-06,
+        5e-06,
+        5e-06
+      ]
+    },
+    "fluid": {
+      "temperature": 298,
+      "pressure": 101325
+    },
+    "fluid_options": {},
+    "mobility_options": {
+      "c_dt": 100
+    },
+    "location_options": {
+      "vf": "on"
+    },
+    "growth_options": {
+      "indupdate": "off"
+    },
+    "diagnostics_options": {},
+    "velocity_options": {}
+  },
+  "post": {
+    "ld2": {
+      "results_file": "../../results/main_ld2_from_main_scatter/LD2_RESULTS_PLACEHOLDER.mat"
+    },
+    "shield": {
+      "results_file": "../../results/main_shield/SHIELD_RESULTS_PLACEHOLDER.mat",
+      "input_file": "../../results/post_ld2/POST_LD2_PLACEHOLDER.mat"
+    },
+    "collapse": {
+      "results_file": "../../results/post_collapse/COLLAPSE_RESULTS_PLACEHOLDER.mat",
+      "fluid_file": "../../results/main_ld2_from_main_scatter/LD2_RESULTS_PLACEHOLDER.mat"
+    },
+    "valid": {
+      "aggregate_file": "../../data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat",
+      "aggregate_dalpha_file": "../../data/main_scatter/scaled_aggs_dalpha_variant.mat",
+      "aggregate_kalpha_file": "../../data/main_scatter/scaled_aggs_kalpha_variant.mat",
+      "experiment_file": "../../data/experimental_effective_density/effective_density_compiled.mat"
+    }
+  }
 }

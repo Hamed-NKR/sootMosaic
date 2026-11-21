@@ -3,6 +3,9 @@ clear
 close all
 warning('off')
 
+% local data folders
+dir_data = ''; % set to the local data folder
+
 %% Initialize and define key parameters %%
 
 % Olfert and Rogak (2019)'s universal correlation
@@ -49,7 +52,7 @@ da_lim_noise = [2e1 2e3]; % extents of noise generation
 cn_scat = 0.6;
 
 % address of aggregate library to be imported for scaling and dispersion
-fdir = 'D:\Hamed\CND\PhD\My Articles\DLCA1\Results\DAT\Desktop-simulations\AUG-02-22\sigmapp1\3';
+fdir = dir_data;
 fname = 'wsp_sigmapp_1.3_Aug9';
 varname = 'pp0';
 vardir = '';

@@ -63,7 +63,7 @@ for kk = 1:n_steps
         k_spring = 0;
     end
 
-    % jitter decay (usually 0 while debugging)
+    % Decay the random perturbation amplitude.
     specs.jit = specs.jit * specs.jit_decay;
 
     % Pairwise geometry

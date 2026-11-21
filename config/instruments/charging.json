@@ -1,0 +1,51 @@
+{
+  "config_version": 1,
+  "models": [
+    {
+      "id": "soft_xray_3082_tableB3",
+      "ion_mobility_ratio": 0.975,
+      "coefficients": [
+        [-30.6155, -2.33509, -0.00163, -2.35889, -27.25320],
+        [46.33885, 0.43635, -0.11384, 0.45169, 38.47963],
+        [-31.1819, 1.08654, 0.33393, 0.99798, -24.27128],
+        [11.3907, -0.55679, -0.35714, -0.48173, 8.44162],
+        [-2.22028, 0.04981, 0.10770, 0.02631, -1.60589],
+        [0.17935, 0.00551, -0.01082, 0.00804, 0.12917]
+      ],
+      "coefficients_state": "ready",
+      "citation": "3082 manual (2016), Eq. B-2, Table B-3 after Knobel et al. (2013). Rows a0 to a5, columns n = -2,-1,0,1,2; base 10, diameter in nm.",
+      "page": "Table B-3: printed B-11 (PDF 193); Eqs. B-2 and B-3: printed B-10 (PDF 192)",
+      "ratio_note": "3082 manual (2016), Eq. B-3 definitions, printed B-10 (PDF 192): positive/negative ion mobility ratio 0.975."
+    },
+    {
+      "id": "kr85_wiedensohler",
+      "ion_mobility_ratio": 0.875,
+      "coefficients": [
+        [-26.3328, -2.3197, -0.0003, -2.3484, -44.4756],
+        [35.9044, 0.6175, -0.1014, 0.6044, 79.3772],
+        [-21.4608, 0.6201, 0.3073, 0.4800, -62.8900],
+        [7.0867, -0.1105, -0.3372, 0.0013, 26.4492],
+        [-1.3088, -0.1260, 0.1023, -0.1553, -5.7480],
+        [0.1051, 0.0297, -0.0105, 0.0320, 0.5049]
+      ],
+      "coefficients_state": "ready",
+      "citation": "Wiedensohler et al. (2012), Appendix A5, Table A7; identical to 3082 manual (2016), Eq. B-2, Table B-2. Rows a0 to a5, columns n = -2,-1,0,1,2; base 10, diameter in nm.",
+      "page": "Table A7: printed 681 (PDF 25), equations and ranges 682 (PDF 26); Table B-2: printed B-10 (PDF 192)",
+      "ratio_note": "Wiedensohler et al. (2012), Appendix A5, p. 682: 1.4/1.6 = 0.875; 3082 manual (2016), printed B-10 (PDF 192)."
+    },
+    {
+      "id": "gopalakrishnan_2013",
+      "ion_mobility_ratio": null,
+      "coefficients": [
+        [-45.405, -7.8696, -0.3880, -8.0157, -40.714],
+        [20.049, 3.1036, 0.4545, 3.2536, 17.487],
+        [-3.0570, -0.4557, -0.1634, -0.5018, -2.6146],
+        [0.1534, 0.0187, 0.0091, 0.0223, 0.1282]
+      ],
+      "coefficients_state": "ready",
+      "citation": "Gopalakrishnan et al. (2013), Eq. (10), Table 2, spherical PA/(pi Rs^2) = 1.00, conducting particles with image potential. Rows a0 to a3, columns n = -2,-1,0,1,2; natural log and exponential, diameter in nm.",
+      "page": "Table 2: printed 140 (PDF 15); Eq. (10): printed 143 (PDF 18); spherical simulations: 134-136 (PDF 9-11)",
+      "ratio_note": "The spherical regression supplies charges -2 through 2 only. The full-charge sensitivity model remains incomplete because its higher-charge ion-mobility ratio is not established by the cited source."
+    }
+  ]
+}

@@ -6,18 +6,17 @@ close all
 
 % load previously saved aggregate data
 
-fdir_pars =... % address for folder that contains aggregate coordinate data
-    'D:\Hamed\CND\PhD\Publication\DLCA2\mainscatter_sigmapp10\FLAT';
-fname_pars = 'FLAT-26NOV24'; % aggregate info filename
+% task files selected by SOOTMOSAIC_MAIN_SCATTER_CONFIG (key
+% post.collapse.aggregate_file) and SOOTMOSAIC_MAIN_LD2_CONFIG (key
+% post.collapse.fluid_file)
+cfg_scatter = UTILS.LOAD_MAIN_SCATTER_CONFIG;
+cfg_ld2 = UTILS.LOAD_MAIN_LD2_CONFIG;
+[fdir_pars, fname_pars] = fileparts( ... % aggregate coordinate data
+    UTILS.POST_PATH(cfg_scatter, 'collapse.aggregate_file'));
 parsname = 'pars_out'; % variable to load
-% fdir_pars =... % address for folder that contains aggregate coordinate data
-%     'D:\Hamed\CND\PhD\Publication\DLCA2\mainscatter_sigmapp13\SCAT';
-% fname_pars = 'LD2-25NOV24'; % aggregate info filename
-% parsname = 'parsdata'; % variable to load
 
-fdir_fl =... % address for folder that contains fluid structure data
-    'D:\Hamed\CND\PhD\Publication\DLCA2\mainscatter_sigmapp13\SCAT';
-fname_fl = 'LD2-25NOV24'; % fluid structure filename
+[fdir_fl, fname_fl] = fileparts( ... % fluid structure data
+    UTILS.POST_PATH(cfg_ld2, 'collapse.fluid_file'));
 flname = 'fl'; % variable to load
 
 % import library of aggregate information
@@ -30,7 +29,8 @@ load(fullfile(fdir_fl, strcat(fname_fl, '.mat')), 'fl');
 eval(['pars_in' ' = ' parsname ';']);
 eval(['clear ' parsname]);
 
-rho0 = 1860; % soot material density
+[~, ~, model_params] = UTILS.MODEL_PROFILE('current', 'LD2');
+rho0 = model_params.si.constants.rho_bc_kg_m3; % Material density (kg/m3)
 
 %% set up effective density figure
 

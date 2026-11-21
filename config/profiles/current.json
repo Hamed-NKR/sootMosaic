@@ -1,0 +1,133 @@
+{
+  "config_version": 1,
+  "profile": "current",
+  "description": "Present default choices",
+  "constants": {
+    "rho_bc_kg_m3": 1.86e3,
+    "m_air_kg_mol": 28.97e-3,
+    "kb_j_k": 1.380649e-23,
+    "na_mol_inv": 6.02214076e23,
+    "ru_j_mol_k": 8.31446261815324,
+    "rho_aero_ref_kg_m3": 1000,
+    "e_c": 1.602176634e-19,
+    "eps0_f_m": 8.8541878128e-12
+  },
+  "gas": {
+    "model": "sutherland",
+    "sutherland": {
+      "mu_ref_pa_s": 1.83245e-5,
+      "t_ref_k": 296.15,
+      "s_k": 110.4
+    },
+    "mean_free_path": {
+      "lambda_ref_m": 67.3e-9,
+      "t_ref_k": 296.15,
+      "s_k": 110.4,
+      "p_ref_pa": 101325
+    },
+    "presets": {
+      "room": {
+        "mu_pa_s": 1.813e-5,
+        "lambda_m": 6.8e-8,
+        "t_k": 293.15
+      },
+      "flame": {
+        "mu_pa_s": 5.647e-5,
+        "lambda_m": 4.98e-7,
+        "t_k": 1700
+      }
+    },
+    "preset_warning": {
+      "temperature_tol_k": 1,
+      "pressure_rel_tol": 0.01,
+      "p_ref_pa": 101325
+    }
+  },
+  "slip": {
+    "model": "kim2005",
+    "kim2005": {
+      "a": 1.165,
+      "b": 0.483,
+      "c": 0.997
+    },
+    "per_caller_7658971": {
+      "mobil": [
+        1.254,
+        0.4,
+        1.1
+      ],
+      "diamobil": [
+        1.165,
+        0.483,
+        0.997
+      ],
+      "aerodyn": [
+        1.165,
+        0.483,
+        0.997
+      ],
+      "tabgen": [
+        1.257,
+        0.4,
+        0.55
+      ]
+    }
+  },
+  "mobility": {
+    "method": "interp",
+    "continuum_diameter": "sorensen_backbone",
+    "root_solve": "bracketed",
+    "eq17": {
+      "prefactor": 1.29,
+      "exponent": -0.13
+    },
+    "dm_c_factor": 0.75,
+    "backbone_crossover_n": 74,
+    "doublet_exponent": 0.46,
+    "doublet_divisor": 1.6
+  },
+  "projection": {
+    "method": "isotropic",
+    "cache": true,
+    "points": 1024,
+    "orientations": 64,
+    "replicates": 4,
+    "tol": 0.01,
+    "cache_tol": 1e-9
+  },
+  "step": {
+    "step_frac": 0.5,
+    "step_policy": "warn"
+  },
+  "initial_velocity": {
+    "sampler": "maxwell_boltzmann"
+  },
+  "diagnostics": {
+    "knudsen": true
+  },
+  "numerics": {
+    "mobil_step_root_tol": 1e-12,
+    "mobil_series_switch": 1e-2,
+    "march_series_switch": 2,
+    "march_series_terms": 10,
+    "connect_margin": 1e-13,
+    "projection_default_n": 1e4,
+    "projection_min_n": 1e2
+  },
+  "reference": {
+    "d_tem": 0.35,
+    "dpp100_nm": 17.8,
+    "mass_mobility_exponent": 2.48,
+    "rho100_kg_m3": 510,
+    "m100_fg": 0.267
+  },
+  "stages": {
+    "LD1": {},
+    "LD2": {},
+    "INV": {
+      "constants": {},
+      "gas": {},
+      "slip": {}
+    }
+  }
+}

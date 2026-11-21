@@ -3,8 +3,11 @@ clear
 close all
 
 % location of previously saved aggregate data
-fdir_in = 'D:\Hamed\CND\PhD\Publication\DLCA2\mainscatter_sigmapp10\FLAT';
-fname_in = 'FLAT-26NOV24';
+% task file selected by SOOTMOSAIC_MAIN_SCATTER_CONFIG,
+% key post.collapse.aggregate_file
+cfg_scatter = UTILS.LOAD_MAIN_SCATTER_CONFIG;
+[fdir_in, fname_in] = fileparts( ...
+    UTILS.POST_PATH(cfg_scatter, 'collapse.aggregate_file'));
 
 varnames = {'pars_out'}; % varaiables to be imported
 

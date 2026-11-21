@@ -37,9 +37,35 @@
 %   If this function is in a tools package, append `tools.` to the 
 %   function call. For example: `tools.textbar(0)` to initialize bar.
 %  
-%  AUTHOR: Timothy Sipkens, 2020-11-02
-%  INSPIRED BY: Samuel Grauer, 2017-11-16 + tqdm for Python
-%  Please see github.com/tsipkens/atems for an original version.
+% Method: Text progress bar adapted from +tools/textbar.m.
+% Repository: https://github.com/tsipkens/atems
+% Commit: 8f38c9d37e87f02907efc93cd0b43e6ccd8b1582
+% License: MIT License.
+% Code citation: Sipkens and Rogak (2021), Journal of Aerosol Science,
+%     105699, doi:10.1016/j.jaerosci.2020.105699.
+% Modified: package name and call syntax, percent shown with two decimals.
+%
+% MIT License
+%
+% Copyright (c) 2019 Timothy A. Sipkens
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be included in all
+% copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+% SOFTWARE.
 
 function TEXTBAR(i, f_back)
 

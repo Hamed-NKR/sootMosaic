@@ -7,16 +7,10 @@ warning('off')
 %% Initialize and load second-stage LD aggregates %%
 
 % address of second-stage langevin dynamics data to be imported
-fdir_simul = 'D:\Hamed\CND\PhD\Weekly\2025\Week_of_27OCT25\Results\LD2-28-Oct-2025_BiggerRepo-Scat135-Real1-Frac0055-27OCT25';
-fname_simul = 'LD2_30-Oct-2025_12-50-54_Final';
-% fdir_simul = 'D:\Hamed\CND\PhD\Publication\Paper2\Validation\Scatter\LD2-25-Sep-2025_Pre_LD2_Scatter___25_09_25';
-% fname_simul = 'LD2_25-Sep-2025_13-03-12_Final';
-% fdir_simul = 'F:\DLCA2\mainscatter_sigmapp13\FLAT';
-% fname_simul = 'LD2_27-Nov-2024_04-21-58_Final';
-% fdir_simul = 'F:\DLCA2\mainscatter_sigmapp10\SCAT';
-% fname_simul = 'LD2-25-Nov-2024_19-37-48_Final';
-% fdir_simul = 'F:\DLCA2\mainscatter_sigmapp10\FLAT';
-% fname_simul = 'LD2-26-Nov-2024_23-56-35_Final';
+% task file selected by SOOTMOSAIC_MAIN_LD2_CONFIG, key post.ld2.results_file
+cfg_post = UTILS.LOAD_MAIN_LD2_CONFIG;
+[fdir_simul, fname_simul] = fileparts( ...
+    UTILS.POST_PATH(cfg_post, 'ld2.results_file'));
 
 % variables of interest in the data
 varnames = {'parsdata', 'ensdata', 'r_n_agg', 'fl'};
@@ -453,7 +447,7 @@ if ~isfolder(dir_out)
 end
 
 % save worksapce
-save(strcat(dir_out, 'Post_', fname_simul, '.mat'))
+UTILS.SAVE_PUBLIC_MAT(strcat(dir_out, 'Post_', fname_simul, '.mat'), {})
 
 % print figures
 exportgraphics(f1, strcat(dir_out, 'dpp-da-temporal.jpg'),...

@@ -1,4 +1,6 @@
 {
+  "config_version": 1,
+  "model_profile": "current",
   "dataset": {
     "id": "ld1_aggregate_library",
     "file": "../../data/main_ld1/ld1_aggregate_library.mat",
@@ -11,13 +13,19 @@
     "universal": {
       "D_TEM": 0.35,
       "dpp100": 17.8,
-      "da_lim_uc": [1.0, 20000.0],
+      "da_lim_uc": [
+        1.0,
+        20000.0
+      ],
       "n_da_uc": 10000
     },
     "brasil": {
       "alpha_a": 1.08,
       "k_a": 1.1,
-      "npp_lim_bc": [0.1, 20000.0],
+      "npp_lim_bc": [
+        0.1,
+        20000.0
+      ],
       "n_npp_uc": 10000
     }
   },

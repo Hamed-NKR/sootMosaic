@@ -1,13 +1,10 @@
 clc
 clear
 close all
-warning('off')
 
 %% Initialize and define key parameters %%
 
-% Load configurable inputs for the scale workflow from the local JSON
-% registry. User-tuned defaults are kept out of the MATLAB source while the
-% scaling/filtering algorithm below remains unchanged.
+% Load configurable inputs for the scale workflow from the local JSON registry.
 cfg_scale = UTILS.LOAD_MAIN_SCALE_CONFIG;
 cfg_dataset = cfg_scale.dataset;
 cfg_uc = cfg_scale.correlation.universal;
@@ -65,7 +62,9 @@ n_bin_filter = cfg_sampling.n_bin_filter;
 %% Raw data against the Brasil's and universal correlations %%
 
 % Load non-scaled first-stage library data through the scale config.
-pars_raw.pp = UTILS.LOAD_MAIN_SCALE_DATASET(cfg_dataset);
+[pars_raw.pp, dataset_src, dataset_provenance] = ...
+    UTILS.LOAD_MAIN_SCALE_DATASET(cfg_dataset);
+dataset_src.sha256 = UTILS.FILE_SHA256(dataset_src.file);
 
 % correct the structure if necessary
 if iscell(pars_raw.pp)
@@ -77,7 +76,7 @@ if iscell(pars_raw.pp)
     pars_raw.pp = pars_raw.pp(~cellfun('isempty', pars_raw.pp));
 
     % Merge pp info from different times only when the imported library has
-    % the extra historical nesting layer.
+    % an extra nesting layer.
     while ~isempty(pars_raw.pp) && all(cellfun(@iscell, pars_raw.pp))
         pars_raw.pp = cat(1, pars_raw.pp{:});
         pars_raw.pp = pars_raw.pp(:);
@@ -85,7 +84,7 @@ if iscell(pars_raw.pp)
     end
 
 else
-    error('PFAL:main_scale_v2:InvalidDatasetShape', ...
+    error('sootMosaic:main_scale_v2:InvalidDatasetShape', ...
         'Scale dataset variable must be a cell array of aggregate primary-particle matrices.')
 end
 
@@ -238,8 +237,9 @@ if ~isfolder(dir_scale_data)
     mkdir(dir_scale_data)
 end
 
-save(fullfile(dir_scale_data, 'scaled_aggs_for_LD2_from_main_scale.mat'), ...
-    'pars_out', '-v7.3')
+UTILS.SAVE_PUBLIC_MAT(fullfile(dir_scale_data, ...
+    'scaled_aggs_for_LD2_from_main_scale.mat'), {'-v7.3'}, 'pars_out', ...
+    'dataset_src', 'dataset_provenance')
 
 % initialize figure for output scaled+filtered aggregates
 f2 = figure(2);

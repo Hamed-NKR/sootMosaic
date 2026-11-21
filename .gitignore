@@ -10,6 +10,7 @@ config/main_ld2/main_ld2_from_main_scatter_config.local*.json
 config/main_ld2/main_ld2_from_main_scale_config.local*.json
 config/main_tem_analysis/main_tem_analysis_config.local*.json
 config/main_valid/main_valid_config.local*.json
+config/main_inv/main_inv_config.local*.json
 data/*
 !data/.gitkeep
 !data/main_ld1/
@@ -34,4 +35,7 @@ data/experimental_effective_density/*
 data/main_valid_webtest/*
 !data/main_valid_webtest/.gitkeep
 .pfal-cache/
+.sootmosaic-cache/
 data_publication_staging/
+# Local exchange logs
+exchanges/

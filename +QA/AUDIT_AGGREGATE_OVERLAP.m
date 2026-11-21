@@ -1,53 +1,61 @@
-function report = audit_aggregate_overlap(repoRoot, varargin)
-% AUDIT_AGGREGATE_OVERLAP  Geometry and index-integrity audit of the
-%   PFAL two-stage (scatter -> LD2) workflow.
+function report = AUDIT_AGGREGATE_OVERLAP(repoRoot, varargin)
+% "AUDIT_AGGREGATE_OVERLAP" audits geometry and index integrity of the...
+%     ...sootMosaic two-stage (scatter -> LD2) workflow.
+% ----------------------------------------------------------------------- %
 %
-%   report = QA.AUDIT_AGGREGATE_OVERLAP(repoRoot, Name, Value, ...)
+% Inputs:
+%     repoRoot: Root folder inferred, when omitted or empty, as the parent...
+%         ...of the directory containing this file
+%     varargin: Name and value options with defaults pointing at the...
+%         ...2026-05-16 from-main-scatter LD2 run
+%         PreScatterFile: data/main_scatter/LD1__gamma_1_35__merge.mat
+%         PostScatterFile:...
+%             ...data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat
+%         LD2FinalFile:...
+%             ...results/.../LD2__from_main_scatter__final__...
+%             ...2026-06-28_20-05-29.mat
+%         CheckpointFiles: 'auto' (all *checkpoint*.mat next to the final...
+%             ...file) or cellstr
+%         RelativeThresholds: [1e-12 1e-6 1e-3 1e-2]
+%         AnalyzeInteraggregate: true
+%         AnalyzePreScatter: true
+%         MatchPrePost: true
+%         RunPropertyTests: true
+%         RenderWorst: false
+%         MaxRender: 10
+%         SaveResults: false
+%         OutputDir: <repoRoot>/results/overlap_audit
+%         Seed: 20260718 (property-test RNG stream seed)
+%         Verbose: true
+% ----------------------------------------------------------------------- %
 %
-%   Measures primary-particle overlap (internal to each aggregate cell and
-%   between independent aggregate cells, with and without periodic
-%   minimum-image displacement) at every saved stage:
-%     1. candidate raw pre-scatter library (pp0),
-%     2. post-scatter library consumed by LD2 (pars_out.pp),
-%     3. parsdata(1:5) saved LD2 populations,
-%     4. every LD2 checkpoint (pars_LD2.pp),
-%     5. final pars_LD2.pp.
-%   It also audits column-1 primary IDs, column-6 subaggregate labels,
-%   aggregate-level array alignment, matches post-scatter aggregates back to
-%   the candidate pre-scatter library, verifies the post-scatter ->
-%   parsdata(1) transformation is rigid, localizes the earliest overlap in
-%   time, and runs isolated property tests against COL.CONNECT, COL.GROW,
-%   and COL.UNITE using in-memory aggregate fixtures.
+% Outputs:
+%     report: Geometry and index-integrity audit results
+% ----------------------------------------------------------------------- %
 %
-%   Overlap detection is independent of COL.OVR. The implementation uses an
-%   exact voxel-hash broad phase validated against brute force and requires
-%   no additional toolboxes.
-%
-%   Options (defaults point at the 2026-05-16 from-main-scatter LD2 run):
-%     'PreScatterFile'       data/main_scatter/LD1__gamma_1_35__merge.mat
-%     'PostScatterFile'      data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat
-%     'LD2FinalFile'         results/.../LD2__from_main_scatter__final__2026-06-28_20-05-29.mat
-%     'CheckpointFiles'      'auto' (all *checkpoint*.mat next to the final file) or cellstr
-%     'RelativeThresholds'   [1e-12 1e-6 1e-3 1e-2]
-%     'AnalyzeInteraggregate' true
-%     'AnalyzePreScatter'    true
-%     'MatchPrePost'         true
-%     'RunPropertyTests'     true
-%     'RenderWorst'          false
-%     'MaxRender'            10
-%     'SaveResults'          false
-%     'OutputDir'            <repoRoot>/results/overlap_audit
-%     'Seed'                 20260718 (property-test RNG stream seed)
-%     'Verbose'              true
-%
-%   Example:
-%     repoRoot = 'C:\path\to\PFAL';
-%     addpath(repoRoot);
-%     report = QA.audit_aggregate_overlap(repoRoot, 'AnalyzeInteraggregate', true);
-%
-%   When repoRoot is omitted or empty it is inferred as the parent folder of
-%   the directory containing this file.
-
+% Primary-particle overlap measured within each aggregate cell and between...
+%     ...independent aggregate cells, with and without periodic minimum-...
+%     ...image displacement, at every saved stage.
+%     1. Candidate raw pre-scatter library (pp0)
+%     2. Post-scatter library consumed by LD2 (pars_out.pp)
+%     3. parsdata(1:5) saved LD2 populations
+%     4. Every LD2 checkpoint (pars_LD2.pp)
+%     5. Final pars_LD2.pp
+% Audits of column-1 primary IDs, column-6 subaggregate labels and...
+%     ...aggregate-level array alignment. Post-scatter aggregates matched...
+%     ...back to the candidate pre-scatter library, post-scatter ->...
+%     ...parsdata(1) transformation verified as rigid, and earliest overlap...
+%     ...localized in time. Isolated property tests against COL.CONNECT,...
+%     ...COL.GROW and COL.UNITE using in-memory aggregate fixtures.
+% Overlap detection independent of COL.OVR, using an exact voxel-hash broad...
+%     ...phase validated against brute force, with no additional toolboxes.
+% Usage with name and value options...
+%     ...report = QA.AUDIT_AGGREGATE_OVERLAP(repoRoot, Name, Value, ...)
+% Example with the root folder added to the path...
+%     ...repoRoot = 'C:\path\to\sootMosaic'
+%     ...addpath(repoRoot)
+%     ...report = QA.AUDIT_AGGREGATE_OVERLAP(repoRoot,...
+%     ...    'AnalyzeInteraggregate', true)
 % ----------------------------------------------------------------------- %
 
 if nargin < 1 || isempty(repoRoot)
@@ -59,14 +67,18 @@ opts = parse_options(repoRoot, varargin{:});
 
 t_all = tic;
 report = struct();
+tool_file = [mfilename('fullpath'), '.m'];
+[~, tool_name, tool_ext] = fileparts(tool_file);
+[~, root_name, root_ext] = fileparts(regexprep(repoRoot, '[\\/]+$', ''));
 report.metadata = struct( ...
-    'tool', mfilename('fullpath'), ...
-    'repoRoot', repoRoot, ...
+    'tool', [tool_name, tool_ext], ...
+    'tool_sha256', UTILS.FILE_SHA256(tool_file), ...
+    'repoRoot', [root_name, root_ext], ...
     'generated_at', char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss')), ...
     'matlab_version', version);
 report.options = opts;
 
-logv(opts, '=== PFAL aggregate overlap / index-integrity audit ===\n');
+logv(opts, '=== sootMosaic aggregate overlap / index-integrity audit ===\n');
 
 % ------------------------------------------------------------------- %
 % 0. Validate the independent overlap detector
@@ -183,7 +195,7 @@ report.temporalTrace = trace_pairs(stages, pairRows, idmaps, ...
 % 4. Deterministic collision-function property tests
 % ------------------------------------------------------------------- %
 if opts.RunPropertyTests
-    addpath(repoRoot); % Make PFAL packages available to property-test calls.
+    addpath(repoRoot); % Make sootMosaic packages available to property-test calls.
     rs = RandStream('twister', 'Seed', opts.Seed);
     report.propertyTests.testA_connect_invariant = test_connect_invariant(postScatterPP, rs, opts);
     report.propertyTests.testB_duplicate_ids = test_duplicate_ids(postScatterPP, opts);
@@ -222,9 +234,9 @@ end
 
 function opts = parse_options(repoRoot, varargin)
 %PARSE_OPTIONS Parse file locations, analysis controls, and output options.
-%   Defaults reproduce the archived scatter-to-LD2 run used by this audit.
+%   Default inputs are pre-scatter, post-scatter, and final LD2 files.
 p = inputParser;
-p.FunctionName = 'audit_aggregate_overlap';
+p.FunctionName = 'AUDIT_AGGREGATE_OVERLAP';
 dataDir = fullfile(repoRoot, 'data', 'main_scatter');
 resDir = fullfile(repoRoot, 'results', 'main_ld2_from_main_scatter', ...
     'LD2__scaled_aggs_for_LD2_from_main_scatter__2026-05-16');
@@ -350,6 +362,7 @@ sources = struct('files', {files});
 for q = 1:numel(files)
     d = dir(files{q});
     sources.bytes(q) = d.bytes;
+    sources.sha256{q} = UTILS.FILE_SHA256(files{q});
 end
 end
 
@@ -1681,20 +1694,53 @@ C.scenario5.crossOverlapAfter = cross_overlap_report(C.scenario5.ppAfter);
 C.scenario5.missedFlaggedMerge = C.scenario5.nAggAfter > 3 && ...
     C.scenario5.crossOverlapAfter.nPairs > 0;
 
+% Scenario 6. Validate COL.UNITE's returned map for every ordered pair of
+% five cells, which includes reversed pairs with index gaps of two to four.
+[ii, jj] = ndgrid(1:5, 1:5);
+iCols = [ii(ii ~= jj), jj(ii ~= jj)];
+C.scenario6 = struct('iCols', iCols, 'corrupt', false(size(iCols, 1), 1));
+for q = 1:size(iCols, 1)
+    Sq = test_unite_reversed_pair(iCols(q, :));
+    C.scenario6.corrupt(q) = Sq.corrupt || startsWith(Sq.summary, 'error');
+end
+C.scenario6.nCorrupt = nnz(C.scenario6.corrupt);
+
+% Scenario 7. A reversed pair with an index gap of three followed by a
+% further pending pair. Candidates (1,6), (4,6), and (4,7) turn the pending
+% pair (4,6) into (4,1) after UNITE(1,6). The remapped final candidate must
+% then join A7 to the {A1,A6,A4} cluster.
+pp = {mk_pp(1, 1, [0, 0, 0], 1); mk_pp(2, 1, [10, 0, 0], 2); ...
+    mk_pp(3, 1, [20, 0, 0], 3); mk_pp(4, 1, [1.6, 0, 0], 4); ...
+    mk_pp(5, 1, [30, 0, 0], 5); mk_pp(6, 1, [0.8, 0, 0], 6); ...
+    mk_pp(7, 1, [2.4, 0, 0], 7)};
+C.scenario7 = run_grow_fixture(pp, og);
+C.scenario7.expectedAggIfMapCorrect = 4;
+C.scenario7.crossOverlapAfter = cross_overlap_report(C.scenario7.ppAfter);
+C.scenario7.missedFlaggedMerge = C.scenario7.nAggAfter > 4 && ...
+    C.scenario7.crossOverlapAfter.nPairs > 0;
+
 C.summary = sprintf(['s1: %s | s2: %s (residual overlap %d, maxRelPen %.3g) | ', ...
     's3: %s | s4(reversed UNITE map): %s | s5(GROW misremap): nAgg=%d ', ...
-    '(expected 3), unresolved flagged overlap pairs=%d'], ...
+    '(expected 3), unresolved flagged overlap pairs=%d | ', ...
+    's6(UNITE map sweep) %d of %d pairs misremapped | ', ...
+    's7(GROW gap 3) nAgg=%d (expected 4), unresolved flagged overlap pairs=%d'], ...
     C.scenario1.outcome{1}, C.scenario2.outcome{1}, ...
     C.scenario2.internalOverlapPairs, C.scenario2.maxRelPen, ...
     C.scenario3.outcome{1}, C.scenario4.summary, C.scenario5.nAggAfter, ...
-    C.scenario5.crossOverlapAfter.nPairs);
+    C.scenario5.crossOverlapAfter.nPairs, C.scenario6.nCorrupt, ...
+    size(iCols, 1), C.scenario7.nAggAfter, ...
+    C.scenario7.crossOverlapAfter.nPairs);
 logv(opts, '  %s\n', C.summary);
 end
 
-function S = test_unite_reversed_pair()
-%TEST_UNITE_REVERSED_PAIR Validate COL.UNITE mapping for i_col = [3,1].
-%   Unique primary IDs identify the physical destination of each original
-%   cell, allowing direct comparison with the returned i_list mapping.
+function S = test_unite_reversed_pair(iCol)
+%TEST_UNITE_REVERSED_PAIR Validate COL.UNITE mapping for one pair i_col.
+%   The default pair is [3,1]. Unique primary IDs identify the physical
+%   destination of each original cell, allowing direct comparison with the
+%   returned i_list mapping.
+if nargin < 1
+    iCol = [3, 1];
+end
 pp = cell(5, 1);
 for i = 1:5
     pp{i} = mk_pp(100 + i, 1, [10 * i, 0, 0], i);
@@ -1707,7 +1753,7 @@ end
 S = struct('summary', '', 'iList', [], 'trueMap', [], 'corrupt', false, ...
     'wrongOldIndices', []);
 try
-    [pars2, iList] = COL.UNITE(pars, [3, 1], 'agg');
+    [pars2, iList] = COL.UNITE(pars, iCol, 'agg');
 catch err
     S.summary = ['error: ', err.identifier];
     return
@@ -1780,7 +1826,7 @@ pars.m = pars.n; % Use count-proportional placeholder masses for the fixture.
 idsBefore = sort(cell2mat(cellfun(@(x) x(:, 1), pars.pp, 'UniformOutput', false)));
 out = struct('outcome', {{'ok'}}, 'nAggAfter', NaN, 'idsPreserved', false, ...
     'aligned', false, 'internalOverlapPairs', 0, 'maxRelPen', 0, ...
-    'errId', {{''}}, 'ppAfter', {{}});
+    'errId', {{''}}, 'ppAfter', {{}}, 'rBefore', pars.r, 'rAfter', []);
 try
     pars2 = COL.GROW(pars, og);
 catch err
@@ -1790,6 +1836,7 @@ catch err
 end
 out.nAggAfter = numel(pars2.pp);
 out.ppAfter = pars2.pp(:);
+out.rAfter = pars2.r;
 idsAfter = sort(cell2mat(cellfun(@(x) x(:, 1), pars2.pp(:), 'UniformOutput', false)));
 out.idsPreserved = isequal(idsBefore, idsAfter);
 out.aligned = numel(pars2.pp) == numel(pars2.n) && ...
@@ -1815,9 +1862,9 @@ function D = test_periodic(domSize, opts)
 %   Both fixtures have the same minimum-image separation. Different merge
 %   outcomes therefore identify inconsistent periodic collision handling.
 logv(opts, '\n--- Property test D: periodic boundary handling in COL.GROW ---\n');
-og = struct('indupdate', 'off', 'col', 'agg');
 d = 1e-7;
 L = domSize(:)';
+og = struct('indupdate', 'off', 'col', 'agg', 'dom_size', L(:));
 % Place the interior pair at a center separation of 0.9d.
 ppI = {mk_pp(1, d, [L(1)/2, L(2)/2, L(3)/2], 1); ...
     mk_pp(2, d, [L(1)/2 + 0.9*d, L(2)/2, L(3)/2], 2)};
@@ -1829,9 +1876,181 @@ D.crossFace = run_grow_fixture(ppX, og);
 D.interiorMerged = D.interior.nAggAfter == 1;
 D.crossFaceMerged = D.crossFace.nAggAfter == 1;
 D.missedPeriodicCollision = D.interiorMerged && ~D.crossFaceMerged;
-D.summary = sprintf('interior merged: %d | cross-face merged: %d (minimum-image separation identical)', ...
-    D.interiorMerged, D.crossFaceMerged);
+% Exits through the positive and negative faces of one axis in one step.
+D.twoFace = test_pbc_two_face(L, d);
+% Contacts across each face and a corner, and pairs near a face that do not touch.
+D.growCrossFace = test_grow_cross_face(L, d, og);
+D.summary = sprintf(['interior merged = %d | cross-face merged = %d (minimum-image separation identical) | ', ...
+    'two-face TRANSP.PBC wrapped on x y z = %d %d %d | ', ...
+    'cross-face GROW passed on x y z corner = %d %d %d %d | ', ...
+    'near-face pairs kept apart on face corner = %d %d | ', ...
+    'wide aggregates merged in nearest and direct image = %d %d | ', ...
+    'noncapture candidate left unchanged = %d | ', ...
+    'chain reaching beyond the next images merged = %d'], ...
+    D.interiorMerged, D.crossFaceMerged, D.twoFace.wrapped, ...
+    D.growCrossFace.passed);
 logv(opts, '  %s\n', D.summary);
+end
+
+function S = test_grow_cross_face(L, d, og)
+%TEST_GROW_CROSS_FACE Merge single primaries that touch across a face.
+%   Four pairs overlap across the x, y and z faces and across a corner of the
+%   domain at a minimum-image center separation below d. Each must merge
+%   into one contiguous aggregate in point contact, with its center inside
+%   the domain. Two further pairs sit near a face and near a corner at
+%   minimum-image separations of 3d and 3 sqrt(3) d and must be left
+%   unchanged.
+%   The touching pairs are placed off center so the merged center lies
+%   outside the domain before it is wrapped.
+S = struct('cases', {{'x', 'y', 'z', 'corner', 'nearFace', 'nearCorner'}}, ...
+    'passed', false(1, 6), 'nAggAfter', nan(1, 6), 'contactGap', nan(1, 6), ...
+    'errId', {repmat({''}, 1, 6)});
+c = L / 2;
+r1 = [0.35*d, c(2), c(3); c(1), 0.35*d, c(3); c(1), c(2), 0.35*d; ...
+    0.2*d, 0.2*d, 0.2*d; 1.5*d, c(2), c(3); 1.5*d, 1.5*d, 1.5*d];
+r2 = [L(1) - 0.55*d, c(2), c(3); c(1), L(2) - 0.55*d, c(3); ...
+    c(1), c(2), L(3) - 0.55*d; L - 0.3*d; L(1) - 1.5*d, c(2), c(3); ...
+    L - 1.5*d];
+nExpected = [1, 1, 1, 1, 2, 2];
+tol = 1e-9 * d;
+for q = 1:6
+    pp = {mk_pp(1, d, r1(q, :), 1); mk_pp(2, d, r2(q, :), 2)};
+    out = run_grow_fixture(pp, og);
+    S.nAggAfter(q) = out.nAggAfter;
+    S.errId{q} = out.errId{1};
+    ok = strcmp(out.outcome{1}, 'ok') && out.nAggAfter == nExpected(q);
+    if ok && nExpected(q) == 1
+        % Contiguous merge in point contact with the center in the domain.
+        P = out.ppAfter{1};
+        S.contactGap(q) = norm(P(1, 3:5) - P(2, 3:5)) - d;
+        w = P(:, 2).^3;
+        com = sum(w .* P(:, 3:5), 1) ./ sum(w);
+        ok = abs(S.contactGap(q)) <= tol && all(com >= 0 & com <= L);
+    elseif ok
+        % Pairs that do not touch keep their positions exactly.
+        ok = isequal(out.ppAfter, pp);
+    end
+    S.passed(q) = ok;
+end
+% Aggregates wider than half of a box of 10d. A chain of primaries along x
+% with a side column at its first primary meets one primary B near the
+% positive x face. In the first case B is captured in the nearest image of
+% the centers, in the second case only in the direct image, which lies
+% farther than half the box from the chain center.
+Lb = 10 * d * [1, 1, 1];
+ogb = og;
+ogb.dom_size = Lb(:);
+zc = [1, 2, 3, 4, 6, 7, 8, 9]' * d;
+x0 = [0.5, 1.5] * d;
+nChain = [9, 8];
+S.cases = [S.cases, {'wideNearest', 'wideDirect'}];
+S.passed = [S.passed, false(1, 2)];
+S.nAggAfter = [S.nAggAfter, nan(1, 2)];
+S.contactGap = [S.contactGap, nan(1, 2)];
+S.errId = [S.errId, {'', ''}];
+for q = 1:2
+    xc = x0(q) + (0:nChain(q) - 1)' * d;
+    A = [(1:nChain(q))', d * ones(nChain(q), 1), xc, 5 * d * ones(nChain(q), 2), ...
+        ones(nChain(q), 1); (11:18)', d * ones(8, 1), x0(q) * ones(8, 1), ...
+        5 * d * ones(8, 1), zc, ones(8, 1)];
+    out = run_grow_fixture({A; mk_pp(100, d, [9.3*d, 5*d, 5*d], 2)}, ogb);
+    S.nAggAfter(6 + q) = out.nAggAfter;
+    S.errId{6 + q} = out.errId{1};
+    ok = strcmp(out.outcome{1}, 'ok') && out.nAggAfter == 1 && ...
+        out.internalOverlapPairs == 0;
+    if ok
+        % Point contact of B with the chain, no overlap with the six face
+        % images of the merged aggregate, and its center in the box.
+        P = out.ppAfter{1};
+        b = P(:, 1) == 100;
+        gB = sqrt(sum((P(~b, 3:5) - P(b, 3:5)).^2, 2)) - d;
+        S.contactGap(6 + q) = min(gB);
+        nSelf = 0;
+        for sh = [eye(3); -eye(3)]'
+            X = P(:, 3:5) + sh' .* Lb;
+            g = sqrt((P(:, 3) - X(:, 1)').^2 + (P(:, 4) - X(:, 2)').^2 + ...
+                (P(:, 5) - X(:, 3)').^2) - d;
+            nSelf = nSelf + nnz(g < -tol);
+        end
+        w = P(:, 2).^3;
+        com = sum(w .* P(:, 3:5), 1) ./ sum(w);
+        ok = abs(S.contactGap(6 + q)) <= tol && nSelf == 0 && ...
+            all(com >= 0 & com <= Lb);
+    end
+    S.passed(6 + q) = ok;
+end
+% Two parallel chains across the x face whose bounding spheres overlap in
+% the nearest image (bounding diameter 5d, center separation 3.02655d)
+% while the smallest surface gap of 2.02655d is outside the capture window
+% of one primary diameter. Primaries and cached centers must stay unchanged.
+zs = (3:7)' * d;
+A = [(1:5)', d * ones(5, 1), 0.2 * d * ones(5, 1), 3 * d * ones(5, 1), zs, ones(5, 1)];
+B = [(11:15)', d * ones(5, 1), 9.8 * d * ones(5, 1), 6 * d * ones(5, 1), zs, 2 * ones(5, 1)];
+out = run_grow_fixture({A; B}, ogb);
+S.cases = [S.cases, {'noCapture'}];
+S.nAggAfter = [S.nAggAfter, out.nAggAfter];
+S.contactGap = [S.contactGap, NaN];
+S.errId = [S.errId, out.errId(1)];
+S.passed = [S.passed, strcmp(out.outcome{1}, 'ok') && out.nAggAfter == 2 && ...
+    isequal(out.ppAfter, {A; B}) && isequal(out.rAfter, out.rBefore)];
+% A straight chain of 41 touching primaries much longer than the box of 10d
+% and one primary that it reaches only through an image two box lengths
+% away along x and one along y, beyond the 27 images next to the box.
+dc = sqrt(1.145) * d;
+jc = (-20:20)';
+A = [(1:41)', dc * ones(41, 1), 5 * d + jc .* [1, 0.35, 0.15] * d, ones(41, 1)];
+B = [100, dc, 6.5 * d, 2 * d, 8 * d, 2];
+out = run_grow_fixture({A; B}, ogb);
+ok = strcmp(out.outcome{1}, 'ok') && out.nAggAfter == 1 && ...
+    out.internalOverlapPairs == 0;
+gChain = NaN;
+if ok
+    % Point contact of the single primary with the chain and the merged
+    % center in the box.
+    P = out.ppAfter{1};
+    b = P(:, 1) == 100;
+    gChain = min(sqrt(sum((P(~b, 3:5) - P(b, 3:5)).^2, 2)) - dc);
+    w = P(:, 2).^3;
+    com = sum(w .* P(:, 3:5), 1) ./ sum(w);
+    ok = abs(gChain) <= tol && all(com >= 0 & com <= Lb);
+end
+S.cases = [S.cases, {'longChain'}];
+S.nAggAfter = [S.nAggAfter, out.nAggAfter];
+S.contactGap = [S.contactGap, gChain];
+S.errId = [S.errId, out.errId(1)];
+S.passed = [S.passed, ok];
+end
+
+function S = test_pbc_two_face(L, d)
+%TEST_PBC_TWO_FACE Apply TRANSP.PBC after exits through both faces of an axis.
+%   For each axis, one cell leaves through the positive face and another
+%   through the negative face in the same step, while a third stays inside.
+%   All cell centers and primary positions must end inside the domain at
+%   the periodic images of their positions before the call.
+S = struct('wrapped', false(1, 3), 'rAfter', nan(3, 3), 'errId', {{''}});
+for ax = 1:3
+    r = repmat(L / 2, 3, 1);
+    r(1, ax) = 1.05 * L(ax);
+    r(2, ax) = -0.05 * L(ax);
+    pars = struct('pp', {{mk_pp(1, d, r(1, :), 1); mk_pp(2, d, r(2, :), 2); ...
+        mk_pp(3, d, r(3, :), 3)}}, 'n', ones(3, 1), 'r', r);
+    try
+        pars2 = TRANSP.PBC(L(:), pars);
+    catch err
+        S.errId = {err.identifier};
+        continue
+    end
+    % Full expected positions, so a wrong coordinate on any axis fails.
+    expected = repmat(L / 2, 3, 1);
+    expected(1, ax) = 0.05 * L(ax);
+    expected(2, ax) = 0.95 * L(ax);
+    rpp = cell2mat(cellfun(@(x) x(:, 3:5), pars2.pp, 'UniformOutput', false));
+    tol = 1e-9 * max(L);
+    S.rAfter(:, ax) = pars2.r(:, ax);
+    S.wrapped(ax) = isequal(size(pars2.r), [3, 3]) && isequal(size(rpp), [3, 3]) && ...
+        all(abs(pars2.r - expected) <= tol, 'all') && ...
+        all(abs(rpp - expected) <= tol, 'all');
+end
 end
 
 % ======================================================================= %
@@ -1978,7 +2197,8 @@ end
 function outDir = save_outputs(report, figs, opts)
 %SAVE_OUTPUTS Write tabular results, the report structure, and rendered cases.
 %   Each invocation receives a timestamped directory so prior audits remain
-%   unchanged.
+%   unchanged. Saved copies keep file names and digests, not folders.
+report = UTILS.PUBLIC_COPY(report);
 stamp = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss'));
 outDir = fullfile(opts.OutputDir, ['audit__', stamp]);
 if isfolder(outDir)

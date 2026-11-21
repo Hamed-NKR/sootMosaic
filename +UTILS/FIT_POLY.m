@@ -3,10 +3,8 @@ function [yfit, xfit, bounds_yfit, afit, bounds_afit, out] = FIT_POLY(x, y, grou
 % the fitted curve with uncertainty bounds, as well as the slope of the fitted
 % curve in the predictor domain used for regression.
 %
-% The function is designed as a general interface so that additional fitting
-% methods (e.g., ordinary least squares) can be added later via the 'Method'
-% option. The current implementation supports a Bayesian linear model with a
-% conjugate Normal–Inverse-Gamma prior.
+% The 'bayes' method fits a Bayesian linear model with a conjugate
+% Normal-Inverse-Gamma prior.
 % ----------------------------------------------------------------------- %
 %
 % Model form (in transformed space):
@@ -32,7 +30,7 @@ function [yfit, xfit, bounds_yfit, afit, bounds_afit, out] = FIT_POLY(x, y, grou
 % Name-value options (varargin):
 %   'Degree'      : polynomial degree in transformed predictor z (default: 2)
 %   'Weights'     : nonnegative importance weights (default: [] => all ones)
-%   'Method'      : fitting backend (default: 'bayes'); placeholder for 'ols'
+%   'Method'      : fitting backend ('bayes' only, default: 'bayes')
 %   'XTransform'  : 'log10' or 'none' (default: 'log10')
 %   'YTransform'  : 'log10' or 'none' (default: 'log10')
 %   'NSamples'    : number of posterior draws for Bayesian backend (default: 1000)
@@ -90,8 +88,8 @@ opt.NSamples    = 1000;
 opt.SlopeOffset = 0;
 opt.CredibleLevel = 0.95;
 
-% Prior defaults match the original function spirit: diffuse Normal prior and
-% moderately informative inverse-gamma on sigma^2.
+% Prior defaults specify a diffuse Normal prior and a moderately informative
+% inverse-gamma prior on sigma^2.
 opt.PriorMu     = [];    % if empty, set to zeros with correct length later
 opt.PriorVScale = 100;
 opt.PriorA      = 3;
@@ -238,8 +236,7 @@ sqrtw = sqrt(w);
 % Design matrix in transformed space:
 %   Xfull = [1, z, z^2, ..., z^deg, group]
 %
-% The final column includes the group covariate, consistent with the earlier
-% implementation that used the group mean for prediction.
+% The final column is the group covariate. Prediction uses the group mean.
 Xpoly = zeros(n, deg);
 for k = 1:deg
     Xpoly(:,k) = z.^k;
@@ -278,11 +275,9 @@ switch opt.Method
         % The weighted likelihood is implemented via row scaling by sqrt(w).
 
     case 'ols'
-        % Placeholder for future expansion. The design/prediction plumbing in
-        % this function is organized so that OLS can be added with minimal
-        % duplication (beta estimate + covariance -> confidence intervals).
+        % Only the Bayesian fitting method is supported.
         error('FIT_POLY:MethodNotImplemented', ...
-              'Method ''ols'' is not implemented yet. Use Method ''bayes'' for now.');
+              'Method ''ols'' is not supported. Use Method ''bayes''.');
 
     otherwise
         error('FIT_POLY:BadMethod', 'Unknown Method: %s', opt.Method);
@@ -340,7 +335,7 @@ beta_draws = Mun + (L * Zrand) .* sqrt(sigma2_draws);  % broadcast sqrt(sigma2) 
 % Construct evaluation grid in transformed predictor space.
 zfit = linspace(min(z), max(z), resol)';
 
-% Set group to its mean for fitted curve evaluation (matches earlier behavior).
+% Set group to its mean for fitted curve evaluation.
 gbar = mean(group);
 
 Xpoly_fit = zeros(resol, deg);

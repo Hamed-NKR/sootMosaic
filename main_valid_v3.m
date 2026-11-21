@@ -4,7 +4,7 @@ close all
 
 %% Load the selected validation profile
 
-% PFAL_MAIN_VALID_CONFIG can point to any of the file, web-test, or custom
+% SOOTMOSAIC_MAIN_VALID_CONFIG can point to any of the file, web-test, or custom
 % profiles. Keeping selection here makes the script convenient to run while
 % leaving data addresses and scientific settings in JSON.
 cfg_valid = UTILS.LOAD_MAIN_VALID_CONFIG;

@@ -1,8 +1,5 @@
 classdef AGG
 % "AGG" is a class containing the aggregate properties and functions.
-%
-% Original author: Timothy Sipkens, 05-2021
-% Revised by: Hamed Nikookar, 07-2021
 % ----------------------------------------------------------------------- %
     
     properties
@@ -228,8 +225,7 @@ classdef AGG
         % "COMPILEPP" compiles a primary particle information set across...
         %   ...multiple aggregates.
         %
-        % Note: This will be useful for some functions that aim to be...
-        %   ...able to run in both "structure" and "class" modes.
+        % Returns primary-particle data as one numeric array.
         % --------------------------------------------------------------- %
         %
         % objs: Aggregate objects

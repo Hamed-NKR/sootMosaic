@@ -1,4 +1,6 @@
 {
+  "config_version": 1,
+  "model_profile": "current",
   "results": {
     "root": "../../data/main_ld1",
     "library_file": "ld1_aggregate_library.mat",
@@ -23,7 +25,11 @@
   "transport": {
     "domain": {
       "volume_fraction": 0.001,
-      "size": [0.000005, 0.000005, 0.000005]
+      "size": [
+        0.000005,
+        0.000005,
+        0.000005
+      ]
     },
     "particles": {
       "n_par": 10000,
@@ -35,20 +41,28 @@
     },
     "fluid": {
       "temperature": 1700,
-      "velocity": [0, 0, 0],
-      "pressure": 100000
+      "velocity": [
+        0,
+        0,
+        0
+      ],
+      "pressure": 101325
     },
-    "fluid_options": {
-      "amb": "flame"
-    },
+    "fluid_options": {},
     "mobility_options": {
-      "mtd": "continuum",
       "c_dt": 1000
     },
     "location_options": {
       "vf": "off",
       "vf_type": "pp"
     },
-    "growth_options": {}
+    "growth_options": {},
+    "diagnostics_options": {},
+    "velocity_options": {}
+  },
+  "post": {
+    "colaps": {
+      "aggregate_file": "../../data/main_ld1/LD1_LIBRARY_PLACEHOLDER.mat"
+    }
   }
 }

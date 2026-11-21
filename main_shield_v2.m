@@ -31,8 +31,10 @@ close all
 %% --- USER SETTINGS ---
 
 % Input data
-fdir_in  = 'D:\Hamed\CND\PhD\Publication\DLCA2\outputs\postLD2-01-Apr-2025_11-54-39_LD2-25NOV24';
-fname_in = 'Post_LD2-25NOV24';
+% task file selected by SOOTMOSAIC_MAIN_LD2_CONFIG, key post.shield.input_file
+cfg_ld2 = UTILS.LOAD_MAIN_LD2_CONFIG;
+[fdir_in, fname_in] = fileparts( ...
+    UTILS.POST_PATH(cfg_ld2, 'shield.input_file'));
 
 % Perimeter resolution
 n_shield = 64;

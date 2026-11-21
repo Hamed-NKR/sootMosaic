@@ -1,0 +1,316 @@
+# Third-party notices
+
+## Tandem classifier source
+
+Repository: https://github.com/cambustion/tandem
+Source: `src/aerosol_psd_fitting_tool.py`, lines 48-60 and 169-259.
+Commit: `0cc733cd4d2f80defd8ef5b93a3bb586778012df` (29 Oct 2026).
+License: MIT License.
+Consumers: `+INV/DM_FROM_Z.m`, `+INV/AAC_SETPOINT.m` and its private
+function `+INV/private/aac_setpoint_physics.m`.
+Published methods: Sipkens et al. (2020, part I, Eqs. 7-9),
+Johnson et al. (2018, Eq. 2), and Kiasadegh et al. (2026, Eqs. 6 and 14).
+Kiasadegh et al. (2026) cites software release v2.0.0 (21e5a71).
+
+MIT License
+
+Copyright (c) 2023-24 Cambustion, University of Alberta, NRC Canada
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## Import and relation methods
+
+- `+INV/READ_SMPS.m` and `+INV/READ_SMPS_DB.m`: SMPS software manual
+  (2019, version 11); Wiedensohler et al. (2012, Appendices A4 and A5.1).
+- `+INV/READ_AAC.m`: AAC manual (2023, v2.43, Sections 2.3.4 and 2.5.3);
+  Johnson et al. (2018, Eqs. 9-11).
+- `+INV/SELECT_SCANS.m` and `+INV/POOL_SCANS.m`: pooled within- and
+  between-group sums-of-squares identity.
+- `+INV/OBSERVATION.m`: Kiasadegh et al. (2026, Section 3.3);
+  Sipkens et al. (2020, part I, Eq. 23); Johnson et al. (2018, Eqs. 9-11).
+- `+INV/GAS.m`: Kim et al. (2005, Eqs. 9, 11 and 34).
+- `+INV/RHO_EFF.m`: Tavakoli and Olfert (2014, Eqs. 3-5 and 7);
+  Kiasadegh et al. (2026, Eqs. 26-31).
+
+## Transfer functions and losses, published methods
+
+The following files are reimplementations from published equations:
+
+- `+INV/TFER_DMA.m`: Stolzenburg (2018, Eqs. 10, 16, 18, 26, 29-34,
+  39-40 and A2-A5, A15); Sipkens et al. (2020, part I, Eqs. 5-9).
+- `+INV/TFER_AAC.m`: Johnson et al. (2018, Eqs. 2, 7, 12-15, Table 1);
+  Tavakoli and Olfert (2013, Eqs. 4-11).
+- `+INV/PENETRATION.m`: Johnson et al. (2018, Eqs. 12-14); Karlsson and
+  Martinsson (2003, Eqs. 13-14, Tables 1 and 6); Wiedensohler et al.
+  (2012, Table 1); SMPS software manual version 11 (Appendix B, p. B-14).
+- `+INV/CPC_EFF.m`: Johnson et al. (2018, Eq. 8); CPC 3789 operation
+  manual revision C (2021, Ch. 5).
+
+No code from the transfer-function package is included. These entries
+record method provenance and impose no additional code notice obligation.
+
+## Charge methods
+
+- `+INV/CHARGE_FRAC.m`: 3082 manual (2016, Eqs. B-2 and B-3,
+  Tables B-2 and B-3); Wiedensohler et al. (2012, Table A7);
+  Gopalakrishnan et al. (2013, Eq. 10, Table 2).
+
+## Progress bar
+
+Repository: https://github.com/tsipkens/atems
+Commit: 8f38c9d37e87f02907efc93cd0b43e6ccd8b1582 (1 Mar 2021).
+License: MIT License.
+
+`+tools/textbar.m` is adopted into `+UTILS/TEXTBAR.m`. Modified: package
+name and call syntax, percent printed with two decimals. The MIT notice is
+included in the file.
+Code citation: Sipkens and Rogak (2021), Journal of Aerosol Science, 105699,
+doi:10.1016/j.jaerosci.2020.105699. The source README requests it for use of
+the repository code.
+
+MIT License
+
+Copyright (c) 2019 Timothy A. Sipkens
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## Density calibration and mass methods
+
+- `+INV/CALIB_K.m`: Perraud, Smith and Olfert (2023, supplement
+  Fig. S5); Kiasadegh et al. (2026, Eqs. 33 and 34); Sapkota et al.
+  (2025, SI Sec. S3 and Fig. S3) for the PEG points and the fitted factor.
+  Earlier calibration code was read as a model of the density-ratio
+  correction of Perraud, Smith and Olfert (2023) and Kiasadegh et al.
+  (2026, Eqs. 33-34), no code text adopted.
+- `+INV/MASS.m`: Tavakoli and Olfert (2014, Eqs. 3-5 and 7).
+
+Both files are reimplementations. No external code text is included.
+
+## Group averaging methods
+
+- `+INV/GROUP_AVG.m`: two-sided Student t interval on the scan count less
+  one; DerSimonian and Laird (1986, Eqs. 2-4 and the moment estimate of
+  the between-day variance, p. 183), the random-effects combination named
+  by Kiasadegh et al. (2026, Appendix), with a Student t interval on the
+  day count less one as a small-sample approximation; JCGM 100:2008
+  (Eq. G.2b) for the effective degrees of freedom of the combined term.
+  Earlier averaging code was read as a model of the call layout for
+  Student t group averages, no code text adopted.
+
+The file is a reimplementation. No external code text is included.
+
+## Operating range calculator
+
+Repository: https://github.com/MortezaKiasadegh/acorc
+Source: `script.js` (DMA and AAC range functions and the aerodynamic to
+mobility conversion), release v2.0.
+Commit: `21889c61289e16936d7b8256b839c4090351c192` (15 Oct 2025).
+License: MIT License.
+Consumer: `+INV/OP_RANGE.m`, adapted 20 Nov 2026 (bracketed roots, the
+speed limit at the given sheath flow, configured constants and geometry,
+no plotting, mass classifier or sheath flow sweep).
+Published methods: Kiasadegh et al. (2026, Sec. 2.4 and Table 1; SI
+Secs. S1.1 and S1.2, Eqs. S1-S7); Johnson et al. (2018, Eqs. 1 and 2).
+Code citation, as the repository `CITATION.cff` at this commit asks:
+Kiasadegh (2025), ACORC, Aerosol Classifier Operational Range Calculator
+(DMA, AAC, CPMA), Zenodo, doi:10.5281/zenodo.15620940.
+
+MIT License
+
+Copyright (c) 2025 Morteza Kiasadegh
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## Two-dimensional inversion package
+
+Repository: https://github.com/tsipkens/bidias
+Commit: fa318b8c6b48b1b4f28bacb7713aba15ba43d52d (9 Apr 2024).
+License: MIT License.
+
+Adopted files:
+
+- `@Grid/Grid.m` into `+INV/@Grid/Grid.m`.
+- `@PartialGrid/PartialGrid.m` into `+INV/@PartialGrid/PartialGrid.m`.
+- The charge-sum and grid-factorization structure of
+  `+kernel/gen_pma_dma_grid.m` into `+INV/KERNEL_2D.m`.
+
+Modified 18 Nov 2026. Grids add one-dimensional coordinates, validation,
+preallocation and explicit whole-cell masks. The tandem kernel uses the AAC
+coordinate, recorded settings, mobility-dependent diffusion, interval
+averaging, exposure and the existing physical functions. Plotting and
+interactive output are omitted. Each adopted file includes the MIT notice.
+
+Method citation: Sipkens et al. (2020, part I), Journal of Aerosol Science
+140, 105484, doi:10.1016/j.jaerosci.2019.105484, Sec. 2.2 and Eqs. 23, 28.
+Code citation: Sipkens et al. (2020), doi:10.17632/sg2zj5yrvr.3.
+The source README requests both the method and code citations for adopted
+code. Its additional Twomey-Markowski citation, Buckley et al. (2017), is
+retained in the tandem kernel provenance. No mass-analyzer transfer code
+is adopted. The pinned source has no `+kernel/build.m`.
+MIT License
+
+Copyright (c) 2019 Timothy A. Sipkens
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## One-dimensional inversion package
+
+Repository: https://github.com/tsipkens/odias
+Commit: 8de95745486b01cf5ede0b186d044656eb3fde33 (8 Jan 2024).
+License: GNU General Public License, version 3 (GPL-3).
+
+`+kernel/gen_smps.m` is adopted into `+INV/KERNEL_1D.m`; its charge
+accumulation is shared in `+INV/private/kernel_dma.m`. Both are modified
+18 Nov 2026. Named charge options, adaptive tails, existing physical calls,
+penetration, the aerodynamic impactor, log quadrature, raw-observation
+checks and exposure after interval averaging replace the source wrappers.
+Display, progress reporting and response thresholding are omitted.
+
+The source file has no copyright or license block. The repository GPL-3
+text is the repository `LICENSE`.
+The modified source is shipped with this distribution. The combined work
+containing the adopted GPL-3 kernel is distributed under GPL-3; existing
+MIT notices remain attached to their respective components.
+
+Methods: Sipkens et al. (2020, part I, Eqs. 23 and 28) and Chen et al.
+(2024, Eqs. 3 and 5). The source README contains credits but no additional
+formal citation request for this kernel.
+
+## Grid support and scan-response methods
+
+`+INV/SCAN_RESPONSE.m` is reimplemented from Chen et al. (2024,
+Eqs. 2, 5, 22-26, 33 and 36-39) and Collins et al. (2002, Eqs. 9-14).
+`+INV/GRID_RULE.m` and `+INV/GRID_CONVERGE.m` implement the kernel support
+and convergence rules using Sipkens et al. (2020, part I, Sec. 2.2),
+Johnson et al. (2018, Eqs. 1 and 7) and 3082 manual (2016, Eq. B-1).
+No external source text is adopted into these three files.
+
+## Solver adaptations, 19 Nov 2026
+
+Repository: https://github.com/tsipkens/odias
+Commit: 8de95745486b01cf5ede0b186d044656eb3fde33.
+License: GNU General Public License, version 3 (GPL-3).
+The repository LICENSE contains the complete license text. The combined
+work is distributed under GPL-3; existing MIT notices remain attached.
+The modified source is included in this distribution.
+
+| Adopted source | Release file | Changes, 19 Nov 2026 |
+|---|---|---|
+| +invert/tikhonov.m | +INV/TIKHONOV.m | Explicit stages, zero mean, final reweighted operator, floor and diagnostics |
+| +invert/tikhonov_lpr.m | +INV/TIKHONOV_LPR.m | Both zero exterior boundaries, full and partial grid directional penalties |
+| +invert/lsq.m | +INV/LSQ.m | Zero lower bounds, feasible starts, validated solver and optimality retry |
+| +invert/exp_dist.m | +INV/EXP_DIST.m | Exact prior factor, validated scale, one-stage diagnostics |
+| +invert/exp_dist_lpr.m | +INV/EXP_DIST_LPR.m | Covariance factorization without cutoff, boundary overwrite or pseudoinverse |
+| +invert/twomey.m | +INV/TWOMEY.m | Package calls, finite zero rows, validation, no progress output |
+| +invert/twomark.m | +INV/TWOMARK.m | Package calls, one-dimensional input, diagnostics, no progress output |
+| +invert/markowski.m | +INV/MARKOWSKI.m | Explicit source stencil, assigned error output with squared units and empty-selection NaN, unused controls omitted, no progress output |
+| +tools/mean_sq_err.m | +INV/MEAN_SQ_ERR.m | Package name, identifiers, header layout and finite nonnegative column validation; source squared-residual mean over nonzero observations and empty-selection NaN retained |
+| +invert/tikhonov.m, precision expression | +INV/POSTERIOR.m | Actual final-stage precision, checked covariance solves |
+
+The adopted sources have no per-file copyright or license blocks. No per-file copyright notice is omitted.
+
+Methods: Sipkens et al. (2020, part II, Eqs. 26, 38-39, 42-46);
+Huckle and Sedlacek (2012, Eqs. 1-2); Petters (2021, Eq. 6);
+Twomey (1975, Eq. 7); Markowski (1987, Eqs. 3-4, 7-8);
+Sipkens et al. (2020, part I, Sec. 4.2); Buckley et al. (2017).
+
++INV/POST_MIX.m, +INV/DELTA_PROP.m and +INV/TGIBBS.m are reimplementations,
+not adoptions. They implement total variance, fixed-window Jacobian
+propagation and nonnegative Gaussian sampling, respectively. Methods are
+Sipkens et al. (2020, part II, Eqs. 25-26), Bardsley and Fox (2012)
+and Robert (1995), with the combination rules of
+`config/main_inv/DEFAULTS.md`, section 13.
+
+The stopping helper +tools/mean_sq_err.m has no per-file copyright or license block. It is adopted from the repository and full commit above under GPL-3 as +INV/MEAN_SQ_ERR.m.
+Its residual mean is unweighted, in squared observation units, and excludes
+zero observations. This source convention is distinct from the error-scaled
+stopping criterion of Markowski (1987, Eq. 8, p. 130).
+Twomey (1975, Eq. 7) supplies the multiplicative method.
+All changes to this helper are marked 19 Nov 2026 in its header.
+
+## Regularization adaptations, 19 Nov 2026
+
+Repository: https://github.com/tsipkens/odias
+Commit: 8de95745486b01cf5ede0b186d044656eb3fde33.
+License: GNU General Public License, version 3 (GPL-3).
+The complete GPL-3 text is distributed in LICENSE with the modified source.
+Existing notices remain attached to their respective files.
+
+| Adopted source | Release file | Changes, 19 Nov 2026 |
+|---|---|---|
+| +invert/bayesf_precomp.m | +INV/BAYESF.m | Package solvers, proper zero-mean priors, unconstrained evidence, prior-whitened singular values, normalized lambda and length probabilities, pooled family scores, widening, refinement, tail diagnostics and report curves |
+| +tools/logdet.m | +INV/LOGDET.m | Package name, input validation and real positive-determinant contract; singular and negative determinants rejected; LU log-magnitude sum retained |
+
+The adopted sources have no per-file copyright or license blocks. No per-file copyright notice is omitted.
+Method: Sipkens et al. (2020, part II, Eqs. 30-34).
+Every modification group is dated 19 Nov 2026 in the corresponding header.
+
++INV/LAMBDA_XCHECK.m is a reimplementation from Golub et al. (1979),
+Hansen (2000) and Groetsch (1984, Eq. 3.3.3).
+No external source text is adopted into that file.
++QA/TEST_INV_REGULARIZATION.m contains original synthetic checks of
+Sipkens et al. (2020, part II, Eqs. 30-34) and those cross-check methods.

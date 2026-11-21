@@ -7,7 +7,10 @@ function [gmean, gstd, ci95] = GEOMSTATS(x, w)
 %   log-normal statistics using positive finite weights W and Kish
 %   effective sample size for the confidence interval.
 %
-%   Adapted from Hamed-NKR/atems +morph/geomstats.m on branch HN.
+%   Method: Geometric mean and standard deviation from the logarithms of...
+%       ...a log-normal sample (Limpert et al., 2001, BioScience 51(5),...
+%       ...341-352); weights and Kish effective sample size (Kish, 1965,...
+%       ...Survey Sampling) for the weighted interval.
 
 x = x(:);
 
@@ -65,7 +68,7 @@ else
         ci95 = exp(mu + z * [-1 1] * se);
     else
         ci95 = [gmean gmean];
-        warning('PFAL:GEOMSTATS:LowEffectiveN', ...
+        warning('sootMosaic:GEOMSTATS:LowEffectiveN', ...
             'Effective sample size n_eff = %.2f <= 1. CI is not reliable.', ...
             n_eff);
     end

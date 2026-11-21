@@ -1,9 +1,14 @@
 clear; clc; close all;
 
+% local data folders
+dir_data_1 = ''; % set to the local data folder
+dir_data_2 = ''; % set to the local data folder
+dir_data_3 = ''; % set to the local data folder
+
 %% loading data %%
 
 % import simulation results from second-stage langevin dynamics
-fdir_LD2 = 'D:\Hamed\CND\PhD\Publication\Paper2\Library_Final\1_35\LD2\Continuum';
+fdir_LD2 = dir_data_1;
 fname_LD2 = 'LD2_11-Dec-2025_19-13-29_Final';
 varnames_LD2 = {'parsdata', 'fl'};
 load(fullfile(fdir_LD2, fname_LD2), varnames_LD2{:});
@@ -11,13 +16,13 @@ ind_sim = [1 4];
 rows_to_merge = 4;
 
 % import experimental effective density data from tandem measurements
-fdir_exp = 'D:\Hamed\CND\PhD\Publication\Experiment\Effective-Density-Compiled';
+fdir_exp = dir_data_2;
 fname_exp = 'Effective-Density-Compiled_17-Mar-2025_05-00-44';
 load(strcat(fdir_exp, '\', fname_exp, '.mat'), 'dist_grp')
 ind_exp = [1 3];
 
 % import manually processed TEM image data
-fdir_tem = 'D:\Hamed\CND\PhD\Publication\Paper2\TEM_Manual';
+fdir_tem = dir_data_3;
 fname_tem = 'TEM_Manual';
 varnames_tem = {'Aggs_lal_1', 'Aggs_exdil',...
     'dbarpp_manu_lal_1', 'dbarpp_manu_exdil', 'id_agg_exdil'};

@@ -3,20 +3,25 @@ clear
 clf('reset')
 close all
 
+% local data folders
+dir_data_1 = ''; % set to the local data folder
+dir_data_2 = ''; % set to the local data folder
+dir_data_3 = ''; % set to the local data folder
+dir_data_4 = ''; % set to the local data folder
+dir_data_5 = ''; % set to the local data folder
+
 %% initialization %%
 
 % address of simulation data to be imported
 
-fdir_simul_13_scat = 'D:\Hamed\CND\PhD\Weekly\2025\Week_of_27OCT25\Results\postLD2-31-Oct-2025_11-12-18_LD2_30-Oct-2025_12-50-54_Final';
+fdir_simul_13_scat = dir_data_1;
 fname_simul_13_scat = 'Post_LD2_30-Oct-2025_12-50-54_Final';
-% fdir_simul_13_scat = 'D:\Hamed\CND\PhD\Publication\Paper2\Validation\postLD2-25-Sep-2025_13-07-57_LD2_25-Sep-2025_13-03-12_Final';
-% fname_simul_13_scat = 'Post_LD2_25-Sep-2025_13-03-12_Final';
 
-fdir_simul_13_flat = 'D:\Hamed\CND\PhD\Publication\DLCA2\outputs\postLD2-28-Mar-2025_18-36-43_LD2_27-Nov-2024_04-21-58_Final';
+fdir_simul_13_flat = dir_data_2;
 fname_simul_13_flat = 'Post_LD2_27-Nov-2024_04-21-58_Final';
-fdir_simul_10_scat = 'D:\Hamed\CND\PhD\Publication\DLCA2\outputs\postLD2-28-Mar-2025_18-57-18_LD2-25-Nov-2024_19-37-48_Final';
+fdir_simul_10_scat = dir_data_3;
 fname_simul_10_scat = 'Post_LD2-25-Nov-2024_19-37-48_Final';
-fdir_simul_10_flat = 'D:\Hamed\CND\PhD\Publication\DLCA2\outputs\postLD2-28-Mar-2025_18-59-48_LD2-26-Nov-2024_23-56-35_Final';
+fdir_simul_10_flat = dir_data_4;
 fname_simul_10_flat = 'Post_LD2-26-Nov-2024_23-56-35_Final';
 
 % variables of interest in the simulation data
@@ -25,7 +30,7 @@ varnames_simul = {'parsdata', 'pars_flt', 'bayesfit'};
 ii0 = [1,4,5]; % data group indices in simulation data to be plotted
 
 % address of experimental data to be improted (for validation)
-fdir_exp = 'D:\Hamed\CND\PhD\Publication\Experiment\Effective-Density-Compiled';
+fdir_exp = dir_data_5;
 fname_exp = 'Effective-Density-Compiled_17-Mar-2025_05-00-44';
 
 bayesresol = 500; % number of increment for bayesian fit 
@@ -621,7 +626,7 @@ xlabel(tl4, '$d_\mathrm{a}$ [nm]', 'interpreter', 'latex', 'FontSize', 18)
 ylabel(tl4, '$d_\mathrm{pp}$ [nm]', 'interpreter',...
     'latex', 'FontSize', 18)
 
-%% a revised version of simulations against experiments (for thesis) %%
+%% Simulation and experiment comparison %%
 
 % initialize figure
 f5 = figure(5);

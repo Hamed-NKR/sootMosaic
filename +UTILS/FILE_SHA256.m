@@ -4,7 +4,7 @@ function hash_text = FILE_SHA256(file_path)
 %   chunks so large experimental artifacts do not need to fit in memory.
 
 if nargin < 1 || isempty(file_path) || ~isfile(file_path)
-    error('PFAL:FILE_SHA256:MissingFile', ...
+    error('sootMosaic:FILE_SHA256:MissingFile', ...
         'Cannot compute SHA-256 because the file does not exist: %s', ...
         char(string(file_path)));
 end
@@ -12,7 +12,7 @@ end
 digest = java.security.MessageDigest.getInstance('SHA-256');
 fid = fopen(file_path, 'r');
 if fid < 0
-    error('PFAL:FILE_SHA256:OpenFailed', ...
+    error('sootMosaic:FILE_SHA256:OpenFailed', ...
         'Could not open the file for hashing: %s', file_path);
 end
 cleanup = onCleanup(@() fclose(fid));

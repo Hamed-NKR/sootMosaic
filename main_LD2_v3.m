@@ -15,10 +15,19 @@ cfg_sim = cfg_ld2.simulation;
 cfg_projection = cfg_ld2.projection;
 cfg_transport = cfg_ld2.transport;
 
+% Seed the random number generator only when simulation.rng_seed is set. An
+% empty value leaves the generator untouched. The seed is applied
+% before any random draw and the loaded dataset does not reset it.
+if ~isempty(cfg_sim.rng_seed)
+    rng(cfg_sim.rng_seed);
+end
+
 % Load previously scaled first-stage aggregates using the variable declared
 % in the source-specific LD2 config. main_scatter_v8 and main_scale_v2 both
 % write this payload as pars_out.
-[pars_LD2, dataset_src] = UTILS.LOAD_MAIN_LD2_DATASET(cfg_dataset);
+[pars_LD2, dataset_src, dataset_provenance] = ... %#ok<NASGU>
+    UTILS.LOAD_MAIN_LD2_DATASET(cfg_dataset);
+dataset_src.sha256 = UTILS.FILE_SHA256(dataset_src.file);
 
 if ~isfield(pars_LD2, 'pp')
     disp(' ')
@@ -66,7 +75,7 @@ end
 
 % Build the fluid and domain parameter tables from the JSON config.
 [params_domain, params_const, fl] = UTILS.LD2_PARAMS_FROM_CONFIG( ...
-    cfg_transport.domain, cfg_transport.fluid);
+    cfg_transport.domain, cfg_transport.fluid, cfg_ld2.model_params.si.constants);
 fprintf('LD2 config: %s\n', cfg_ld2.config_file);
 fprintf('LD2 requested volume fraction: %.6g\n', params_domain.Value(1));
 
@@ -76,7 +85,7 @@ opts_fl = cfg_transport.fluid_options;
 
 % calculate initial mobility properties
 opts_mobil = cfg_transport.mobility_options;
-pars_LD2 = TRANSP.MOBIL(pars_LD2, fl, params_const, opts_mobil);
+[pars_LD2, opts_mobil] = TRANSP.MOBIL(pars_LD2, fl, params_const, opts_mobil);
 
 % Assign random initial locations and velocities to aggregates
 opts_loc = cfg_transport.location_options;
@@ -84,9 +93,12 @@ opts_loc = cfg_transport.location_options;
 fl.size = params_domain.Value(2:4);
 fprintf('LD2 effective domain size after volume-fraction adjustment: [%.6g %.6g %.6g] m\n', ...
     params_domain.Value(2), params_domain.Value(3), params_domain.Value(4));
-pars_LD2.v = PAR.INIT_VEL(pars_LD2.pp, pars_LD2.n, fl.temp, params_const);
+opts_vel = cfg_transport.velocity_options;
+pars_LD2.v = PAR.INIT_VEL(pars_LD2.pp, pars_LD2.n, fl.temp, params_const, ...
+    opts_vel.sampler);
 
 opts_grow = cfg_transport.growth_options;
+opts_grow.dom_size = params_domain.Value(2:4); % periodic collision search
 
 % make a placeholder for temporal ensemble data
 ensdata.t = zeros(k_max, 1);
@@ -98,6 +110,13 @@ ensdata.dpp = zeros(k_max, 2);
 ensdata.sigmapp = zeros(k_max, 2);
 ensdata.da = zeros(k_max, 2);
 ensdata.dm = zeros(k_max, 2);
+opts_diag = cfg_transport.diagnostics_options;
+if opts_diag.knudsen
+    % pair and nearest-neighbor Knudsen numbers of TRANSP.KNUDSEN
+    ensdata.kn_pair = zeros(k_max, 2);
+    ensdata.knn = zeros(k_max, 2);
+    ensdata.knn_defined = false(k_max, 1);
+end
 
 % store ensemble values at the first moment
 ensdata.t(1) = 0;
@@ -109,6 +128,12 @@ ensdata.dpp(1,1:2) = [geomean(pars_LD2.dpp_g(:,1)), UTILS.GEOSTD(pars_LD2.dpp_g(
 ensdata.sigmapp(1,1:2) = [geomean(pars_LD2.dpp_g(:,2)), UTILS.GEOSTD(pars_LD2.dpp_g(:,2))];
 ensdata.da(1,1:2) = [geomean(pars_LD2.da), UTILS.GEOSTD(pars_LD2.da)];
 ensdata.dm(1,1:2) = [geomean(pars_LD2.dm), UTILS.GEOSTD(pars_LD2.dm)];
+if opts_diag.knudsen
+    kn = TRANSP.KNUDSEN(pars_LD2, fl, params_const, opts_mobil);
+    ensdata.kn_pair(1,1:2) = [mean(kn.kn_pair), std(kn.kn_pair)];
+    ensdata.knn(1,1:2) = [mean(kn.knn), std(kn.knn)];
+    ensdata.knn_defined(1) = kn.knn_defined;
+end
 
 pars_LD2.n_hyb = ones(n0_agg, 1); % initialize number of sub-aggregates...
 % ...(first, all aggregates are non-hybrid)
@@ -167,9 +192,10 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     pars_LD2 = PAR.SIZING(pars_LD2);
     
     % update mobility properties
-    pars_LD2 = TRANSP.MOBIL(pars_LD2, fl, params_const, opts_mobil);
+    [pars_LD2, opts_mobil] = TRANSP.MOBIL(pars_LD2, fl, params_const, opts_mobil);
     
-    ensdata.t(k) = ensdata.t(k-1) + min(pars_LD2.delt);
+    % advance the clock by the step MARCH took, not by the next step
+    ensdata.t(k) = ensdata.t(k-1) + delt;
     ensdata.n_agg(k) = length(pars_LD2.pp);
     ensdata.tau(k,1:2) = [mean(pars_LD2.tau), std(pars_LD2.tau)];
     ensdata.kn_kin(k,1:2) = [mean(pars_LD2.kn_kin), std(pars_LD2.kn_kin)];
@@ -177,14 +203,22 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     ensdata.dpp(k,1:2) = [geomean(pars_LD2.dpp_g(:,1)), UTILS.GEOSTD(pars_LD2.dpp_g(:,1))];
     ensdata.sigmapp(k,1:2) = [geomean(pars_LD2.dpp_g(:,2)), UTILS.GEOSTD(pars_LD2.dpp_g(:,2))];
     ensdata.dm(k,1:2) = [geomean(pars_LD2.dm), UTILS.GEOSTD(pars_LD2.dm)];
-    if strcmp(opts_mobil.mtd, 'interp')
+    if any(strcmp(opts_mobil.mtd, {'interp', 'free_molecular'}))
         ensdata.da(k,1:2) = [geomean(pars_LD2.da), UTILS.GEOSTD(pars_LD2.da)];
     end
-    
+    if opts_diag.knudsen
+        kn = TRANSP.KNUDSEN(pars_LD2, fl, params_const, opts_mobil);
+        ensdata.kn_pair(k,1:2) = [mean(kn.kn_pair), std(kn.kn_pair)];
+        ensdata.knn(k,1:2) = [mean(kn.knn), std(kn.knn)];
+        ensdata.knn_defined(k) = kn.knn_defined;
+    end
+
     if ensdata.n_agg(k) <= (r_n_agg(ind_dat) * ensdata.n_agg(1))
 
         % update projected area sizes (if necessary)
-        if ~strcmp(opts_mobil.mtd, 'interp')
+        % (methods without da use PAR.PROJECTION with the projection
+        % section of the config, not the mobility projection options)
+        if ~any(strcmp(opts_mobil.mtd, {'interp', 'free_molecular'}))
             pars_LD2.da = 2 * sqrt(PAR.PROJECTION(pars_LD2, [], n_mc_prj,...
                 n_ang_prj, [], opts_prj) / pi);
         end
@@ -195,9 +229,12 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
         parsdata(ind_dat).dpp = pars_LD2.dpp_g(:,1);
         parsdata(ind_dat).sigmapp = pars_LD2.dpp_g(:,2);
         parsdata(ind_dat).da = pars_LD2.da;
-        parsdata(ind_dat).dm = pars_LD2.da;
+        parsdata(ind_dat).dm = pars_LD2.dm;
         parsdata(ind_dat).dg = pars_LD2.dg;
         parsdata(ind_dat).n_hyb = pars_LD2.n_hyb;
+
+        % saved mobility diameters must match the current population
+        UTILS.CHECK_SAVED_DM(parsdata(ind_dat).dm, pars_LD2.dm);
 
         ind_dat = ind_dat + 1; % update data saving index
 
@@ -206,9 +243,10 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     % save workspace once in a while (to recover iterations in case they...
     % ...are interrupted)
     if mod(k, checkpoint_interval) == 1
+        rng_state = rng; % generator state, saved below and restored by UTILS.RESUME_LD2_V3
         dt = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss')); % current date and time
-        save(fullfile(dir_wsp, strcat(cfg_results.checkpoint_prefix, '__', ...
-            dt, '.mat')), '-v7.3')
+        UTILS.SAVE_PUBLIC_MAT(fullfile(dir_wsp, strcat( ...
+            cfg_results.checkpoint_prefix, '__', dt, '.mat')), {'-v7.3'})
     end
 
     UTILS.TEXTBAR([k, k_max]); % update progress textbar
@@ -218,7 +256,7 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
 end
 
 % Remove unused elements from the data storage structures
-parsdata(ind_dat:end) = [];
+[parsdata, r_n_agg] = UTILS.TRIM_LD2_OUTPUT(parsdata, r_n_agg, ind_dat);
 ensdata.t(k:end) = [];
 ensdata.n_agg(k:end) = [];
 ensdata.tau(k:end,:) = [];
@@ -228,9 +266,14 @@ ensdata.dpp(k:end,:) = [];
 ensdata.sigmapp(k:end,:) = [];
 ensdata.da(k:end,:) = [];
 ensdata.dm(k:end,:) = [];
+if isfield(ensdata, 'kn_pair')
+    ensdata.kn_pair(k:end,:) = [];
+    ensdata.knn(k:end,:) = [];
+    ensdata.knn_defined(k:end) = [];
+end
 
 % save the final workspace
 dt_final = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss'));
-save(fullfile(dir_wsp, strcat(cfg_results.final_prefix, '__', ...
-    dt_final, '.mat')), '-v7.3')
+UTILS.SAVE_PUBLIC_MAT(fullfile(dir_wsp, strcat(cfg_results.final_prefix, ...
+    '__', dt_final, '.mat')), {'-v7.3'})
 
