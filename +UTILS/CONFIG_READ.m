@@ -27,6 +27,13 @@ function [cfg, provenance] = CONFIG_READ(file, dictionary, opts)
 %         ...present, preserving a required section with optional keys.
 %         ...Native_json retains decoded values for selected rows....
 %         ...When used, unlisted root members retain decoded values too....
+%         ...Native_items with native_json returns the decoded entries of...
+%         ...an object array as a cell column, so they merge by id, and...
+%         ...validation checks their ids without merging nested values....
+%         ...Id_char on the id row of an object array matches and checks...
+%         ...entries by string({char(id)}) in every merge and in the id...
+%         ...check of validation. The id must be nonempty as given, the...
+%         ...key may be empty text and the stored id keeps its input form.
 %         ...Type any with open true leaves nested metadata uninterpreted.
 %         ...Struct_fallback replaces non-struct input with an empty object;...
 %         ...struct arrays retain their decoded values without child checks.
@@ -132,6 +139,10 @@ end
 warned_aliases = false(size(dictionary));
 native_rows = cellfun(@(r) option(r, 'native_json', false), dictionary);
 native_paths = paths(native_rows);
+native_items = cellfun(@(r) isequal(option(r, 'native_items', false), ...
+    true), dictionary(native_rows));
+id_paths = paths(cellfun(@(r) isequal(option(r, 'id_char', false), true), ...
+    dictionary));
 warned_unknown = {};
 files = struct('file', {}, 'sha256', {}, 'config_version', {}, 'notes', {});
 records = struct('path', {}, 'old_value', {}, 'new_value', {}, 'source', {});
@@ -141,13 +152,14 @@ require_object(base, 'Base');
 require_object(direct, 'Overrides');
 base = prepare(base);
 [base, base_records] = UTILS.CONFIG_MERGE( ...
-    dictionary_defaults(schema), base, '<base>');
+    dictionary_defaults(schema), base, '<base>', '', id_paths);
 [cfg, chain_records] = chain(canonical(file), {}, 1);
 direct = prepare(direct);
-[cfg, direct_records] = UTILS.CONFIG_MERGE(cfg, direct, '<arguments>');
+[cfg, direct_records] = UTILS.CONFIG_MERGE(cfg, direct, '<arguments>', ...
+    '', id_paths);
 records = [records; base_records; chain_records; direct_records];
 unknowns(cfg, schema, '');
-[cfg, si] = validate_object(cfg, schema, '');
+[cfg, si] = validate_object(cfg, schema, '', id_paths);
 if ~isfield(cfg, 'config_version'), cfg.config_version = 1; end
 check_version(cfg.config_version);
 cfg.si = si;
@@ -175,6 +187,9 @@ cfg.provenance = provenance;
             for native_index = 1:numel(native_paths)
                 parts = strsplit(native_paths{native_index}, '.');
                 [item, found] = get_path(decoded, parts);
+                if found && native_items(native_index)
+                    item = item_cells(item);
+                end
                 if found, value = set_path(value, parts, item); end
             end
             if isstruct(decoded) && isscalar(decoded)
@@ -206,7 +221,8 @@ cfg.provenance = provenance;
             [lower, changes] = chain(canonical(parent), [stack {name}], ...
                 depth + 1);
         end
-        [value, extra] = UTILS.CONFIG_MERGE(lower, value, name);
+        [value, extra] = UTILS.CONFIG_MERGE(lower, value, name, '', ...
+            id_paths);
         changes = [changes; extra];
         [hash, notes] = file_digest(name, notes);
         files(end + 1, 1) = struct('file', name, ...
@@ -290,7 +306,7 @@ cfg.provenance = provenance;
     end
 end
 
-function [value, si] = validate_object(value, tree, prefix)
+function [value, si] = validate_object(value, tree, prefix, id_paths)
 si = struct();
 names = fieldnames(tree.children);
 for k = 1:numel(names)
@@ -307,7 +323,8 @@ for k = 1:numel(names)
             error('sootMosaic:CONFIG_READ:MissingKey', ...
                 'Required key %s is missing.', path);
         elseif ~child.array && ~isempty(fieldnames(child.children))
-            [nested, nested_si] = validate_object(struct(), child, path);
+            [nested, nested_si] = validate_object(struct(), child, path, ...
+                id_paths);
             if ~isempty(fieldnames(nested))
                 value.(key) = nested;
                 si.(key) = nested_si;
@@ -338,16 +355,26 @@ for k = 1:numel(names)
         item_si = cell(size(item));
         for j = 1:numel(item)
             [item{j}, item_si{j}] = validate_object( ...
-                item{j}, child, [path '[]']);
+                item{j}, child, [path '[]'], id_paths);
         end
     elseif ~isempty(fieldnames(child.children))
         require_object(item, path);
-        [item, item_si] = validate_object(item, child, path);
+        [item, item_si] = validate_object(item, child, path, id_paths);
     else
         item = clean_nulls(item);
         item_si = item;
     end
-    if child.array, [item, ~] = UTILS.CONFIG_MERGE(item, item); end
+    if child.array
+        list_ids = id_paths(startsWith(id_paths, [path '[]']));
+        list_ids = cellfun(@(p) p(numel(path) + 1:end), list_ids, ...
+            'UniformOutput', false);
+        if option(row, 'native_items', false)
+            % Checking the entry ids without merging nested decoded values
+            [item, ~] = UTILS.CONFIG_MERGE([], item, '', '', list_ids);
+        else
+            [item, ~] = UTILS.CONFIG_MERGE(item, item, '', '', list_ids);
+        end
+    end
     if isnumeric(item)
         item_si = item .* unit_factor(option(row, 'unit', 'none'), key, ...
             strcmp(option(row, 'status', ''), 'new'));
@@ -658,6 +685,15 @@ elseif isstruct(value)
     end
 elseif iscell(value)
     value = cellfun(@clean_nulls, value, 'UniformOutput', false);
+end
+end
+
+function value = item_cells(value)
+% Keeping decoded object entries as a cell column for the id merge
+if isstruct(value)
+    value = num2cell(value(:));
+elseif iscell(value)
+    value = value(:);
 end
 end
 

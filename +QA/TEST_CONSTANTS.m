@@ -68,7 +68,8 @@ folder = tempname(root);
 mkdir(folder);
 restore_folder = onCleanup(@() rmdir(folder, 's'));
 file = fullfile(folder, 'validation.json');
-density = raw.physics.material_density_kg_m3;
+density = 1860; % Explicit material density of the fixture (kg/m3)
+raw.physics.material_density_kg_m3 = density;
 raw.model_profile = 'current';
 raw.model_overrides.constants.rho_bc_kg_m3 = 2 * density;
 write_json(file, raw);
@@ -82,7 +83,7 @@ write_json(file, raw);
 cfg = UTILS.LOAD_MAIN_VALID_CONFIG(file);
 [names, pass] = add(names, pass, 'validation density inherits profile', ...
     cfg.physics.material_density_kg_m3 == 2 * density);
-raw = rmfield(raw, {'model_profile', 'model_overrides'});
+raw = rmfield(raw, {'config_version', 'model_profile', 'model_overrides'});
 raw.physics.material_density_kg_m3 = density;
 write_json(file, raw);
 cfg = UTILS.LOAD_MAIN_VALID_CONFIG(file);

@@ -1,14 +1,30 @@
-function cfg = LOAD_MAIN_VALID_CONFIG(config_path)
-%LOAD_MAIN_VALID_CONFIG Load and validate the publication validation config.
-%   The SOOTMOSAIC_MAIN_VALID_CONFIG environment variable, or
-%   PFAL_MAIN_VALID_CONFIG when that one is empty, selects a profile when
-%   CONFIG_PATH is omitted. Relative paths are resolved from the config file,
-%   which keeps machine-specific addresses out of tracked MATLAB source.
+function cfg = LOAD_MAIN_VALID_CONFIG(config_path, opts)
+% "LOAD_MAIN_VALID_CONFIG" resolves validation task and profile settings.
+% model_profile resolves the LD2 profile, whose constants.rho_bc gives the...
+%     ...material density unless physics.material_density_kg_m3 is set....
+%     ...RUN_MAIN_VALIDATION reads the native task fields and...
+%     ...physics.material_density_kg_m3. It recomputes the mobility...
+%     ...diameter with the DIAMOBIL call defaults and does not read...
+%     ...cfg.model. cfg.si mirrors the resolved task in SI units.
+% ----------------------------------------------------------------------- %
+%
+% Inputs:
+%     config_path: Task file, or empty for SOOTMOSAIC_MAIN_VALID_CONFIG,...
+%         ...then PFAL_MAIN_VALID_CONFIG, then the local task file
+%     opts: Optional CONFIG_READ and MODEL_PROFILE controls. QA calls...
+%         ...set Strict to true
+% ----------------------------------------------------------------------- %
+%
+% Outputs:
+%     cfg: Validated task, resolved profile and source records. Task...
+%         ...paths are relative to the selected task file
+% ----------------------------------------------------------------------- %
 
+if nargin < 2, opts = struct(); end
 if nargin < 1 || isempty(config_path)
     config_path = getenv('SOOTMOSAIC_MAIN_VALID_CONFIG');
     if isempty(config_path)
-        config_path = getenv('PFAL_MAIN_VALID_CONFIG'); % earlier name
+        config_path = getenv('PFAL_MAIN_VALID_CONFIG'); % Permanent fallback
     end
     if isempty(config_path)
         config_path = fullfile(repo_root(), 'config', 'main_valid', ...
@@ -24,33 +40,35 @@ if ~isfile(config_path)
          'SOOTMOSAIC_MAIN_VALID_CONFIG.'], config_path);
 end
 
-try
-    cfg = jsondecode(fileread(config_path));
-catch err
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidJSON', ...
-        'Could not parse validation config "%s": %s', config_path, err.message);
-end
+dictionary = fullfile(repo_root(), 'config', 'main_valid', ...
+    'main_valid.keys.json');
+cfg = UTILS.CONFIG_READ(config_path, dictionary, opts);
+read_cfg = cfg;
 
 config_dir = fileparts(config_path);
 cfg.config_file = normalize_path(config_path);
 
-cfg.sources = require_struct(cfg, 'sources', 'sources');
 source_names = {'ld2', 'tem', 'effective_density'};
 for i = 1:numel(source_names)
     name = source_names{i};
-    cfg.sources.(name) = validate_source( ...
-        require_struct(cfg.sources, name, ['sources.', name]), ...
+    cfg.sources.(name) = validate_source(cfg.sources.(name), ...
         ['sources.', name], config_dir);
 end
 
-if ~isfield(cfg, 'conditions') || isempty(cfg.conditions) || ...
-        ~isstruct(cfg.conditions)
+% Validating the conditions and returning them as a structure array
+if isempty(cfg.conditions)
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:MissingConditions', ...
         'The validation config must define a non-empty conditions array.');
 end
 condition_cells = cell(numel(cfg.conditions), 1);
 for i = 1:numel(cfg.conditions)
-    condition_cells{i} = validate_condition(cfg.conditions(i), i);
+    condition_cells{i} = validate_condition(cfg.conditions{i}, i);
+end
+condition_keys = fieldnames(condition_cells{1});
+if any(cellfun(@(c) ~isempty(setxor(fieldnames(c), condition_keys)), ...
+        condition_cells))
+    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InconsistentConditions', ...
+        'Every configured condition must use the same keys.');
 end
 cfg.conditions = vertcat(condition_cells{:});
 condition_ids = string({cfg.conditions.id});
@@ -59,15 +77,15 @@ if numel(unique(condition_ids)) ~= numel(condition_ids)
         'Each configured condition must have a unique id.');
 end
 
-cfg.physics = require_struct(cfg, 'physics', 'physics');
+% Resolving the profile and the explicit material density
 profile_name = 'article1_7658971';
 if isfield(cfg, 'model_profile'), profile_name = cfg.model_profile; end
 overrides = struct();
 if isfield(cfg, 'model_overrides'), overrides = cfg.model_overrides; end
 [cfg.model, ~, cfg.model_params, cfg.model_source] = ...
-    UTILS.MODEL_PROFILE(profile_name, 'LD2', overrides);
+    UTILS.MODEL_PROFILE(profile_name, 'LD2', overrides, opts);
 if isfield(cfg.physics, 'material_density_kg_m3')
-    density = positive_scalar(cfg.physics, 'material_density_kg_m3', ...
+    density = positive_value(cfg.physics.material_density_kg_m3, ...
         'physics.material_density_kg_m3');
     explicit.constants.rho_bc_kg_m3 = density;
     [cfg.model_params, changes] = UTILS.CONFIG_MERGE( ...
@@ -82,56 +100,41 @@ if strcmp(cfg.model.slip_correction, 'per_caller_7658971')
         cfg.physics.material_density_kg_m3;
 end
 
-cfg.references = require_struct(cfg, 'references', 'references');
-cfg.references.dpp_vs_da = validate_reference( ...
-    require_struct(cfg.references, 'dpp_vs_da', 'references.dpp_vs_da'), ...
-    'references.dpp_vs_da', 'exponent', 'value_at_100_nm');
+cfg.references.dpp_vs_da = validate_reference(cfg.references.dpp_vs_da, ...
+    'references.dpp_vs_da', 'value_at_100_nm');
 cfg.references.rho_eff_vs_dm = validate_reference( ...
-    require_struct(cfg.references, 'rho_eff_vs_dm', ...
-    'references.rho_eff_vs_dm'), 'references.rho_eff_vs_dm', ...
-    'mass_mobility_exponent', 'value_at_100_nm');
+    cfg.references.rho_eff_vs_dm, 'references.rho_eff_vs_dm', ...
+    'value_at_100_nm');
 
-cfg.fits = require_struct(cfg, 'fits', 'fits');
-cfg.fits.dpp_vs_da = validate_fit(require_struct(cfg.fits, ...
-    'dpp_vs_da', 'fits.dpp_vs_da'), 'fits.dpp_vs_da');
-cfg.fits.rho_eff_vs_dm = validate_fit(require_struct(cfg.fits, ...
-    'rho_eff_vs_dm', 'fits.rho_eff_vs_dm'), 'fits.rho_eff_vs_dm');
-if isfield(cfg.fits, 'experimental_rho_eff_vs_dm')
-    experimental_fit = require_struct(cfg.fits, ...
-        'experimental_rho_eff_vs_dm', ...
-        'fits.experimental_rho_eff_vs_dm');
-else
-    experimental_fit = struct('enabled', false, 'degree', 1, ...
-        'support_mode', 'common', 'support_limits_nm', [], ...
-        'confidence_level', 0.95);
-end
+cfg.fits.dpp_vs_da = validate_fit(cfg.fits.dpp_vs_da, 'fits.dpp_vs_da');
+cfg.fits.rho_eff_vs_dm = validate_fit(cfg.fits.rho_eff_vs_dm, ...
+    'fits.rho_eff_vs_dm');
 cfg.fits.experimental_rho_eff_vs_dm = validate_experimental_fit( ...
-    experimental_fit, 'fits.experimental_rho_eff_vs_dm');
+    cfg.fits.experimental_rho_eff_vs_dm, 'fits.experimental_rho_eff_vs_dm');
 
-cfg.figures = validate_figures(require_struct(cfg, 'figures', 'figures'));
-cfg.outputs = require_struct(cfg, 'outputs', 'outputs');
+cfg.figures = validate_figures(cfg.figures);
 cfg.outputs.root = resolve_config_path(require_text(cfg.outputs, ...
     'root', 'outputs.root'), config_dir);
-cfg.outputs.export = logical_scalar(cfg.outputs, 'export', 'outputs.export');
-cfg.outputs.pdf = logical_scalar(cfg.outputs, 'pdf', 'outputs.pdf');
-cfg.outputs.png = logical_scalar(cfg.outputs, 'png', 'outputs.png');
-cfg.outputs.png_resolution = positive_integer(cfg.outputs, ...
-    'png_resolution', 'outputs.png_resolution');
-cfg.outputs.png_source = lower(optional_text(cfg.outputs, ...
-    'png_source', 'figure'));
+cfg.outputs.png_source = lower(char(cfg.outputs.png_source));
 if ~ismember(cfg.outputs.png_source, {'figure', 'pdf'})
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidPNGSource', ...
         'outputs.png_source must be figure or pdf.');
 end
-cfg.outputs.save_figures = logical_scalar(cfg.outputs, ...
-    'save_figures', 'outputs.save_figures');
-cfg.outputs.experimental_summary_csv = optional_text(cfg.outputs, ...
-    'experimental_summary_csv', 'experimental_mass_mobility_summary.csv');
+cfg.outputs.experimental_summary_csv = ...
+    char(cfg.outputs.experimental_summary_csv);
 if cfg.outputs.export && cfg.outputs.png && ...
         strcmp(cfg.outputs.png_source, 'pdf') && ~cfg.outputs.pdf
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:MissingPDFForPNG', ...
         'outputs.pdf must be enabled when outputs.png_source is pdf.');
 end
+
+% Checking the requested fractions against the r_n_agg of the LD2 product
+check_ld2_fractions(cfg.conditions, cfg.sources.ld2);
+
+% Mirroring the resolved task with the SI numbers of the reader
+task = rmfield(cfg, {'si', 'provenance', 'model', 'model_params', ...
+    'model_source'});
+cfg.si = si_mirror(task, read_cfg, read_cfg.si);
 
 end
 
@@ -166,42 +169,37 @@ end
 end
 
 function condition = validate_condition(condition, index)
-%VALIDATE_CONDITION Validate named experimental/simulation mappings.
+% "validate_condition" checks one experimental and simulation mapping.
+% ----------------------------------------------------------------------- %
 
 label = sprintf('conditions(%d)', index);
 condition.id = require_text(condition, 'id', [label, '.id']);
 condition.label = require_text(condition, 'label', [label, '.label']);
-condition.enabled = logical_scalar(condition, 'enabled', [label, '.enabled']);
-condition.include = require_struct(condition, 'include', [label, '.include']);
-condition.include.dpp_vs_da = logical_scalar(condition.include, ...
-    'dpp_vs_da', [label, '.include.dpp_vs_da']);
-condition.include.rho_eff_vs_dm = logical_scalar(condition.include, ...
-    'rho_eff_vs_dm', [label, '.include.rho_eff_vs_dm']);
-condition.tem_entry_id = optional_text(condition, 'tem_entry_id', '');
-condition.effective_density_condition_id = optional_text(condition, ...
-    'effective_density_condition_id', '');
-condition.ld2_fractions = optional_numeric_vector(condition, ...
-    'ld2_fractions', []);
-condition.style = require_struct(condition, 'style', [label, '.style']);
-condition.style.color = require_text(condition.style, 'color', ...
-    [label, '.style.color']);
-condition.style.simulation_marker = require_text(condition.style, ...
-    'simulation_marker', [label, '.style.simulation_marker']);
-condition.style.experimental_marker = require_text(condition.style, ...
-    'experimental_marker', [label, '.style.experimental_marker']);
-condition.style.simulation_marker_size = positive_scalar(condition.style, ...
-    'simulation_marker_size', [label, '.style.simulation_marker_size']);
-condition.style.experimental_marker_size = positive_scalar(condition.style, ...
-    'experimental_marker_size', [label, '.style.experimental_marker_size']);
-condition.style.experimental_color = optional_text(condition.style, ...
-    'experimental_color', condition.style.color);
-condition.style.experimental_marker_face_color = optional_text( ...
-    condition.style, 'experimental_marker_face_color', 'none');
-condition.style.experimental_marker_line_width = optional_positive_scalar( ...
-    condition.style, 'experimental_marker_line_width', 1.2, ...
+condition.tem_entry_id = char(condition.tem_entry_id);
+condition.effective_density_condition_id = ...
+    char(condition.effective_density_condition_id);
+condition.ld2_fractions = plain_empty(condition.ld2_fractions);
+style = condition.style;
+style.color = require_text(style, 'color', [label, '.style.color']);
+style.simulation_marker = require_text(style, 'simulation_marker', ...
+    [label, '.style.simulation_marker']);
+style.experimental_marker = require_text(style, 'experimental_marker', ...
+    [label, '.style.experimental_marker']);
+style.simulation_marker_size = positive_value( ...
+    style.simulation_marker_size, [label, '.style.simulation_marker_size']);
+style.experimental_marker_size = positive_value( ...
+    style.experimental_marker_size, ...
+    [label, '.style.experimental_marker_size']);
+style.experimental_color = optional_text(style, 'experimental_color', ...
+    style.color);
+style.experimental_marker_face_color = ...
+    char(style.experimental_marker_face_color);
+style.experimental_marker_line_width = positive_value( ...
+    style.experimental_marker_line_width, ...
     [label, '.style.experimental_marker_line_width']);
-condition.style.fit_line_width = positive_scalar(condition.style, ...
-    'fit_line_width', [label, '.style.fit_line_width']);
+style.fit_line_width = positive_value(style.fit_line_width, ...
+    [label, '.style.fit_line_width']);
+condition.style = style;
 
 if condition.enabled && ...
         (condition.include.dpp_vs_da || condition.include.rho_eff_vs_dm) && ...
@@ -223,70 +221,45 @@ end
 
 end
 
-function reference = validate_reference(reference, label, exponent_field, value_field)
-%VALIDATE_REFERENCE Validate a configurable literature correlation.
+function reference = validate_reference(reference, label, value_field)
+% "validate_reference" checks a configurable literature correlation.
+% ----------------------------------------------------------------------- %
 
-reference.enabled = logical_scalar(reference, 'enabled', [label, '.enabled']);
 reference.label = require_text(reference, 'label', [label, '.label']);
-reference.(exponent_field) = finite_scalar(reference, exponent_field, ...
-    [label, '.', exponent_field]);
-reference.(value_field) = positive_scalar(reference, value_field, ...
+reference.(value_field) = positive_value(reference.(value_field), ...
     [label, '.', value_field]);
 reference.color = require_text(reference, 'color', [label, '.color']);
 reference.line_style = require_text(reference, 'line_style', ...
     [label, '.line_style']);
-reference.line_width = positive_scalar(reference, 'line_width', ...
+reference.line_width = positive_value(reference.line_width, ...
     [label, '.line_width']);
 
 end
 
 function fit_cfg = validate_fit(fit_cfg, label)
-%VALIDATE_FIT Validate independent Bayesian controls for one panel.
+% "validate_fit" checks the Bayesian fit controls of one panel.
+% ----------------------------------------------------------------------- %
 
-fit_cfg.enabled = logical_scalar(fit_cfg, 'enabled', [label, '.enabled']);
-fit_cfg.degree = positive_integer(fit_cfg, 'degree', [label, '.degree']);
-fit_cfg.resolution = positive_integer(fit_cfg, 'resolution', ...
-    [label, '.resolution']);
-if fit_cfg.resolution < 2
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidResolution', ...
-        '%s.resolution must be at least 2.', label);
-end
-
-fit_cfg.posterior_samples = positive_integer(fit_cfg, ...
-    'posterior_samples', [label, '.posterior_samples']);
-if fit_cfg.posterior_samples < 100
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidPosteriorSamples', ...
-        '%s.posterior_samples must be at least 100.', label);
-end
-fit_cfg.rng_seed = nonnegative_integer(fit_cfg, 'rng_seed', ...
-    [label, '.rng_seed']);
-fit_cfg.credible_level = finite_scalar(fit_cfg, 'credible_level', ...
-    [label, '.credible_level']);
 if fit_cfg.credible_level <= 0 || fit_cfg.credible_level >= 1
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidCredibleLevel', ...
         '%s.credible_level must be strictly between 0 and 1.', label);
 end
-fit_cfg.show_band = logical_scalar(fit_cfg, 'show_band', ...
-    [label, '.show_band']);
 fit_cfg.x_transform = validate_transform(require_text(fit_cfg, ...
     'x_transform', [label, '.x_transform']), [label, '.x_transform']);
 fit_cfg.y_transform = validate_transform(require_text(fit_cfg, ...
     'y_transform', [label, '.y_transform']), [label, '.y_transform']);
-fit_cfg.slope_offset = finite_scalar(fit_cfg, 'slope_offset', ...
-    [label, '.slope_offset']);
-fit_cfg.prior_mu = optional_numeric_vector(fit_cfg, 'prior_mu', []);
-fit_cfg.prior_v_scale = positive_scalar(fit_cfg, 'prior_v_scale', ...
+fit_cfg.prior_mu = plain_empty(fit_cfg.prior_mu);
+fit_cfg.prior_v_scale = positive_value(fit_cfg.prior_v_scale, ...
     [label, '.prior_v_scale']);
-fit_cfg.prior_a = positive_scalar(fit_cfg, 'prior_a', [label, '.prior_a']);
-fit_cfg.prior_b = positive_scalar(fit_cfg, 'prior_b', [label, '.prior_b']);
+fit_cfg.prior_a = positive_value(fit_cfg.prior_a, [label, '.prior_a']);
+fit_cfg.prior_b = positive_value(fit_cfg.prior_b, [label, '.prior_b']);
 
 end
 
 function fit_cfg = validate_experimental_fit(fit_cfg, label)
-%VALIDATE_EXPERIMENTAL_FIT Validate the direct experimental power-law fit.
+% "validate_experimental_fit" checks the direct power-law density fit.
+% ----------------------------------------------------------------------- %
 
-fit_cfg.enabled = logical_scalar(fit_cfg, 'enabled', [label, '.enabled']);
-fit_cfg.degree = positive_integer(fit_cfg, 'degree', [label, '.degree']);
 if fit_cfg.degree ~= 1
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidExperimentalFitDegree', ...
         '%s.degree must be 1 for a single mass-mobility exponent.', label);
@@ -297,15 +270,13 @@ if ~ismember(fit_cfg.support_mode, {'common','explicit'})
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidExperimentalSupportMode', ...
         '%s.support_mode must be common or explicit.', label);
 end
-fit_cfg.support_limits_nm = optional_limits(fit_cfg, ...
-    'support_limits_nm', [label, '.support_limits_nm']);
+fit_cfg.support_limits_nm = limits_value(fit_cfg.support_limits_nm, ...
+    [label, '.support_limits_nm']);
 if strcmp(fit_cfg.support_mode, 'explicit') && ...
         isempty(fit_cfg.support_limits_nm)
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:MissingExperimentalSupportLimits', ...
         '%s.support_limits_nm is required for explicit support.', label);
 end
-fit_cfg.confidence_level = finite_scalar(fit_cfg, 'confidence_level', ...
-    [label, '.confidence_level']);
 if fit_cfg.confidence_level <= 0 || fit_cfg.confidence_level >= 1
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidExperimentalConfidenceLevel', ...
         '%s.confidence_level must be strictly between 0 and 1.', label);
@@ -314,125 +285,90 @@ end
 end
 
 function figures = validate_figures(figures)
-%VALIDATE_FIGURES Validate shared typography and panel-specific appearance.
+% "validate_figures" checks the shared typography and panel appearance.
+% ----------------------------------------------------------------------- %
 
 figures.visible = lower(require_text(figures, 'visible', 'figures.visible'));
 if ~ismember(figures.visible, {'on', 'off'})
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidVisibility', ...
         'figures.visible must be "on" or "off".');
 end
-figures.show_raw_simulation = logical_scalar(figures, ...
-    'show_raw_simulation', 'figures.show_raw_simulation');
-figures.show_tem_error_bars = logical_scalar(figures, ...
-    'show_tem_error_bars', 'figures.show_tem_error_bars');
-figures.simulation_marker_alpha = unit_interval(figures, ...
-    'simulation_marker_alpha', 'figures.simulation_marker_alpha');
-figures.band_alpha = unit_interval(figures, 'band_alpha', ...
-    'figures.band_alpha');
-figures.axis_line_width = optional_positive_scalar(figures, ...
-    'axis_line_width', 1.0, 'figures.axis_line_width');
-if isfield(figures, 'axes') && isstruct(figures.axes)
-    axes_cfg = figures.axes;
-else
-    axes_cfg = struct();
+figures.axis_line_width = positive_value(figures.axis_line_width, ...
+    'figures.axis_line_width');
+axes_cfg = figures.axes;
+if ~isscalar(axes_cfg)
+    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidAxisStyle', ...
+        'figures.axes must be one object.');
 end
-if isfield(axes_cfg, 'box')
-    axes_cfg.box = logical_scalar(axes_cfg, 'box', 'figures.axes.box');
-else
-    axes_cfg.box = true;
-end
-axes_cfg.layer = lower(optional_text(axes_cfg, 'layer', 'top'));
+axes_cfg.layer = lower(char(axes_cfg.layer));
 if ~ismember(axes_cfg.layer, {'top','bottom'})
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidAxisLayer', ...
         'figures.axes.layer must be top or bottom.');
 end
-axes_cfg.tick_length = optional_numeric_vector(axes_cfg, ...
-    'tick_length', [0.02 0.02]);
-if numel(axes_cfg.tick_length) ~= 2 || any(axes_cfg.tick_length < 0)
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidTickLength', ...
-        'figures.axes.tick_length must contain two nonnegative values.');
-end
-axes_cfg.tick_label_rotation = optional_nonnegative_scalar(axes_cfg, ...
-    'tick_label_rotation', 0, 'figures.axes.tick_label_rotation');
-if axes_cfg.tick_label_rotation > 360
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidTickRotation', ...
-        'figures.axes.tick_label_rotation must not exceed 360 degrees.');
-end
-axes_cfg.label_position_mode = optional_text(axes_cfg, ...
-    'label_position_mode', 'auto');
+axes_cfg.label_position_mode = char(axes_cfg.label_position_mode);
 if ~ismember(lower(axes_cfg.label_position_mode), {'auto','manual'})
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidAxisStyle', ...
         'figures.axes.label_position_mode must be auto or manual.');
 end
-axes_cfg.x_label_offset = optional_positive_scalar(axes_cfg, ...
-    'x_label_offset', 0.055, 'figures.axes.x_label_offset');
-axes_cfg.y_label_offset = optional_positive_scalar(axes_cfg, ...
-    'y_label_offset', 0.075, 'figures.axes.y_label_offset');
+axes_cfg.x_label_offset = positive_value(axes_cfg.x_label_offset, ...
+    'figures.axes.x_label_offset');
+axes_cfg.y_label_offset = positive_value(axes_cfg.y_label_offset, ...
+    'figures.axes.y_label_offset');
 figures.axes = axes_cfg;
-figures.font = require_struct(figures, 'font', 'figures.font');
-figures.font.family = require_text(figures.font, 'family', ...
-    'figures.font.family');
-figures.font.fallback = require_text(figures.font, 'fallback', ...
-    'figures.font.fallback');
-figures.font.axis_size = positive_scalar(figures.font, ...
-    'axis_size', 'figures.font.axis_size');
-figures.font.label_size = positive_scalar(figures.font, ...
-    'label_size', 'figures.font.label_size');
-figures.font.legend_size = positive_scalar(figures.font, ...
-    'legend_size', 'figures.font.legend_size');
-figures.font.title_size = optional_positive_scalar(figures.font, ...
-    'title_size', figures.font.label_size, 'figures.font.title_size');
-figures.font.weight = require_text(figures.font, 'weight', ...
-    'figures.font.weight');
-if ~ismember(lower(figures.font.weight), {'normal','bold'})
+font = figures.font;
+font.family = require_text(font, 'family', 'figures.font.family');
+font.fallback = require_text(font, 'fallback', 'figures.font.fallback');
+font.axis_size = positive_value(font.axis_size, 'figures.font.axis_size');
+font.label_size = positive_value(font.label_size, 'figures.font.label_size');
+font.legend_size = positive_value(font.legend_size, ...
+    'figures.font.legend_size');
+font.title_size = optional_positive_scalar(font, 'title_size', ...
+    font.label_size, 'figures.font.title_size');
+font.weight = require_text(font, 'weight', 'figures.font.weight');
+if ~ismember(lower(font.weight), {'normal','bold'})
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidFontWeight', ...
         'figures.font.weight must be normal or bold.');
 end
-figures.font.interpreter = lower(require_text(figures.font, ...
-    'interpreter', 'figures.font.interpreter'));
-if ~ismember(figures.font.interpreter, {'tex', 'none', 'latex'})
+font.interpreter = lower(require_text(font, 'interpreter', ...
+    'figures.font.interpreter'));
+if ~ismember(font.interpreter, {'tex', 'none', 'latex'})
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidInterpreter', ...
         'figures.font.interpreter must be tex, none, or latex.');
 end
+figures.font = font;
 
-figures.legend = require_struct(figures, 'legend', 'figures.legend');
-figures.legend.location = lower(require_text(figures.legend, ...
-    'location', 'figures.legend.location'));
-figures.legend.columns = positive_integer(figures.legend, ...
-    'columns', 'figures.legend.columns');
-figures.legend.box = logical_scalar(figures.legend, ...
-    'box', 'figures.legend.box');
-figures.legend.orientation = lower(require_text(figures.legend, ...
-    'orientation', 'figures.legend.orientation'));
-if ~ismember(figures.legend.orientation, {'horizontal', 'vertical'})
+legend_cfg = figures.legend;
+legend_cfg.location = lower(require_text(legend_cfg, 'location', ...
+    'figures.legend.location'));
+legend_cfg.orientation = lower(require_text(legend_cfg, 'orientation', ...
+    'figures.legend.orientation'));
+if ~ismember(legend_cfg.orientation, {'horizontal', 'vertical'})
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidLegendOrientation', ...
         'figures.legend.orientation must be horizontal or vertical.');
 end
-figures.legend.interpreter = lower(optional_text(figures.legend, ...
-    'interpreter', 'none'));
-if ~ismember(figures.legend.interpreter, {'tex', 'none', 'latex'})
+legend_cfg.interpreter = lower(char(legend_cfg.interpreter));
+if ~ismember(legend_cfg.interpreter, {'tex', 'none', 'latex'})
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidLegendInterpreter', ...
         'figures.legend.interpreter must be tex, none, or latex.');
 end
-figures.legend.font_family = optional_text(figures.legend, ...
-    'font_family', figures.font.family);
-figures.legend.font_fallback = optional_text(figures.legend, ...
-    'font_fallback', figures.font.fallback);
-figures.legend.font_weight = lower(optional_text(figures.legend, ...
-    'font_weight', figures.font.weight));
-if ~ismember(figures.legend.font_weight, {'normal', 'bold'})
+legend_cfg.font_family = optional_text(legend_cfg, 'font_family', ...
+    font.family);
+legend_cfg.font_fallback = optional_text(legend_cfg, 'font_fallback', ...
+    font.fallback);
+legend_cfg.font_weight = lower(optional_text(legend_cfg, 'font_weight', ...
+    font.weight));
+if ~ismember(legend_cfg.font_weight, {'normal', 'bold'})
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidLegendFontWeight', ...
         'figures.legend.font_weight must be normal or bold.');
 end
+figures.legend = legend_cfg;
 panel_names = {'dpp_vs_da', 'rho_eff_vs_dm'};
 for i = 1:numel(panel_names)
     name = panel_names{i};
-    panel = require_struct(figures, name, ['figures.', name]);
-    panel.position = numeric_vector(panel, 'position', 4, ...
-        ['figures.', name, '.position']);
-    panel.x_limits = optional_limits(panel, 'x_limits', ...
+    panel = figures.(name);
+    panel.x_limits = limits_value(panel.x_limits, ...
         ['figures.', name, '.x_limits']);
-    panel.y_limits = optional_limits(panel, 'y_limits', ...
+    panel.y_limits = limits_value(panel.y_limits, ...
         ['figures.', name, '.y_limits']);
     figures.(name) = panel;
 end
@@ -440,7 +376,8 @@ end
 end
 
 function value = validate_transform(value, label)
-%VALIDATE_TRANSFORM Restrict fit transforms to FIT_POLY-supported values.
+% "validate_transform" restricts fit transforms to those of FIT_POLY.
+% ----------------------------------------------------------------------- %
 
 value = lower(value);
 if ~ismember(value, {'log10', 'none'})
@@ -450,152 +387,212 @@ end
 
 end
 
-function out = require_struct(source, field_name, label)
-if ~isfield(source, field_name) || ~isstruct(source.(field_name))
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:MissingSection', ...
-        'The validation config is missing the %s section.', label);
+function check_ld2_fractions(conditions, source)
+% "check_ld2_fractions" matches the requested fractions to the LD2 product.
+% ----------------------------------------------------------------------- %
+%
+% Inputs:
+%     conditions: Validated conditions; only enabled ones are checked
+%     source: Validated sources.ld2 entry
+% ----------------------------------------------------------------------- %
+%
+% Each requested fraction matches exactly one r_n_agg entry within...
+%     ...max(1e-12, 1e-9 times the fraction), the rule of...
+%     ...RUN_MAIN_VALIDATION. The inline file, then its cache file, is...
+%     ...read without download or digest check. A registry selection or...
+%     ...a product not on disk leaves the check to the run, with a warning
+% ----------------------------------------------------------------------- %
+
+enabled = conditions([conditions.enabled]);
+if isempty(enabled) || all(arrayfun(@(c) isempty(c.ld2_fractions), enabled))
+    return
 end
-out = source.(field_name);
+[fractions, file, reason] = ld2_product_fractions(source);
+if ~isempty(reason)
+    warning('sootMosaic:LOAD_MAIN_VALID_CONFIG:LD2FractionsUnchecked', ...
+        ['conditions.ld2_fractions are checked when RUN_MAIN_VALIDATION ' ...
+         'loads the LD2 product, since %s.'], reason);
+    return
+end
+for i = 1:numel(enabled)
+    for target = enabled(i).ld2_fractions
+        tolerance = max(1e-12, 1e-9 * abs(target));
+        matched = nnz(abs(fractions - target) <= tolerance);
+        if matched ~= 1
+            error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidLD2FractionMapping', ...
+                ['Condition "%s" requests LD2 fraction %.12g, which ' ...
+                 'matches %d r_n_agg entries of %s. Available fractions: %s'], ...
+                enabled(i).id, target, matched, file, mat2str(fractions.'));
+        end
+    end
+end
+
+end
+
+function [fractions, file, reason] = ld2_product_fractions(source)
+% "ld2_product_fractions" reads r_n_agg from the named LD2 product.
+% ----------------------------------------------------------------------- %
+
+fractions = [];
+file = '';
+reason = '';
+if isfield(source, 'source_id') && ~isempty(source.source_id)
+    reason = 'sources.ld2 is selected through the source registry';
+    return
+end
+candidates = {source.file, source.cache_file};
+for k = 1:numel(candidates)
+    if ~isempty(candidates{k}) && isfile(candidates{k})
+        file = candidates{k};
+        break
+    end
+end
+if isempty(file)
+    reason = sprintf('no LD2 product exists at %s', source.file);
+    return
+end
+try
+    names = who('-file', file);
+catch
+    reason = sprintf('%s is not a readable MAT file', file);
+    return
+end
+if ~any(strcmp(names, 'r_n_agg'))
+    reason = sprintf('%s holds no r_n_agg', file);
+    return
+end
+loaded = load(file, 'r_n_agg');
+if ~(isnumeric(loaded.r_n_agg) || islogical(loaded.r_n_agg))
+    reason = sprintf('r_n_agg of %s is not numeric', file);
+    return
+end
+fractions = double(loaded.r_n_agg(:));
+
+end
+
+function si = si_mirror(value, read_value, read_si)
+% "si_mirror" copies resolved values with the SI numbers of the reader.
+% Numbers the loader leaves unchanged keep their converted reader value.
+
+si = value;
+if isstruct(value) && isscalar(value) && isstruct(read_value) && ...
+        isscalar(read_value) && isstruct(read_si) && isscalar(read_si)
+    names = fieldnames(value);
+    for k = 1:numel(names)
+        key = names{k};
+        if isfield(read_value, key) && isfield(read_si, key)
+            si.(key) = si_mirror(value.(key), read_value.(key), ...
+                read_si.(key));
+        end
+    end
+elseif isnumeric(value) && strcmp(class(value), class(read_value)) && ...
+        isequal(value, read_value) && isnumeric(read_si)
+    si = read_si;
+end
+
 end
 
 function out = require_text(source, field_name, label)
+% "require_text" reads a required nonempty value as text.
+
 if ~isfield(source, field_name) || isempty(source.(field_name))
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:MissingText', ...
         'The validation config is missing %s.', label);
 end
 out = char(source.(field_name));
+
 end
 
 function out = optional_text(source, field_name, default_value)
+% "optional_text" reads optional text or its conditional default.
+
 out = default_value;
 if isfield(source, field_name) && ~isempty(source.(field_name))
     out = char(source.(field_name));
 end
+
 end
 
-function out = finite_scalar(source, field_name, label)
-if ~isfield(source, field_name) || isempty(source.(field_name))
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:MissingNumber', ...
-        'The validation config is missing %s.', label);
-end
-out = double(source.(field_name));
-if ~isscalar(out) || ~isfinite(out)
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidNumber', ...
-        '%s must be a finite numeric scalar.', label);
-end
-end
+function out = positive_value(value, label)
+% "positive_value" checks a number that the dictionary made finite.
 
-function out = positive_scalar(source, field_name, label)
-out = finite_scalar(source, field_name, label);
-if out <= 0
+if value <= 0
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidPositiveNumber', ...
         '%s must be greater than zero.', label);
 end
+out = value;
+
 end
 
 function out = optional_positive_scalar(source, field_name, default_value, label)
-out = default_value;
-if isfield(source, field_name) && ~isempty(source.(field_name))
-    out = positive_scalar(source, field_name, label);
-end
-end
+% "optional_positive_scalar" reads a positive scalar or its default.
 
-function out = optional_nonnegative_scalar(source, field_name, ...
-    default_value, label)
-out = default_value;
-if isfield(source, field_name) && ~isempty(source.(field_name))
-    out = finite_scalar(source, field_name, label);
-    if out < 0
-        error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidNonnegativeNumber', ...
-            '%s must be nonnegative.', label);
-    end
-end
-end
-
-function out = positive_integer(source, field_name, label)
-out = positive_scalar(source, field_name, label);
-if out ~= round(out)
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidPositiveInteger', ...
-        '%s must be a positive integer.', label);
-end
-end
-
-function out = nonnegative_integer(source, field_name, label)
-out = finite_scalar(source, field_name, label);
-if out < 0 || out ~= round(out)
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidNonnegativeInteger', ...
-        '%s must be a nonnegative integer.', label);
-end
-end
-
-function out = logical_scalar(source, field_name, label)
-if ~isfield(source, field_name) || ~isscalar(source.(field_name)) || ...
-        ~islogical(source.(field_name))
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidLogical', ...
-        '%s must be true or false.', label);
-end
-out = source.(field_name);
-end
-
-function out = unit_interval(source, field_name, label)
-out = finite_scalar(source, field_name, label);
-if out < 0 || out > 1
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidUnitInterval', ...
-        '%s must be between 0 and 1.', label);
-end
-end
-
-function out = optional_numeric_vector(source, field_name, default_value)
 out = default_value;
 if isfield(source, field_name) && ~isempty(source.(field_name))
     out = double(source.(field_name));
-    out = reshape(out, 1, []);
-    if any(~isfinite(out))
-        error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidVector', ...
-            '%s must contain only finite numeric values.', field_name);
+    if ~isscalar(out) || ~isfinite(out)
+        error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidNumber', ...
+            '%s must be a finite numeric scalar.', label);
     end
-end
-end
-
-function out = numeric_vector(source, field_name, expected_count, label)
-out = optional_numeric_vector(source, field_name, []);
-if numel(out) ~= expected_count
-    error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidVectorLength', ...
-        '%s must contain %d numeric values.', label, expected_count);
-end
+    out = positive_value(out, label);
 end
 
-function out = optional_limits(source, field_name, label)
-out = optional_numeric_vector(source, field_name, []);
+end
+
+function out = plain_empty(value)
+% "plain_empty" returns an empty vector of the dictionary as [].
+
+out = value;
+if isempty(out), out = []; end
+
+end
+
+function out = limits_value(value, label)
+% "limits_value" checks empty limits or two increasing positive values.
+
+out = plain_empty(value);
 if ~isempty(out) && (numel(out) ~= 2 || any(out <= 0) || out(2) <= out(1))
     error('sootMosaic:LOAD_MAIN_VALID_CONFIG:InvalidLimits', ...
         '%s must be empty or contain two increasing positive values.', label);
 end
+
 end
 
 function full_path = resolve_config_path(path_value, config_dir)
+% "resolve_config_path" resolves a path from the task directory.
+
 if is_absolute_path(path_value)
     full_path = normalize_path(path_value);
 else
     full_path = normalize_path(fullfile(config_dir, path_value));
 end
+
 end
 
 function tf = is_absolute_path(path_value)
+% "is_absolute_path" identifies an absolute path.
+
 tf = ~isempty(regexp(path_value, '^[A-Za-z]:[\\/]', 'once')) || ...
     strncmp(path_value, '\\', 2) || strncmp(path_value, '//', 2) || ...
     strncmp(path_value, '/', 1);
+
 end
 
 function path_value = normalize_path(path_value)
+% "normalize_path" collapses relative path segments when available.
+
 try
     path_value = char(java.io.File(path_value).getCanonicalPath());
 catch
     path_value = char(path_value);
 end
+
 end
 
 function root_dir = repo_root()
+% "repo_root" locates the repository root.
+
 utils_dir = fileparts(mfilename('fullpath'));
 root_dir = fileparts(utils_dir);
+
 end

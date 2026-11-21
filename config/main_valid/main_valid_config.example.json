@@ -1,4 +1,6 @@
 {
+  "config_version": 1,
+  "model_profile": "current",
   "sources": {
     "ld2": {
       "id": "latest_main_scatter_ld2",
@@ -136,9 +138,7 @@
       }
     }
   ],
-  "physics": {
-    "material_density_kg_m3": 1860
-  },
+  "physics": {},
   "references": {
     "dpp_vs_da": {
       "enabled": true,

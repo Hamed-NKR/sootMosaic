@@ -264,7 +264,11 @@ end
                     name = source_names{j};
                     registry_cfg.sources.(name) = rmfield( ...
                         registry_cfg.sources.(name), 'source_id');
+                    registry_cfg.si.sources.(name) = rmfield( ...
+                        registry_cfg.si.sources.(name), 'source_id');
                 end
+                inline_cfg = rmfield(inline_cfg, 'provenance');
+                registry_cfg = rmfield(registry_cfg, 'provenance');
             end
             check(isequaln(inline_cfg, registry_cfg));
             for j = 1:numel(inline_sources)

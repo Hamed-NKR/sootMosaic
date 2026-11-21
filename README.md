@@ -72,7 +72,7 @@ Main scripts clear workspace variables and figures, so save them before running.
 ### 3. Local configuration
 
 Copy the examples once to ignored local JSON files, then edit the copies.
-Use `extends` for local overrides in Scale, Scatter, LD1, LD2, and INV task configurations.
+Use `extends` for local overrides in Scale, Scatter, LD1, LD2, Validation, and INV task configurations.
 
 ```matlab
 tasks = {'main_ld1', 'main_scale', 'main_scatter', ...
@@ -285,14 +285,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 30 QA functions. A pass prints one `PASS TEST_...`
+Run all 31 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 30)
+assert(numel(checks) == 31)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -375,6 +375,7 @@ primary size, giving the hybrid the appearance of a mosaic.
 | [`config/main_scatter/main_scatter.keys.json`](config/main_scatter/main_scatter.keys.json) | Scatter inputs, units, and reading rules |
 | [`config/main_ld1/main_ld1.keys.json`](config/main_ld1/main_ld1.keys.json) | LD1 inputs, units, and reading rules |
 | [`config/main_ld2/main_ld2.keys.json`](config/main_ld2/main_ld2.keys.json) | LD2 inputs, units, and reading rules |
+| [`config/main_valid/main_valid.keys.json`](config/main_valid/main_valid.keys.json) | Validation inputs, units, and reading rules |
 | [`config/instruments/instruments.keys.json`](config/instruments/instruments.keys.json) | Instrument and charging registry fields |
 
 Task examples and `UTILS.LOAD_MAIN_*_CONFIG` define the task settings. TEM
@@ -569,6 +570,7 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `config/main_scatter/main_scatter.keys.json` | Scatter settings and reading rules |
 | `config/main_tem_analysis/` | TEM inputs, analysis, and figure settings |
 | `config/main_valid/` | Validation inputs, condition mappings, and exports |
+| `config/main_valid/main_valid.keys.json` | Validation settings and reading rules |
 | `config/main_inv/` | Inversion configuration example and key dictionary |
 | `config/main_inv/main_inv_config.example.json` | Inversion configuration example |
 | `config/main_inv/main_inv.keys.json` | Inversion settings and reading rules |
