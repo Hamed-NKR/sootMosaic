@@ -255,7 +255,7 @@ end
             if i < 5
                 registry_cfg.dataset = rmfield( ...
                     registry_cfg.dataset, 'source_id');
-                if i == 1
+                if i <= 2
                     registry_cfg.si.dataset = rmfield( ...
                         registry_cfg.si.dataset, 'source_id');
                     inline_cfg = rmfield(inline_cfg, 'provenance');

@@ -1,211 +1,66 @@
-function cfg = LOAD_MAIN_SCATTER_CONFIG(config_path)
-%LOAD_MAIN_SCATTER_CONFIG Load and validate the main_scatter JSON config.
-%   CFG = UTILS.LOAD_MAIN_SCATTER_CONFIG reads the local JSON config for
-%   main_scatter_v8 and returns a validated MATLAB struct.
+function cfg = LOAD_MAIN_SCATTER_CONFIG(config_path, opts)
+% "LOAD_MAIN_SCATTER_CONFIG" resolves scatter settings and profile metadata.
+% model_profile resolves LD1 profile metadata. The scatter calculation...
+%     ...keeps its existing projection calls and native-unit inputs.
+% cfg.si is returned for later consumers.
+% ----------------------------------------------------------------------- %
 %
-%   CFG = UTILS.LOAD_MAIN_SCATTER_CONFIG(CONFIG_PATH) reads a specific
-%   config file instead of the default local file.
+% Inputs:
+%     config_path: Task file, or empty for SOOTMOSAIC_MAIN_SCATTER_CONFIG,...
+%         ...then PFAL_MAIN_SCATTER_CONFIG, then the local task file
+%     opts: Optional CONFIG_READ controls; Strict rejects unknown keys
+% ----------------------------------------------------------------------- %
+%
+% Outputs:
+%     cfg: Task values, SI values, configuration provenance and the LD1...
+%         ...profile. Dataset paths are relative to the selected task file
+% ----------------------------------------------------------------------- %
 
+root = fileparts(fileparts(mfilename('fullpath')));
 if nargin < 1 || isempty(config_path)
-    config_path = fullfile(repo_root(), 'config', 'main_scatter', ...
-        'main_scatter_config.local.json');
+    config_path = getenv('SOOTMOSAIC_MAIN_SCATTER_CONFIG');
+    if isempty(config_path)
+        config_path = getenv('PFAL_MAIN_SCATTER_CONFIG');
+    end
+    if isempty(config_path)
+        config_path = fullfile(root, 'config', 'main_scatter', ...
+            'main_scatter_config.local.json');
+    end
 end
-
+if nargin < 2, opts = struct(); end
 config_path = char(config_path);
-
-% The config file is the single source of user-tuned defaults for the
-% scatter workflow, so execution should stop early if it is missing.
 if ~isfile(config_path)
     error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:MissingConfig', ...
-        ['Scatter config not found: %s\n' ...
-        'Create it from config/main_scatter/main_scatter_config.example.json and fill in the local dataset path.'], ...
-        config_path);
+        'Scatter config not found: %s', config_path);
 end
-
-% Parse the JSON file into a MATLAB struct before validating each section.
-try
-    cfg = jsondecode(fileread(config_path));
-catch err
-    error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:InvalidConfig', ...
-        'Could not parse scatter config "%s": %s', config_path, err.message);
-end
+dictionary = fullfile(root, 'config', 'main_scatter', ...
+    'main_scatter.keys.json');
+cfg = UTILS.CONFIG_READ(config_path, dictionary, opts);
 cfg.config_file = config_path;
+cfg.si.config_file = config_path;
 
-% Validate the dataset section and attach the config directory so the
-% dataset loader can resolve relative paths without re-reading the JSON.
-cfg.dataset = require_struct_field(cfg, 'dataset', 'dataset section');
+% Checking fields supplied inline against the selected source
 from_registry = isfield(cfg.dataset, 'source_id') && ...
     ~isempty(cfg.dataset.source_id);
 fields = {'id', 'file', 'variable'};
-for i = 1:numel(fields)
-    name = fields{i};
-    if ~from_registry || isfield(cfg.dataset, name)
-        cfg.dataset.(name) = require_text_field(cfg.dataset, name, ...
-            ['dataset.', name]);
+for k = 1:numel(fields)
+    key = fields{k};
+    if ~from_registry || isfield(cfg.dataset, key)
+        if ~isfield(cfg.dataset, key) || isempty(cfg.dataset.(key))
+            error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:MissingText', ...
+                'The scatter config is missing dataset.%s.', key);
+        end
+        cfg.dataset.(key) = char(cfg.dataset.(key));
+        cfg.si.dataset.(key) = cfg.dataset.(key);
     end
 end
 cfg.dataset.config_dir = fileparts(config_path);
+cfg.si.dataset.config_dir = cfg.dataset.config_dir;
 
-% Validate the correlation inputs that define the universal and Brasil
-% relationships used throughout the script.
-cfg.correlation = require_struct_field(cfg, 'correlation', 'correlation section');
-
-cfg.correlation.universal = require_struct_field(cfg.correlation, ...
-    'universal', 'correlation.universal section');
-cfg.correlation.universal.D_TEM = require_scalar_field(cfg.correlation.universal, ...
-    'D_TEM', 'correlation.universal.D_TEM');
-cfg.correlation.universal.dpp100 = require_scalar_field(cfg.correlation.universal, ...
-    'dpp100', 'correlation.universal.dpp100');
-cfg.correlation.universal.da_lim_uc = require_vector_field(cfg.correlation.universal, ...
-    'da_lim_uc', 2, 'correlation.universal.da_lim_uc');
-cfg.correlation.universal.n_da_uc = require_scalar_field(cfg.correlation.universal, ...
-    'n_da_uc', 'correlation.universal.n_da_uc');
-
-cfg.correlation.brasil = require_struct_field(cfg.correlation, ...
-    'brasil', 'correlation.brasil section');
-cfg.correlation.brasil.alpha_a = require_scalar_field(cfg.correlation.brasil, ...
-    'alpha_a', 'correlation.brasil.alpha_a');
-cfg.correlation.brasil.k_a = require_scalar_field(cfg.correlation.brasil, ...
-    'k_a', 'correlation.brasil.k_a');
-cfg.correlation.brasil.npp_lim_bc = require_vector_field(cfg.correlation.brasil, ...
-    'npp_lim_bc', 2, 'correlation.brasil.npp_lim_bc');
-cfg.correlation.brasil.n_npp_uc = require_scalar_field(cfg.correlation.brasil, ...
-    'n_npp_uc', 'correlation.brasil.n_npp_uc');
-
-% Validate the distribution, sampling, projection, and option groups that
-% were previously assigned directly in the script.
-cfg.distribution = require_struct_field(cfg, 'distribution', 'distribution section');
-cfg.distribution.gm_da = require_scalar_field(cfg.distribution, ...
-    'gm_da', 'distribution.gm_da');
-cfg.distribution.gsd_da = require_scalar_field(cfg.distribution, ...
-    'gsd_da', 'distribution.gsd_da');
-cfg.distribution.gm_dpp = require_scalar_field(cfg.distribution, ...
-    'gm_dpp', 'distribution.gm_dpp');
-cfg.distribution.gsd_dpp = require_scalar_field(cfg.distribution, ...
-    'gsd_dpp', 'distribution.gsd_dpp');
-
-cfg.sampling = require_struct_field(cfg, 'sampling', 'sampling section');
-cfg.sampling.cn_scat = require_scalar_field(cfg.sampling, ...
-    'cn_scat', 'sampling.cn_scat');
-
-cfg.projection = require_struct_field(cfg, 'projection', 'projection section');
-cfg.projection.n_mc = require_scalar_field(cfg.projection, ...
-    'n_mc', 'projection.n_mc');
-cfg.projection.n_ang = require_scalar_field(cfg.projection, ...
-    'n_ang', 'projection.n_ang');
-
-cfg.options = require_struct_field(cfg, 'options', 'options section');
-cfg.options.rng_seed = optional_rng_seed(cfg.options);
-cfg.options.opt_scale = optional_text_field(cfg.options, ...
-    'opt_scale', 'bivariate');
-valid_scale_modes = {'bivariate', 'sequential', 'ideal'};
-if ~ismember(cfg.options.opt_scale, valid_scale_modes)
-    error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:InvalidScaleMode', ...
-        ['options.opt_scale must be one of: bivariate, sequential, ', ...
-        'or ideal. Got "%s".'], cfg.options.opt_scale);
-end
-cfg.options.opts_nppcor = optional_text_field(cfg.options, ...
-    'opts_nppcor', 'off');
-valid_nppcor_modes = {'on', 'off'};
-if ~ismember(cfg.options.opts_nppcor, valid_nppcor_modes)
-    error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:InvalidNppCorrectionMode', ...
-        'options.opts_nppcor must be either on or off. Got "%s".', ...
-        cfg.options.opts_nppcor);
-end
-
-end
-
-function out = require_struct_field(src, field_name, label)
-%REQUIRE_STRUCT_FIELD Read and validate a nested struct field.
-
-if ~isfield(src, field_name) || ~isstruct(src.(field_name))
-    error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:MissingSection', ...
-        'The scatter config is missing the %s.', label);
-end
-
-out = src.(field_name);
-
-end
-
-function out = require_text_field(src, field_name, label)
-%REQUIRE_TEXT_FIELD Read and validate a non-empty text field.
-
-if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:MissingText', ...
-        'The scatter config is missing %s.', label);
-end
-
-out = char(src.(field_name));
-
-end
-
-function out = optional_text_field(src, field_name, default_value)
-%OPTIONAL_TEXT_FIELD Read a text field with a validated default.
-
-if ~isfield(src, field_name) || isempty(src.(field_name))
-    out = default_value;
-else
-    out = char(src.(field_name));
-end
-
-out = lower(strtrim(out));
-
-end
-
-function out = require_scalar_field(src, field_name, label)
-%REQUIRE_SCALAR_FIELD Read and validate a numeric scalar field.
-
-if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:MissingScalar', ...
-        'The scatter config is missing %s.', label);
-end
-
-out = double(src.(field_name));
-if ~isscalar(out) || ~isfinite(out)
-    error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:InvalidScalar', ...
-        'The scatter config field %s must be a finite numeric scalar.', label);
-end
-
-end
-
-function seed = optional_rng_seed(src)
-%OPTIONAL_RNG_SEED Read an optional random-number seed (empty means unseeded).
-
-seed = [];
-if ~isfield(src, 'rng_seed') || isempty(src.rng_seed)
-    return
-end
-seed = double(src.rng_seed);
-if ~isscalar(seed) || ~isfinite(seed) || seed < 0 || seed >= 2^32 || ...
-        round(seed) ~= seed
-    error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:InvalidRngSeed', ...
-        'options.rng_seed must be empty or an integer scalar from 0 to 4294967295.');
-end
-
-end
-
-function out = require_vector_field(src, field_name, expected_len, label)
-%REQUIRE_VECTOR_FIELD Read and validate a numeric vector field.
-
-if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:MissingVector', ...
-        'The scatter config is missing %s.', label);
-end
-
-out = double(src.(field_name));
-out = reshape(out, 1, []);
-if numel(out) ~= expected_len || any(~isfinite(out))
-    error('sootMosaic:LOAD_MAIN_SCATTER_CONFIG:InvalidVector', ...
-        'The scatter config field %s must be a finite numeric vector of length %d.', ...
-        label, expected_len);
-end
-
-end
-
-function root_dir = repo_root()
-%REPO_ROOT Resolve the repository root from the current package location.
-
-utils_dir = fileparts(mfilename('fullpath')); % .../+UTILS
-root_dir = fileparts(utils_dir); % repository root above the package folder
-
+% Resolving the profile for the first-stage aggregate library
+strict = false;
+if isfield(opts, 'Strict'), strict = opts.Strict; end
+[cfg.model, ~, cfg.model_params, cfg.model_source] = ...
+    UTILS.MODEL_PROFILE(cfg.model_profile, 'LD1', ...
+    cfg.model_overrides, struct('Strict', strict));
 end
