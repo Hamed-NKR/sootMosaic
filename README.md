@@ -72,7 +72,7 @@ Main scripts clear workspace variables and figures, so save them before running.
 ### 3. Local configuration
 
 Copy the examples once to ignored local JSON files, then edit the copies.
-Use `extends` for local overrides in Scale, Scatter, and INV task configurations.
+Use `extends` for local overrides in Scale, Scatter, LD1, and INV task configurations.
 
 ```matlab
 tasks = {'main_ld1', 'main_scale', 'main_scatter', ...
@@ -285,14 +285,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 28 QA functions. A pass prints one `PASS TEST_...`
+Run all 29 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 28)
+assert(numel(checks) == 29)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -373,6 +373,7 @@ primary size, giving the hybrid the appearance of a mosaic.
 | [`config/main_inv/main_inv.keys.json`](config/main_inv/main_inv.keys.json) | INV defaults, units, and input reading rules |
 | [`config/main_scale/main_scale.keys.json`](config/main_scale/main_scale.keys.json) | Scale inputs, units, and reading rules |
 | [`config/main_scatter/main_scatter.keys.json`](config/main_scatter/main_scatter.keys.json) | Scatter inputs, units, and reading rules |
+| [`config/main_ld1/main_ld1.keys.json`](config/main_ld1/main_ld1.keys.json) | LD1 inputs, units, and reading rules |
 | [`config/instruments/instruments.keys.json`](config/instruments/instruments.keys.json) | Instrument and charging registry fields |
 
 Task examples and `UTILS.LOAD_MAIN_*_CONFIG` define the task settings. TEM
@@ -558,6 +559,7 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | Other `main_*` and `post_*` scripts | Shielding, collapse, and post-processing analyses with script-level inputs |
 | `config/` | Task configurations, profiles, and registries |
 | `config/main_ld1/` | LD1 example configuration |
+| `config/main_ld1/main_ld1.keys.json` | LD1 settings and reading rules |
 | `config/main_ld2/` | Scale and scatter branch examples for LD2 |
 | `config/main_scale/` | Correlation-based calibration example |
 | `config/main_scale/main_scale.keys.json` | Scale settings and reading rules |

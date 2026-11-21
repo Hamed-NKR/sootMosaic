@@ -28,6 +28,8 @@ function [cfg, provenance] = CONFIG_READ(file, dictionary, opts)
 %         ...Native_json retains decoded values for selected rows....
 %         ...When used, unlisted root members retain decoded values too....
 %         ...Type any with open true leaves nested metadata uninterpreted.
+%         ...Struct_fallback replaces non-struct input with an empty object;...
+%         ...struct arrays retain their decoded values without child checks.
 %     opts: Optional structure with Strict (false), MaxDepth (16 files),...
 %         ...SupportedVersion (1), Base (resolved lower-precedence object)...
 %         ...and Overrides (direct arguments, highest precedence)....
@@ -316,6 +318,14 @@ for k = 1:numel(names)
         end
     end
     item = value.(key);
+    if option(row, 'struct_fallback', false)
+        if ~isstruct(item), item = struct(); end
+        if ~isscalar(item)
+            value.(key) = clean_nulls(item);
+            si.(key) = value.(key);
+            continue
+        end
+    end
     if isfield(row, 'type'), item = check_type(item, row, path); end
     if child.array && ~isempty(fieldnames(child.children))
         if isnumeric(item) && isempty(item), item = cell(0, 1); end

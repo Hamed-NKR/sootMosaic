@@ -206,6 +206,7 @@ mkdir(tmp);
 cleanup = onCleanup(@() rmdir(tmp, 's'));
 ld1 = jsondecode(fileread(fullfile(repoRoot, 'config', 'main_ld1', ...
     'main_ld1_config.example.json')));
+ld1 = QA.LD1_CONFIG_EXPLICIT_CHOICES(ld1);
 f1 = @(c) UTILS.LOAD_MAIN_LD1_CONFIG(write_config(tmp, c));
 cfg = f1(ld1);
 [names, pass] = add(names, pass, ...

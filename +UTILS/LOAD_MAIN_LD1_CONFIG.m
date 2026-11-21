@@ -1,10 +1,15 @@
 function cfg = LOAD_MAIN_LD1_CONFIG(config_path, opts)
-% "LOAD_MAIN_LD1_CONFIG" loads and validates the LD1 configuration.
+% "LOAD_MAIN_LD1_CONFIG" resolves LD1 task and profile settings.
+% model_profile resolves LD1 gas, slip, mobility, projection, step,...
+%     ...diagnostics and initial velocity choices. The consumer reads the...
+%     ...native task fields and model_params.si constants. Saved-data...
+%     ...projection still reads the task projection section. cfg.si mirrors...
+%     ...the resolved task in SI units.
 % ----------------------------------------------------------------------- %
 %
 % Inputs:
 %     config_path: Task file, or empty for selection by the environment
-%     opts: Optional MODEL_PROFILE reader controls. QA and release calls...
+%     opts: Optional CONFIG_READ and MODEL_PROFILE controls. QA calls...
 %         ...set Strict to true
 % ----------------------------------------------------------------------- %
 %
@@ -17,7 +22,7 @@ if nargin < 2, opts = struct(); end
 if nargin < 1 || isempty(config_path)
     config_path = getenv('SOOTMOSAIC_MAIN_LD1_CONFIG');
     if isempty(config_path)
-        config_path = getenv('PFAL_MAIN_LD1_CONFIG'); % earlier name
+        config_path = getenv('PFAL_MAIN_LD1_CONFIG'); % Permanent fallback
     end
     if isempty(config_path)
         config_path = fullfile(repo_root(), 'config', 'main_ld1', ...
@@ -35,17 +40,13 @@ if ~isfile(config_path)
         config_path);
 end
 
-try
-    cfg = jsondecode(fileread(config_path));
-catch err
-    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidConfig', ...
-        'Could not parse LD1 config "%s": %s', config_path, err.message);
-end
+dictionary = fullfile(repo_root(), 'config', 'main_ld1', ...
+    'main_ld1.keys.json');
+cfg = UTILS.CONFIG_READ(config_path, dictionary, opts);
 
 config_dir = fileparts(config_path);
 cfg.config_file = config_path;
 
-cfg.results = require_struct_field(cfg, 'results', 'results section');
 cfg.results.root = require_text_field(cfg.results, 'root', 'results.root');
 cfg.results.library_file = require_text_field(cfg.results, ...
     'library_file', 'results.library_file');
@@ -53,45 +54,16 @@ cfg.results.run_label = require_text_field(cfg.results, ...
     'run_label', 'results.run_label');
 cfg.results.root = resolve_config_path(cfg.results.root, config_dir);
 
-cfg.simulation = require_struct_field(cfg, 'simulation', 'simulation section');
-cfg.simulation.n_temporal = require_positive_integer_field(cfg.simulation, ...
-    'n_temporal', 'simulation.n_temporal');
-cfg.simulation.n_trial = require_positive_integer_field(cfg.simulation, ...
-    'n_trial', 'simulation.n_trial');
 cfg.simulation.primary_size_gsd_between_trials = require_positive_scalar_field( ...
     cfg.simulation, 'primary_size_gsd_between_trials', ...
     'simulation.primary_size_gsd_between_trials');
-cfg.simulation.npp_min = require_positive_integer_field(cfg.simulation, ...
-    'npp_min', 'simulation.npp_min');
-cfg.simulation.npp_max = require_positive_integer_field(cfg.simulation, ...
-    'npp_max', 'simulation.npp_max');
-cfg.simulation.j_max = require_positive_integer_field(cfg.simulation, ...
-    'j_max', 'simulation.j_max');
-cfg.simulation.rng_seed = optional_rng_seed(cfg.simulation);
 
-if cfg.simulation.n_temporal < 2
-    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidStorageCount', ...
-        'simulation.n_temporal must be at least 2.');
-end
 if cfg.simulation.npp_max < cfg.simulation.npp_min
     error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidNppRange', ...
         'simulation.npp_max must be greater than or equal to simulation.npp_min.');
 end
 
-cfg.projection = require_struct_field(cfg, 'projection', 'projection section');
-cfg.projection.n_mc = require_positive_integer_field(cfg.projection, ...
-    'n_mc', 'projection.n_mc');
-cfg.projection.n_ang = require_positive_integer_field(cfg.projection, ...
-    'n_ang', 'projection.n_ang');
-if isfield(cfg.projection, 'options') && isstruct(cfg.projection.options)
-    cfg.projection.options = cfg.projection.options;
-else
-    cfg.projection.options = struct();
-end
-cfg.projection.options.tbar = optional_text_field(cfg.projection.options, ...
-    'tbar', 'off');
-
-% Configs without model_profile run with the article1_7658971 profile.
+% Resolving the selected profile and explicit task choices
 if isfield(cfg, 'model_profile') && ~isempty(cfg.model_profile)
     profile_name = cfg.model_profile;
 else
@@ -112,18 +84,6 @@ for i_change = 1:numel(cfg.model_source.overrides)
     end
 end
 
-cfg.transport = require_struct_field(cfg, 'transport', 'transport section');
-cfg.transport.domain = require_struct_field(cfg.transport, ...
-    'domain', 'transport.domain section');
-cfg.transport.domain.volume_fraction = require_scalar_field( ...
-    cfg.transport.domain, 'volume_fraction', 'transport.domain.volume_fraction');
-cfg.transport.domain.size = require_vector_field(cfg.transport.domain, ...
-    'size', 3, 'transport.domain.size');
-
-cfg.transport.particles = require_struct_field(cfg.transport, ...
-    'particles', 'transport.particles section');
-cfg.transport.particles.n_par = require_positive_integer_field( ...
-    cfg.transport.particles, 'n_par', 'transport.particles.n_par');
 cfg.transport.particles.n_pp_mean = require_positive_scalar_field( ...
     cfg.transport.particles, 'n_pp_mean', 'transport.particles.n_pp_mean');
 cfg.transport.particles.n_pp_std = require_nonnegative_scalar_field( ...
@@ -137,30 +97,22 @@ cfg.transport.particles.d_pp_gsd_within_aggregates = require_nonnegative_scalar_
     cfg.transport.particles, 'd_pp_gsd_within_aggregates', ...
     'transport.particles.d_pp_gsd_within_aggregates');
 
-cfg.transport.fluid = require_struct_field(cfg.transport, ...
-    'fluid', 'transport.fluid section');
 cfg.transport.fluid.temperature = require_positive_scalar_field( ...
     cfg.transport.fluid, 'temperature', 'transport.fluid.temperature');
-cfg.transport.fluid.velocity = require_vector_field(cfg.transport.fluid, ...
-    'velocity', 3, 'transport.fluid.velocity');
 cfg.transport.fluid.pressure = require_positive_scalar_field( ...
     cfg.transport.fluid, 'pressure', 'transport.fluid.pressure');
 
-cfg.transport.fluid_options = require_struct_field(cfg.transport, ...
-    'fluid_options', 'transport.fluid_options section');
 cfg.transport.fluid_options.amb = optional_choice_field( ...
     cfg.transport.fluid_options, 'amb', cfg.model.fluid_properties, ...
     known.fluid_properties, 'transport.fluid_options.amb');
 cfg.model.fluid_properties = cfg.transport.fluid_options.amb;
 
-cfg.transport.mobility_options = require_struct_field(cfg.transport, ...
-    'mobility_options', 'transport.mobility_options section');
 cfg.transport.mobility_options.mtd = optional_choice_field( ...
     cfg.transport.mobility_options, 'mtd', cfg.model_params.mobility.method, ...
     known.mobility, 'transport.mobility_options.mtd');
 cfg.model.mobility = cfg.transport.mobility_options.mtd;
 if strcmp(cfg.model.mobility, 'continuum')
-    cfg.model.mobility = 'sorensen_eq17'; % earlier name of the method
+    cfg.model.mobility = 'sorensen_eq17'; % Canonical method name
 end
 cfg.transport.mobility_options.continuum_diameter = optional_choice_field( ...
     cfg.transport.mobility_options, 'continuum_diameter', ...
@@ -221,38 +173,14 @@ cfg.transport.mobility_options.slip = optional_choice_field( ...
     known.slip_correction, 'transport.mobility_options.slip');
 cfg.model.slip_correction = cfg.transport.mobility_options.slip;
 
-cfg.transport.location_options = require_struct_field(cfg.transport, ...
-    'location_options', 'transport.location_options section');
 cfg.transport.location_options.vf = require_text_field( ...
     cfg.transport.location_options, 'vf', 'transport.location_options.vf');
-cfg.transport.location_options.vf_type = optional_text_field( ...
-    cfg.transport.location_options, 'vf_type', 'pp');
-
-if isfield(cfg.transport, 'growth_options') && isstruct(cfg.transport.growth_options)
-    cfg.transport.growth_options = cfg.transport.growth_options;
-else
-    cfg.transport.growth_options = struct();
-end
-
-% Optional diagnostics, recorded in ensdata0 and never used in the dynamics
-if isfield(cfg.transport, 'diagnostics_options')
-    cfg.transport.diagnostics_options = require_struct_field(cfg.transport, ...
-        'diagnostics_options', 'transport.diagnostics_options section');
-else
-    cfg.transport.diagnostics_options = struct();
-end
+% Resolving diagnostics and the initial velocity sampler
 cfg.transport.diagnostics_options.knudsen = optional_logical_field( ...
     cfg.transport.diagnostics_options, 'knudsen', ...
     cfg.model.knudsen_diagnostics, 'transport.diagnostics_options.knudsen');
 cfg.model.knudsen_diagnostics = cfg.transport.diagnostics_options.knudsen;
 
-% Optional sampler of the initial velocities
-if isfield(cfg.transport, 'velocity_options')
-    cfg.transport.velocity_options = require_struct_field(cfg.transport, ...
-        'velocity_options', 'transport.velocity_options section');
-else
-    cfg.transport.velocity_options = struct();
-end
 cfg.transport.velocity_options.sampler = optional_choice_field( ...
     cfg.transport.velocity_options, 'sampler', cfg.model.initial_velocity, ...
     known.initial_velocity, 'transport.velocity_options.sampler');
@@ -260,14 +188,13 @@ cfg.model.initial_velocity = cfg.transport.velocity_options.sampler;
 
 cfg = record_model(cfg);
 
-end
+% Mirroring resolved task fields whose input units are SI
+cfg.si.results = cfg.results;
+cfg.si.simulation = cfg.simulation;
+cfg.si.projection = cfg.projection;
+cfg.si.transport = cfg.transport;
+cfg.si.config_file = cfg.config_file;
 
-function out = require_struct_field(src, field_name, label)
-if ~isfield(src, field_name) || ~isstruct(src.(field_name))
-    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:MissingSection', ...
-        'The LD1 config is missing the %s.', label);
-end
-out = src.(field_name);
 end
 
 function out = require_text_field(src, field_name, label)
@@ -276,13 +203,6 @@ if ~isfield(src, field_name) || isempty(src.(field_name))
         'The LD1 config is missing %s.', label);
 end
 out = char(src.(field_name));
-end
-
-function out = optional_text_field(src, field_name, default_value)
-out = default_value;
-if isfield(src, field_name) && ~isempty(src.(field_name))
-    out = char(src.(field_name));
-end
 end
 
 function out = require_scalar_field(src, field_name, label)
@@ -375,33 +295,6 @@ out = require_positive_scalar_field(src, field_name, label);
 if round(out) ~= out
     error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidInteger', ...
         'The LD1 config field %s must be a positive integer.', label);
-end
-end
-
-function out = require_vector_field(src, field_name, expected_len, label)
-if ~isfield(src, field_name) || isempty(src.(field_name))
-    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:MissingVector', ...
-        'The LD1 config is missing %s.', label);
-end
-out = double(src.(field_name));
-out = reshape(out, 1, []);
-if numel(out) ~= expected_len || any(~isfinite(out))
-    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidVector', ...
-        'The LD1 config field %s must be a finite numeric vector of length %d.', ...
-        label, expected_len);
-end
-end
-
-function seed = optional_rng_seed(src)
-seed = [];
-if ~isfield(src, 'rng_seed') || isempty(src.rng_seed)
-    return
-end
-seed = double(src.rng_seed);
-if ~isscalar(seed) || ~isfinite(seed) || seed < 0 || seed >= 2^32 || ...
-        round(seed) ~= seed
-    error('sootMosaic:LOAD_MAIN_LD1_CONFIG:InvalidRngSeed', ...
-        'simulation.rng_seed must be empty or an integer scalar from 0 to 4294967295.');
 end
 end
 
