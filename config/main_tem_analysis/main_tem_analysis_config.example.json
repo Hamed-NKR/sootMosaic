@@ -517,9 +517,21 @@
             "line_width": 1.5
           },
           {
-            "id": "gt_5",
-            "label": "{\\it N}_{\\rm subagg} > 5",
-            "lower": 5,
+            "id": "six_to_ten",
+            "label": "6 \\leq {\\it N}_{\\rm subagg} \\leq 10",
+            "lower": 6,
+            "upper": 10,
+            "include_lower": true,
+            "include_upper": true,
+            "color": "#11604B",
+            "marker": "d",
+            "marker_size": 36,
+            "line_width": 1.5
+          },
+          {
+            "id": "gt_10",
+            "label": "{\\it N}_{\\rm subagg} > 10",
+            "lower": 10,
             "upper": null,
             "include_lower": false,
             "include_upper": false,
