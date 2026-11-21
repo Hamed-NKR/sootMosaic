@@ -7,8 +7,11 @@ warning('off')
 %% initialize %%
 
 % load aggregate data
-fdir_in = 'C:\Users\hmdni\Downloads\Colaps';
-fname_in = 'Colaps';
+% task file selected by SOOTMOSAIC_MAIN_LD2_CONFIG,
+% key post.collapse.results_file
+cfg_post = UTILS.LOAD_MAIN_LD2_CONFIG;
+[fdir_in, fname_in] = fileparts( ...
+    UTILS.POST_PATH(cfg_post, 'collapse.results_file'));
 varnames = {'pars_clps','pars_out'}; % varaiables to be imported
 for i = 1 : numel(varnames)
     load(fullfile(fdir_in, strcat(fname_in, '.mat')), varnames{i});
@@ -264,4 +267,5 @@ if ~isfolder(dir_out)
 end
 
 % save worksapce
-save(strcat(dir_out, 'Collapse_plus_Shield_', dir0_out, '.mat'))
+UTILS.SAVE_PUBLIC_MAT(strcat(dir_out, 'Collapse_plus_Shield_', dir0_out, ...
+    '.mat'), {})

@@ -88,6 +88,7 @@ opts_nppcor = cfg_options.opts_nppcor; % 'on' rounds primary-particle counts
 % stable dataset identifier in version control.
 [pars_raw.pp, dataset_src, dataset_provenance] = ...
     UTILS.LOAD_SCATTER_LD1_DATASET(cfg_dataset);
+dataset_src.sha256 = UTILS.FILE_SHA256(dataset_src.file);
 
 % % correct the structure if necessary
 % if logical(nnz(size(pars_raw.pp)))
@@ -605,8 +606,13 @@ sd_sigmapp_out = std(pars_out.dpp_g(:,2)); % arithmetic standard deviation of...
 
 scatter_metadata = struct();
 scatter_metadata.generated_at = char(datetime('now'));
-scatter_metadata.script = mfilename;
-scatter_metadata.config_file = cfg_scatter.config_file;
+scatter_metadata.script = [mfilename, '.m'];
+scatter_metadata.script_sha256 = ...
+    UTILS.FILE_SHA256([mfilename('fullpath'), '.m']);
+[~, config_name, config_ext] = fileparts(cfg_scatter.config_file);
+scatter_metadata.config_file = [config_name, config_ext];
+scatter_metadata.config_file_sha256 = ...
+    UTILS.FILE_SHA256(cfg_scatter.config_file);
 if isfield(cfg_dataset, 'source_id') && ~isempty(cfg_dataset.source_id)
     scatter_metadata.dataset_id = dataset_src.id;
 else
@@ -671,10 +677,12 @@ canonical_file = fullfile(dir_scatter_data, ...
 method_file = fullfile(dir_scatter_data, sprintf( ...
     'scaled_aggs_for_LD2_from_main_scatter_%s.mat', opt_scale));
 
-save(canonical_file, 'pars_out', 'scatter_metadata', ...
-    'scatter_summary', 'dataset_src', 'dataset_provenance', '-v7.3')
-save(method_file, 'pars_out', 'scatter_metadata', ...
-    'scatter_summary', 'dataset_src', 'dataset_provenance', '-v7.3')
+UTILS.SAVE_PUBLIC_MAT(canonical_file, {'-v7.3'}, 'pars_out', ...
+    'scatter_metadata', 'scatter_summary', 'dataset_src', ...
+    'dataset_provenance')
+UTILS.SAVE_PUBLIC_MAT(method_file, {'-v7.3'}, 'pars_out', ...
+    'scatter_metadata', 'scatter_summary', 'dataset_src', ...
+    'dataset_provenance')
 
 %% Plot scaled aggregates
 

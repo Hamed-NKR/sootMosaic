@@ -28,7 +28,10 @@ if ~isfile(checkpoint_path)
         'Checkpoint file not found: %s', checkpoint_path)
 end
 
+resume_dir = fileparts(checkpoint_path);
 load(checkpoint_path);
+dir_wsp = resume_dir;
+clear resume_dir
 
 % Restore a nonempty checkpoint rng_state to continue the saved random
 % sequence. Without it, a nonempty simulation.rng_seed seeds the generator
@@ -256,8 +259,8 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     if mod(k, checkpoint_interval) == 1
         rng_state = rng; %#ok<NASGU> saved below, restored on the next resume
         dt = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss')); % current date and time
-        save(fullfile(dir_wsp, strcat(cfg_results.checkpoint_prefix, '__', ...
-            dt, '.mat')), '-v7.3')
+        UTILS.SAVE_PUBLIC_MAT(fullfile(dir_wsp, strcat( ...
+            cfg_results.checkpoint_prefix, '__', dt, '.mat')), {'-v7.3'})
     end
 
     UTILS.TEXTBAR([k, k_max]); % update progress textbar
@@ -290,8 +293,8 @@ end
 
 % save the final workspace
 dt_final = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss'));
-save(fullfile(dir_wsp, strcat(cfg_results.final_prefix, '__', ...
-    dt_final, '.mat')), '-v7.3')
+UTILS.SAVE_PUBLIC_MAT(fullfile(dir_wsp, strcat(cfg_results.final_prefix, ...
+    '__', dt_final, '.mat')), {'-v7.3'})
 
 end
 

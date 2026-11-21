@@ -34,19 +34,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Fork of the 1D inversion package, provenance only
-
-Repository: https://github.com/Hamed-NKR/odias
-Commit: c654348abf11599e24b63374622c31d8458cd7e4 (12 May 2025).
-License: GPL-3. The following files were read for logic, field lists or
-formulas only; no code text was copied.
-
-- `DAT.m`: `+INV/READ_SMPS.m`, `+INV/SELECT_SCANS.m`,
-  `+INV/POOL_SCANS.m` and `+INV/RHO_EFF.m`.
-- `main_aac_HN_1d.m`: `+INV/READ_AAC.m`.
-- `main_dma_HN_1d_v3.m`: `+INV/SELECT_SCANS.m` and `+INV/POOL_SCANS.m`.
-- `main_loss_HN.m`: `+INV/PENETRATION.m`.
-
 ## Import and relation methods
 
 - `+INV/READ_SMPS.m` and `+INV/READ_SMPS_DB.m`: SMPS software manual
@@ -58,6 +45,8 @@ formulas only; no code text was copied.
 - `+INV/OBSERVATION.m`: Kiasadegh et al. (2026, Section 3.3);
   Sipkens et al. (2020, part I, Eq. 23); Johnson et al. (2018, Eqs. 9-11).
 - `+INV/GAS.m`: Kim et al. (2005, Eqs. 9, 11 and 34).
+- `+INV/RHO_EFF.m`: Tavakoli and Olfert (2014, Eqs. 3-5 and 7);
+  Kiasadegh et al. (2026, Eqs. 26-31).
 
 ## Transfer functions and losses, published methods
 
@@ -81,6 +70,41 @@ record method provenance and impose no additional code notice obligation.
 - `+INV/CHARGE_FRAC.m`: 3082 manual (2016, Eqs. B-2 and B-3,
   Tables B-2 and B-3); Wiedensohler et al. (2012, Table A7);
   Gopalakrishnan et al. (2013, Eq. 10, Table 2).
+
+## Progress bar
+
+Repository: https://github.com/tsipkens/atems
+Commit: 8f38c9d37e87f02907efc93cd0b43e6ccd8b1582 (1 Mar 2021).
+License: MIT License.
+
+`+tools/textbar.m` is adopted into `+UTILS/TEXTBAR.m`. Modified: package
+name and call syntax, percent printed with two decimals. The MIT notice is
+included in the file.
+Code citation: Sipkens and Rogak (2021), Journal of Aerosol Science, 105699,
+doi:10.1016/j.jaerosci.2020.105699. The source README requests it for use of
+the repository code.
+
+MIT License
+
+Copyright (c) 2019 Timothy A. Sipkens
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## Density calibration and mass methods
 

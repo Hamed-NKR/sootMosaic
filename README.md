@@ -97,8 +97,20 @@ end
 | LD2 | Select the scale or scatter local file and set `dataset.file` to its `pars_out` product | Branch output paths, transport, and `simulation.r_n_agg` |
 | TEM | `entries[].entry_dir`, `aggregate.file`, `aggregate.variable`, `primary_particles.folder`, `file_pattern`, `area_column`, `aggregate_ids`, and `primary_particle_aggregate_ids` | Analysis, style, and output settings |
 | Validation | `sources.ld2.file`, `sources.tem.file`, `sources.effective_density.file`, and enabled `conditions` mappings | Fits, references, physics, style, and output settings |
+| Post-processing scripts | The `post` entries a script needs, listed below | Entries of scripts that are not run |
 
 Task input paths and output roots are relative to the configuration folder.
+The `post_*` and `main_collapse_*` scripts, `main_shield_v2`, and the
+`test_valid*` scripts read their input files from the `post` section of the
+selected LD2 task file, namely `post.ld2.results_file`,
+`post.shield.results_file`, `post.shield.input_file`,
+`post.collapse.results_file`, `post.collapse.fluid_file`, and
+`post.valid.aggregate_file`, `aggregate_dalpha_file`, `aggregate_kalpha_file`
+and `experiment_file`, and from the `post` section of the selected scatter
+task file, namely `post.charsize.aggregate_file` and
+`post.collapse.aggregate_file`. Set only the entries of the scripts you run.
+`test_colaps` reads `post.colaps.aggregate_file` from the selected LD1 task
+file.
 LD1 `results.library_file` is relative to `results.root`. TEM aggregate files
 and primary-particle folders are relative to `entries[].entry_dir`. LD lengths
 and calibration particle products use meters. Configured calibration diameters
@@ -257,7 +269,7 @@ Final names start with `LD2__from_main_scatter__final__` and end in a timestamp.
 The scale branch uses `main_scale` in these names. The workspace includes
 `parsdata`, `r_n_agg`, `fl`, `cfg_ld2`, and source metadata.
 `UTILS.RESUME_LD2_V3` prompts for a checkpoint folder and filename and resumes
-into that run folder. Those two strings can also be passed as arguments.
+into the folder of that checkpoint. Those two strings can also be passed as arguments.
 
 For TEM, place aggregate MAT files and primary-area CSV files in the configured
 entry folders, normally `data/tem_analysis/`. The example reads an `Aggs`
@@ -304,14 +316,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 35 QA functions. A pass prints one `PASS TEST_...`
+Run all 38 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 35)
+assert(numel(checks) == 38)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -443,8 +455,9 @@ automatic limits.
 
 ### Transport models and saved records
 
-Scale, scatter and LD2 products store resolved source metadata in `dataset_src`
-and registry/overlay provenance in `dataset_provenance`. Validation stores
+Saved products and checkpoints keep file names and SHA-256 digests, never local
+folder paths. Scale, scatter and LD2 products store resolved source metadata in
+`dataset_src` and registry/overlay provenance in `dataset_provenance`. Validation stores
 provenance in `manifest.sources.<source>.provenance` in `validation_results.mat`
 and `sources.<source>.provenance` in `run_manifest.json`.
 
@@ -578,7 +591,7 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `main_LD2_v3.m` | Post-flame agglomeration |
 | `main_tem_analysis_v1.m` | TEM analysis and figures |
 | `main_valid_v3.m` | LD2, TEM, and effective-density comparisons |
-| Other `main_*` and `post_*` scripts | Shielding, collapse, and post-processing analyses with script-level inputs |
+| Other `main_*` and `post_*` scripts | Shielding, collapse, and post-processing analyses with inputs from the `post` task entries |
 | `config/` | Task configurations, profiles, and registries |
 | `config/main_ld1/` | LD1 example configuration |
 | `config/main_ld1/main_ld1.keys.json` | LD1 settings and reading rules |
@@ -602,7 +615,7 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `config/profiles/DEFAULTS.md` | Reasoning and sources of the profile defaults |
 | `config/sources/` | Dataset registry and dictionary |
 | `+COL/` | Collision detection, connection, and aggregate growth |
-| `+DEPOT/` | Additional simulation and analysis scripts |
+| `+DEPOT/` | Older scripts kept for reference, left out of the archived release |
 | `+INV/` | Instrument import and inversion functions |
 | `+INV/READ_SMPS.m` | Labeled SMPS exports |
 | `+INV/READ_SMPS_DB.m` | Raw SMPS database records and CSV imports |
@@ -654,12 +667,14 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `+QA/` | Synthetic tests and aggregate geometry checks |
 | `+TRANSP/` | Transport properties, mobility, marching, and boundaries |
 | `+UTILS/` | Configuration, data loading, checkpoint resume, fitting, and plotting |
+| `+UTILS/PUBLIC_COPY.m` | Copies of saved values with local paths reduced to file and folder names |
+| `+UTILS/SAVE_PUBLIC_MAT.m` | MAT saves of caller variables through that copy |
 | `+VIS/` | Visualization routines |
 | `@AGG/` | Aggregate class |
 | `data/` | Measured inputs and files passed between stages |
 | `results/` | Generated workspaces, figures, and validation records |
 | `inputs/` | Tab-delimited parameter files |
-| `THIRD_PARTY_NOTICES.md` | Source and license notices for adapted code |
+| `THIRD_PARTY_NOTICES.md` | Source, license, and method notices for adapted code and the progress bar |
 
 Generated data, `results/`, `outputs/`, `.sootmosaic-cache/`, and
 `.pfal-cache/` are ignored by `.gitignore`.

@@ -1,16 +1,24 @@
 % test_colaps_min.m
 % Minimal, dependency-free driver to test COLAPS on one aggregate (pp0)
-% Place this script, COLAPS.m, and pp0.mat in the same folder.
+% The aggregate comes from the LD1 library named by post.colaps.aggregate_file
+% in the task file selected by SOOTMOSAIC_MAIN_LD1_CONFIG.
 
 clc; clear; close all;
 
 %% ---- Load a single aggregate (pp0 must be N x 6) ----
 if exist('pp0','var') ~= 1
-    if exist('C:\Users\hmdni\Downloads\pp0.mat','file')
-        S = load('C:\Users\hmdni\Downloads\pp0.mat');   % expects a variable named pp0 inside
-        if isfield(S,'pp0'); pp0 = S.pp0; else; error('pp0.mat must contain variable "pp0".'); end
+    cfg_ld1 = UTILS.LOAD_MAIN_LD1_CONFIG;
+    library_file = UTILS.POST_PATH(cfg_ld1, 'colaps.aggregate_file');
+    if isfile(library_file)
+        S = load(library_file, 'pp0');   % expects a variable named pp0 inside
+        if isfield(S,'pp0')
+            pp0 = S.pp0;
+        else
+            error('The LD1 library must contain variable "pp0".');
+        end
+        if iscell(pp0); pp0 = pp0{1}; end   % first aggregate of the library
     else
-        error('No "pp0" in workspace and pp0.mat not found.');
+        error('No "pp0" in workspace and the LD1 library was not found.');
     end
 end
 

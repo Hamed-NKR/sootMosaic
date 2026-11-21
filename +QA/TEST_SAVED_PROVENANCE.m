@@ -70,6 +70,9 @@ for k = 1:numel(names)
             capture = ['[' lhs ',dataset_src,dataset_provenance]=' ...
                 func2str(loaders{index}) '(cfg_dataset);'];
             check(contains(compact, capture));
+            check(contains(compact, ['dataset_src.sha256=' ...
+                'UTILS.FILE_SHA256(dataset_src.file);']));
+            check(isempty(regexp(txt, '(?m)^\s*save\(', 'once')));
             [data, source, provenance] = loaders{index}(selected, opts);
             check(isequal(data, payload));
             if index < 3
@@ -77,6 +80,7 @@ for k = 1:numel(names)
                 site = 1;
                 if k == 3, site = 2; end
                 check(numel(lists) == index);
+                check(numel(strfind(txt, 'UTILS.SAVE_PUBLIC_MAT(')) == index);
                 tokens = regexp(lists{site}, '''([^'']*)''', 'tokens');
                 list = cellfun(@(item) item{1}, tokens, ...
                     'UniformOutput', false);
@@ -86,16 +90,16 @@ for k = 1:numel(names)
                     product.scatter_metadata = struct('fixture', 7);
                     product.scatter_summary = [5 6];
                 end
-                save(product_file, '-struct', 'product', list{:});
+                save_public(product_file, product, list);
                 saved = load(product_file);
-                check(isequal(saved, product));
+                check(isequal(saved, UTILS.PUBLIC_COPY(product)));
             else
-                sites = regexp(txt, ...
-                    'save\(fullfile\(dir_wsp,.*?''-v7.3''\)', 'match');
+                sites = regexp(txt, ['UTILS\.SAVE_PUBLIC_MAT\(' ...
+                    'fullfile\(dir_wsp,.*?\{''-v7\.3''\}\)'], 'match');
                 check(numel(sites) == 2);
                 for j = 1:2
                     tail = regexp(sites{j}, ...
-                        '\)\),\s*''-v7.3''\)$', 'once');
+                        '\)\),\s*\{''-v7\.3''\}\)$', 'once');
                     check(~isempty(tail));
                 end
                 check(isscalar(strfind(txt, 'dataset_provenance')));
@@ -103,7 +107,8 @@ for k = 1:numel(names)
                 saved = load(product_file);
                 check(isequal(saved.pars_LD2, payload));
             end
-            check(isequal(saved.dataset_src, source));
+            check(isequal(saved.dataset_src, UTILS.PUBLIC_COPY(source)));
+            check(strcmp(saved.dataset_src.file, 'input.mat'));
             check(strcmp(saved.dataset_src.id, 'fixture'));
             check(strcmp(saved.dataset_src.doi, 'inline'));
             check_record(saved.dataset_provenance, opts);
@@ -158,7 +163,15 @@ end
 
 function save_workspace(file, pars_LD2, dataset_src, dataset_provenance) %#ok<INUSD>
 % Saving the captured variables through a workspace save
-save(file, '-v7.3');
+UTILS.SAVE_PUBLIC_MAT(file, {'-v7.3'});
+end
+
+function save_public(file, product, list) %#ok<INUSD> read in eval
+% Saving the listed product fields as variables through the public save
+for k = 1:numel(list)
+    eval([list{k} ' = product.(list{k});']);
+end
+UTILS.SAVE_PUBLIC_MAT(file, {}, list{:});
 end
 
 function output = assemble_source(source, provenance, body) %#ok<INUSD>

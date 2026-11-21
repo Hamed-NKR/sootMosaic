@@ -1,8 +1,5 @@
 classdef AGG
 % "AGG" is a class containing the aggregate properties and functions.
-%
-% Original author: Timothy Sipkens, 05-2021
-% Revised by: Hamed Nikookar, 07-2021
 % ----------------------------------------------------------------------- %
     
     properties

@@ -3,6 +3,9 @@ clear
 close all
 warning('off')
 
+% local data folders
+dir_data = ''; % set to the local data folder
+
 %% Initialize and define key parameters %%
 
 % Olfert and Rogak (2019)'s universal correlation
@@ -44,7 +47,7 @@ gsd_dpp = 1.45; % geometric standard deviation of ~
 cn_scat = 0.13; % proportion of random aggregates chosen for bivariate sampling
 
 % address of aggregate library to be imported for scaling and dispersion
-fdir = 'D:\Hamed\CND\PhD\Publication\Paper2\Library_Final\1_35\LD1';
+fdir = dir_data;
 fname = 'LD1__gamma_1_35__merge';
 varname = 'pp0';
 vardir = '';

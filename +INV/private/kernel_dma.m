@@ -7,7 +7,8 @@ function [k, info] = kernel_dma(dm, voltage, cfg, draw, caller)
 % Repository: https://github.com/tsipkens/odias
 % Commit: 8de95745486b01cf5ede0b186d044656eb3fde33
 % License: GNU General Public License, version 3 (GPL-3).
-% Source attribution: Sipkens (2020).
+% Method citation: Sipkens et al. (2020, part I), Journal of Aerosol Science
+%     140, 105484, doi:10.1016/j.jaerosci.2019.105484.
 % Modified 18 Nov 2026: shared accumulation with existing physical calls,...
 %     ...recorded polarity, charge tails, external paths and loss diagnostics.
 % The complete GPL-3 text is supplied in the repository LICENSE file.

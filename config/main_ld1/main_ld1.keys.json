@@ -70,5 +70,8 @@
   {"path":"transport.mobility_options.proj_warned","type":"any","unit":"none","status":"keep","since":1,"reader":"MOBIL","reading_rule":"Unconverted pass-through; MOBIL reads and updates runtime state","native_json":true,"open":true},
   {"path":"transport.mobility_options.proj_cache_data","type":"any","unit":"none","status":"keep","since":1,"reader":"MOBIL","reading_rule":"Unconverted pass-through; MOBIL reads and updates runtime state","native_json":true,"open":true},
   {"path":"transport.mobility_options.slip_coefficients","type":"any","unit":"none","status":"keep","since":1,"reader":"LOAD_MAIN_LD1_CONFIG, MOBIL","reading_rule":"Replaced by resolved SI slip section without reading input","native_json":true,"open":true},
-  {"path":"transport.fluid_options.gas","type":"any","unit":"none","status":"keep","since":1,"reader":"LOAD_MAIN_LD1_CONFIG, FLPROPS","reading_rule":"Replaced by resolved SI gas section without reading input","native_json":true,"open":true}
+  {"path":"transport.fluid_options.gas","type":"any","unit":"none","status":"keep","since":1,"reader":"LOAD_MAIN_LD1_CONFIG, FLPROPS","reading_rule":"Replaced by resolved SI gas section without reading input","native_json":true,"open":true},
+  {"path":"post","type":"object","unit":"none","default":{},"native_json":true,"status":"new","since":1,"reader":"POST_PATH","reading_rule":"Optional object; absent becomes empty; inputs of the post-processing scripts"},
+  {"path":"post.colaps","type":"object","unit":"none","default":{},"native_json":true,"status":"new","since":1,"reader":"POST_PATH","reading_rule":"Optional object"},
+  {"path":"post.colaps.aggregate_file","type":"any","unit":"none","status":"new","since":1,"reader":"POST_PATH","reading_rule":"Optional text; path resolved relative to the selected task file by POST_PATH; read by test_colaps; LD1 aggregate library MAT","native_json":true,"open":true}
 ]

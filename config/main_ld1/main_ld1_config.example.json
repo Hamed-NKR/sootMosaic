@@ -59,5 +59,10 @@
     "growth_options": {},
     "diagnostics_options": {},
     "velocity_options": {}
+  },
+  "post": {
+    "colaps": {
+      "aggregate_file": "../../data/main_ld1/LD1_LIBRARY_PLACEHOLDER.mat"
+    }
   }
 }

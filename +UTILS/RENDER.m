@@ -1,8 +1,5 @@
 function h_rend = RENDER(pars, dom_size, cm, q)
 % "RENDER" depicts the posture of an aggregate population in space.
-% 
-% Original author: Timothy Sipkens, 05-2021
-% Revised by: Hamed Nikookar, 06-2021
 % ----------------------------------------------------------------------- %
 % 
 % Input:

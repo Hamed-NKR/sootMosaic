@@ -218,6 +218,9 @@ ke_p = 0.5 * out_p.m0 .* sum(out_p.v0.^2, 2) / (1.381e-23 * out_p.temp);
     isequaln(out_c.pars_LD2, out_c.ref_pars) && ...
     isequal(out_c.rng_res, out_c.rng_ref) && ...
     ~isequaln(out_c.pars_LD2.v, out_p.pars_LD2.v));
+[names, pass] = add(names, pass, ...
+    'saved checkpoint and resumed output hold no absolute path', ...
+    isempty(out_c.absolute) && isempty(out_p.absolute));
 
 clear cleanup restore_rng
 report = struct('name', names, 'pass', num2cell(pass));
@@ -367,7 +370,7 @@ cfg_results = struct('checkpoint_prefix', 'ckpt', 'final_prefix', ...
     'final'); %#ok<NASGU>
 rng_state = rng; %#ok<NASGU>
 cfg_ld2 = struct('config_file', 'checkpoint', 'model', model); %#ok<NASGU>
-save(fullfile(folder, 'checkpoint.mat'), '-v7.3')
+UTILS.SAVE_PUBLIC_MAT(fullfile(folder, 'checkpoint.mat'), {'-v7.3'})
 
 % uninterrupted continuation of the saved state
 st = load(fullfile(folder, 'checkpoint.mat'));
@@ -407,4 +410,30 @@ out.rng_res = rng_res;
 out.v0 = st.pars_LD2.v;
 out.m0 = st.pars_LD2.m;
 out.temp = st.fl.temp;
+out.absolute = [absolute_leaves(st), ...
+    absolute_leaves(load(fullfile(folder, final(end).name)))];
+end
+
+function found = absolute_leaves(value)
+% Text leaves holding a drive letter path or starting with a slash
+found = {};
+if isstruct(value)
+    names = fieldnames(value);
+    for j = 1:numel(value)
+        for k = 1:numel(names)
+            found = [found, absolute_leaves(value(j).(names{k}))]; %#ok<AGROW>
+        end
+    end
+elseif iscell(value)
+    for j = 1:numel(value)
+        found = [found, absolute_leaves(value{j})]; %#ok<AGROW>
+    end
+elseif istable(value)
+    found = absolute_leaves(table2struct(value));
+elseif isstring(value)
+    found = absolute_leaves(cellstr(value(~ismissing(value))));
+elseif ischar(value) && ~isempty(regexp(value(:).', ...
+        '((^|[^A-Za-z])[A-Za-z]:[\\/]|^[\\/])', 'once'))
+    found = {value(:).'};
+end
 end

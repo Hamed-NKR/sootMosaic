@@ -1,22 +1,25 @@
 clear; clc; close all;
 
 % load scaled uniform aggregates - Brasil's values
-fdir_dpp_da_1 = 'D:\Hamed\CND\PhD\Weekly\2025\Week_of_27OCT25';
-fname_dpp_da_1 = 'BiggerRepo-Scat135-Real1-Frac0055-27OCT25';
+% task file selected by SOOTMOSAIC_MAIN_LD2_CONFIG, keys of the post.valid
+% section and post.ld2.results_file
+cfg_post = UTILS.LOAD_MAIN_LD2_CONFIG;
+[fdir_dpp_da_1, fname_dpp_da_1] = fileparts( ...
+    UTILS.POST_PATH(cfg_post, 'valid.aggregate_file'));
 vars_dpp_da = {'pars_out'};
 load(fullfile(fdir_dpp_da_1, fname_dpp_da_1), vars_dpp_da{:});
 pars_out_dalpha_108_k_alpha_110 = pars_out;
 
 % load scaled uniform aggregates - D_alpha=1.20
-fdir_dpp_da_2 = 'D:\Hamed\CND\PhD\Weekly\2025\Week_of_27OCT25\Results\d_alpha_1.2';
-fname_dpp_da_2 = 'BiggerRepo-Scat135-Real1-Frac0055-10NOV25-Dalpha120';
+[fdir_dpp_da_2, fname_dpp_da_2] = fileparts( ...
+    UTILS.POST_PATH(cfg_post, 'valid.aggregate_dalpha_file'));
 vars_dpp_da = {'pars_out'};
 load(fullfile(fdir_dpp_da_2, fname_dpp_da_2), vars_dpp_da{:});
 pars_out_dalpha_120_k_alpha_110 = pars_out;
 
 % load scaled uniform aggregates - k_alpha=1.20
-fdir_dpp_da_3 = 'D:\Hamed\CND\PhD\Weekly\2025\Week_of_27OCT25\Results\k_alpha_1.2';
-fname_dpp_da_3 = 'BiggerRepo-Scat135-Real1-Frac0055-10NOV25-Kalpha120';
+[fdir_dpp_da_3, fname_dpp_da_3] = fileparts( ...
+    UTILS.POST_PATH(cfg_post, 'valid.aggregate_kalpha_file'));
 vars_dpp_da = {'pars_out'};
 load(fullfile(fdir_dpp_da_3, fname_dpp_da_3), vars_dpp_da{:});
 pars_out_dalpha_108_k_alpha_120 = pars_out;
@@ -24,14 +27,14 @@ pars_out_dalpha_108_k_alpha_120 = pars_out;
 clear pars_out
 
 % second-stage langevin dynamics data to be imported
-fdir_LD2 = 'D:\Hamed\CND\PhD\Weekly\2025\Week_of_27OCT25\Results\Brasil\LD2-28-Oct-2025_BiggerRepo-Scat135-Real1-Frac0055-27OCT25';
-fname_LD2 = 'LD2_30-Oct-2025_12-50-54_Final';
+[fdir_LD2, fname_LD2] = fileparts( ...
+    UTILS.POST_PATH(cfg_post, 'ld2.results_file'));
 varnames_LD2 = {'fl'};
 load(fullfile(fdir_LD2, fname_LD2), varnames_LD2{:});
 
 % load experimental data for validation
-fdir_exp = 'D:\Hamed\CND\PhD\Publication\Experiment\Effective-Density-Compiled';
-fname_exp = 'Effective-Density-Compiled_17-Mar-2025_05-00-44';
+[fdir_exp, fname_exp] = fileparts( ...
+    UTILS.POST_PATH(cfg_post, 'valid.experiment_file'));
 load(strcat(fdir_exp, '\', fname_exp, '.mat'), 'dist_grp')
 
 % calculate mobility diameter for all aggregates

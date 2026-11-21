@@ -10,8 +10,11 @@ warning('off')
 %% initialize %%
 
 % address of data library to be imported
-fdir = 'D:\Hamed\CND\PhD\My Articles\DLCA2\mainscatter_sigmapp13\SCAT';
-fname = 'SCAT-18NOV24';
+% task file selected by SOOTMOSAIC_MAIN_SCATTER_CONFIG,
+% key post.charsize.aggregate_file
+cfg_post = UTILS.LOAD_MAIN_SCATTER_CONFIG;
+[fdir, fname] = fileparts( ...
+    UTILS.POST_PATH(cfg_post, 'charsize.aggregate_file'));
 varname = 'pars_out';
 
 ind_agg = [];

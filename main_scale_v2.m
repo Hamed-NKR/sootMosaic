@@ -64,6 +64,7 @@ n_bin_filter = cfg_sampling.n_bin_filter;
 % Load non-scaled first-stage library data through the scale config.
 [pars_raw.pp, dataset_src, dataset_provenance] = ...
     UTILS.LOAD_MAIN_SCALE_DATASET(cfg_dataset);
+dataset_src.sha256 = UTILS.FILE_SHA256(dataset_src.file);
 
 % correct the structure if necessary
 if iscell(pars_raw.pp)
@@ -236,8 +237,9 @@ if ~isfolder(dir_scale_data)
     mkdir(dir_scale_data)
 end
 
-save(fullfile(dir_scale_data, 'scaled_aggs_for_LD2_from_main_scale.mat'), ...
-    'pars_out', 'dataset_src', 'dataset_provenance', '-v7.3')
+UTILS.SAVE_PUBLIC_MAT(fullfile(dir_scale_data, ...
+    'scaled_aggs_for_LD2_from_main_scale.mat'), {'-v7.3'}, 'pars_out', ...
+    'dataset_src', 'dataset_provenance')
 
 % initialize figure for output scaled+filtered aggregates
 f2 = figure(2);

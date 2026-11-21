@@ -19,10 +19,13 @@ clf('reset')
 close all
 warning('off')
 
+% local data folders
+dir_data = ''; % set to the local data folder
+
 %% initialize the script %%
 
 % location of previously saved aggregate data
-fdir_in = 'E:\DLCA2\outputs\postLD2-01-Apr-2025_11-54-39_LD2-25NOV24';
+fdir_in = dir_data;
 fname_in = 'Post_LD2-25NOV24';
 
 varnames = {'parsdata'}; % varaiables to be imported

@@ -1,7 +1,7 @@
 function [effective_density_data, metadata] = NORMALIZE_EFFECTIVE_DENSITY_DATA( ...
         source_file, output_file, varargin)
 %NORMALIZE_EFFECTIVE_DENSITY_DATA Create a compact, lossless validation MAT.
-%   This utility copies the grouped ODIAS results into a long-format table.
+%   This utility copies the grouped inversion results into a long-format table.
 %   It does not rerun the tandem inversion, mode selection, density equation,
 %   or any fit. The original MAT remains the numerical source of record.
 %
@@ -52,7 +52,7 @@ default_labels = ["Low agglomeration"; "Moderate collapse"; ...
     "High agglomeration"; "Extensive collapse"];
 if numel(legacy_groups) ~= numel(condition_ids)
     error('sootMosaic:NORMALIZE_EFFECTIVE_DENSITY_DATA:UnexpectedGroupCount', ...
-        'Expected four ODIAS condition groups but found %d.', numel(legacy_groups));
+        'Expected four condition groups but found %d.', numel(legacy_groups));
 end
 
 condition_labels = extract_condition_labels(source, default_labels);
@@ -101,13 +101,10 @@ verify_round_trip(effective_density_data, legacy_groups);
 metadata = struct();
 metadata.schema_version = '1.0.0';
 metadata.generated_at = char(datetime('now', 'Format', 'yyyy-MM-dd''T''HH:mm:ss'));
-metadata.source_file = source_file;
+[~, source_name, source_ext] = fileparts(source_file);
+metadata.source_file = [source_name, source_ext];
 metadata.source_sha256 = source_hash_before;
 metadata.source_variable = 'dist_grp';
-metadata.source_repository = 'https://github.com/Hamed-NKR/odias';
-metadata.source_branch = 'developer-HN';
-metadata.source_commit = 'c654348abf11599e24b63374622c31d8458cd7e4';
-metadata.source_script = 'main_dma_HN_2d_v2.m';
 metadata.processing_note = [ ...
     'Values were copied from dist_grp without recalculation, rounding, ' ...
     'unit conversion, inversion, mode selection, or fitting.'];

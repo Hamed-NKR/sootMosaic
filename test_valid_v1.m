@@ -1,8 +1,11 @@
 clear; clc; close all;
 
 % load scaled uniform aggregates
-fdir_dpp_da = 'D:\Hamed\CND\PhD\Weekly\2025\Week_of_27OCT25';
-fname_dpp_da = 'BiggerRepo-Scat135-Real1-Frac0055-27OCT25';
+% task file selected by SOOTMOSAIC_MAIN_LD2_CONFIG,
+% key post.valid.aggregate_file
+cfg_post = UTILS.LOAD_MAIN_LD2_CONFIG;
+[fdir_dpp_da, fname_dpp_da] = fileparts( ...
+    UTILS.POST_PATH(cfg_post, 'valid.aggregate_file'));
 vars_dpp_da = {'pars_out'};
 load(fullfile(fdir_dpp_da, fname_dpp_da), vars_dpp_da{:});
 
@@ -101,8 +104,8 @@ f2.Position = [200, 200, 450, 450];
 set(f2, 'color', 'white');
 
 % address of second-stage langevin dynamics data to be imported
-fdir_LD2 = 'D:\Hamed\CND\PhD\Weekly\2025\Week_of_27OCT25\Results\LD2-28-Oct-2025_BiggerRepo-Scat135-Real1-Frac0055-27OCT25';
-fname_LD2 = 'LD2_30-Oct-2025_12-50-54_Final';
+[fdir_LD2, fname_LD2] = fileparts( ...
+    UTILS.POST_PATH(cfg_post, 'ld2.results_file'));
 varnames_LD2 = {'fl'};
 load(fullfile(fdir_LD2, fname_LD2), varnames_LD2{:});
 

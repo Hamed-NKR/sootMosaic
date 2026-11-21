@@ -192,8 +192,13 @@ pars_ld1.dm = flatten_parsdata_field(parsdata0_nested, 'dm');
 ensdata0 = trim_empty_ensemble_rows(ensdata0);
 
 metadata = struct();
-metadata.source_script = mfilename('fullpath');
-metadata.config_file = cfg_ld1.config_file;
+script_file = [mfilename('fullpath'), '.m'];
+[~, script_name, script_ext] = fileparts(script_file);
+[~, config_name, config_ext] = fileparts(cfg_ld1.config_file);
+metadata.source_script = [script_name, script_ext];
+metadata.source_script_sha256 = UTILS.FILE_SHA256(script_file);
+metadata.config_file = [config_name, config_ext];
+metadata.config_file_sha256 = UTILS.FILE_SHA256(cfg_ld1.config_file);
 metadata.created_at = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss'));
 metadata.run_label = cfg_results.run_label;
 metadata.output_file = fullfile(cfg_results.root, cfg_results.library_file);
@@ -209,9 +214,9 @@ if ~isfolder(cfg_results.root)
 end
 
 % fl0 holds the gas temperature, pressure, viscosity and mean free path
-save(metadata.output_file, 'pp0', 'pp0_n', 'pars_ld1', 'ensdata0', ...
-    'parsdata0', 'pp0_nested', 'pp0_n_nested', 'parsdata0_nested', ...
-    'fl0', 'cfg_ld1', 'metadata', '-v7.3')
+UTILS.SAVE_PUBLIC_MAT(metadata.output_file, {'-v7.3'}, 'pp0', 'pp0_n', ...
+    'pars_ld1', 'ensdata0', 'parsdata0', 'pp0_nested', 'pp0_n_nested', ...
+    'parsdata0_nested', 'fl0', 'cfg_ld1', 'metadata')
 
 fprintf('Saved LD1 aggregate library: %s\n', metadata.output_file)
 

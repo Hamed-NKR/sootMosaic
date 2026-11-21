@@ -31,8 +31,9 @@ function [a, info] = KERNEL_1D(grid, obs, cfg, impactor, draw)
 % Repository: https://github.com/tsipkens/odias
 % Commit: 8de95745486b01cf5ede0b186d044656eb3fde33
 % License: GNU General Public License, version 3 (GPL-3).
-% Source attribution: Sipkens (2020).
-% The source file has an authorship line but no copyright or license block.
+% Method citation: Sipkens et al. (2020, part I), Journal of Aerosol Science
+%     140, 105484, doi:10.1016/j.jaerosci.2019.105484.
+% The source file has no copyright or license block.
 % The complete GPL-3 text is supplied in the repository LICENSE file.
 % Modified 18 Nov 2026: package calls replace transfer-package calls.
 % Modified 18 Nov 2026: named charge options and adaptive charge tails.

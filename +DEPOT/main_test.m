@@ -102,13 +102,6 @@ h0_pose = UTILS.PLOTPARS(pars, params_ud.Value(1:3),...
 % h0_nntest = UTILS.PLOTNN(pars, params_ud.Value(1:3), ind_trg_test,...
 %     coef_trg(ind_trg_test));
 % 
-<<<<<<< Updated upstream:main_DLCA_test.m
-timetable.prerender = clock;
-% figure
-UTILS.RENDER(pars);
-timetable.postrender = clock;
-=======
-
 % Time recording
 if (str_maintime == 'Y') || (str_maintime == 'y')
     timedata.prerender = clock;
@@ -121,7 +114,6 @@ UTILS.RENDER(pars); % The initial population morphology
 if (str_maintime == 'Y') || (str_maintime == 'y')
     timedata.postrender = clock;
 end
->>>>>>> Stashed changes:main_test.m
 
 %% Part 2: Simulating the particle aggregations
 

@@ -1,8 +1,5 @@
 function aggs = PAR2AGG(pars)
 % "PAR2AGG" Convert from a PAR structure to an array of AGG objects.
-%
-% Original author: Timothy Sipkens, 06-2021
-% Revised by: Hamed Nikookar, 07-2021
 % ----------------------------------------------------------------------- %
 % 
 % Input:

@@ -27,6 +27,7 @@ end
 % write this payload as pars_out.
 [pars_LD2, dataset_src, dataset_provenance] = ... %#ok<NASGU>
     UTILS.LOAD_MAIN_LD2_DATASET(cfg_dataset);
+dataset_src.sha256 = UTILS.FILE_SHA256(dataset_src.file);
 
 if ~isfield(pars_LD2, 'pp')
     disp(' ')
@@ -244,8 +245,8 @@ while (k <= k_max) && (ind_dat <= n_dat) && (length(pars_LD2.n) > 1)
     if mod(k, checkpoint_interval) == 1
         rng_state = rng; % generator state, saved below and restored by UTILS.RESUME_LD2_V3
         dt = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss')); % current date and time
-        save(fullfile(dir_wsp, strcat(cfg_results.checkpoint_prefix, '__', ...
-            dt, '.mat')), '-v7.3')
+        UTILS.SAVE_PUBLIC_MAT(fullfile(dir_wsp, strcat( ...
+            cfg_results.checkpoint_prefix, '__', dt, '.mat')), {'-v7.3'})
     end
 
     UTILS.TEXTBAR([k, k_max]); % update progress textbar
@@ -273,6 +274,6 @@ end
 
 % save the final workspace
 dt_final = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss'));
-save(fullfile(dir_wsp, strcat(cfg_results.final_prefix, '__', ...
-    dt_final, '.mat')), '-v7.3')
+UTILS.SAVE_PUBLIC_MAT(fullfile(dir_wsp, strcat(cfg_results.final_prefix, ...
+    '__', dt_final, '.mat')), {'-v7.3'})
 

@@ -46,5 +46,13 @@
     "opt_scale": "bivariate",
     "opts_nppcor": "off",
     "rng_seed": []
+  },
+  "post": {
+    "charsize": {
+      "aggregate_file": "../../data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat"
+    },
+    "collapse": {
+      "aggregate_file": "../../data/main_scatter/scaled_aggs_for_LD2_from_main_scatter.mat"
+    }
   }
 }

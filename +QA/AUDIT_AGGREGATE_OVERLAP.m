@@ -67,9 +67,13 @@ opts = parse_options(repoRoot, varargin{:});
 
 t_all = tic;
 report = struct();
+tool_file = [mfilename('fullpath'), '.m'];
+[~, tool_name, tool_ext] = fileparts(tool_file);
+[~, root_name, root_ext] = fileparts(regexprep(repoRoot, '[\\/]+$', ''));
 report.metadata = struct( ...
-    'tool', mfilename('fullpath'), ...
-    'repoRoot', repoRoot, ...
+    'tool', [tool_name, tool_ext], ...
+    'tool_sha256', UTILS.FILE_SHA256(tool_file), ...
+    'repoRoot', [root_name, root_ext], ...
     'generated_at', char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss')), ...
     'matlab_version', version);
 report.options = opts;
@@ -358,6 +362,7 @@ sources = struct('files', {files});
 for q = 1:numel(files)
     d = dir(files{q});
     sources.bytes(q) = d.bytes;
+    sources.sha256{q} = UTILS.FILE_SHA256(files{q});
 end
 end
 
@@ -2192,7 +2197,8 @@ end
 function outDir = save_outputs(report, figs, opts)
 %SAVE_OUTPUTS Write tabular results, the report structure, and rendered cases.
 %   Each invocation receives a timestamped directory so prior audits remain
-%   unchanged.
+%   unchanged. Saved copies keep file names and digests, not folders.
+report = UTILS.PUBLIC_COPY(report);
 stamp = char(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss'));
 outDir = fullfile(opts.OutputDir, ['audit__', stamp]);
 if isfolder(outDir)

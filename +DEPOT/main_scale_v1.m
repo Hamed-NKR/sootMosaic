@@ -3,6 +3,9 @@ clear
 close all
 warning('off')
 
+% local data folders
+dir_data = ''; % set to the local data folder
+
 %% Initialize and define key parameters %%
 
 % Olfert and Rogak (2019)'s universal correlation
@@ -45,7 +48,7 @@ gsd_dpp = 1.22; % ensemble geometric standard deviation
 cn_scale = 0.6; % proportion of random aggregates chosen for filtering
 
 % address of aggregate library to be imported for scaling and filtering
-fdir = 'D:\Hamed\CND\PhD\My Articles\DLCA2\mainscatter_sigmapp13';
+fdir = dir_data;
 fname = 'wsp-sigmapp-13';
 varname = 'pp0';
 vardir = '';

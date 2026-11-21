@@ -3,6 +3,9 @@ clear
 close all
 warning('off')
 
+% local data folders
+dir_data = ''; % set to the local data folder
+
 %% initialize
 
 % parameters for universal correlation
@@ -61,7 +64,7 @@ hold on
 %% non-scattered library data
 
 % load data from first-stage library
-load('D:\Hamed\CND\PhD\My Articles\DLCA1\Results\DAT\wsp-1e4.mat', 'pp0')
+load(fullfile(dir_data, 'wsp-1e4.mat'), 'pp0')
 
 pars_raw.pp = pp0;
 pars_raw.n = zeros(length(pp0), 1);

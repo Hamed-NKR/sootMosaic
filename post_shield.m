@@ -8,8 +8,11 @@ warning('off')
 
 % location of previously saved aggregate data (this should include...
     % ...spp field in pars strcuture for primary particle shielding)
-fdir_in = 'D:\Hamed\CND\PhD\Publication\DLCA2\outputs\Shield_2025-08-15_06-16-40_opaque';
-fname_in = 'Shield_2025-08-15_06-16-40_opaque';
+% task file selected by SOOTMOSAIC_MAIN_LD2_CONFIG,
+% key post.shield.results_file
+cfg_post = UTILS.LOAD_MAIN_LD2_CONFIG;
+[fdir_in, fname_in] = fileparts( ...
+    UTILS.POST_PATH(cfg_post, 'shield.results_file'));
 
 varnames = {'parsdata'}; % varaiables to be imported
 
@@ -965,7 +968,7 @@ if ~isfolder(dir_out)
 end
 
 % save worksapce
-save(strcat(dir_out, 'PostShield_', dir0_out, '.mat'))
+UTILS.SAVE_PUBLIC_MAT(strcat(dir_out, 'PostShield_', dir0_out, '.mat'), {})
 
 % print figures
 exportgraphics(f1, strcat(dir_out, 'render-shield.jpg'),...
