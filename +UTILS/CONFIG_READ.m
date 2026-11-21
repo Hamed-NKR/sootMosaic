@@ -17,6 +17,17 @@ function [cfg, provenance] = CONFIG_READ(file, dictionary, opts)
 %         ...or "empty", default "Inf"). Integer or empty accepts null...
 %         ...and []. Text or none maps null to empty text. An alias row...
 %         ...names a canonical path in alias_of.
+%         ...Coerce "double" or "char" applies that conversion before...
+%         ...type checks. Double accepts decoded singleton arrays....
+%         ...Row_vector reshapes converted vectors to one row....
+%         ...Preserve_empty retains null and [] as [] for text or none.
+%         ...Empty_default uses the row default for null or empty input....
+%         ...Normalize_text applies lower(strtrim(...)) after coercion....
+%         ...Defer_defaults fills child defaults only when the object is...
+%         ...present, preserving a required section with optional keys.
+%         ...Native_json retains decoded values for selected rows....
+%         ...When used, unlisted root members retain decoded values too....
+%         ...Type any with open true leaves nested metadata uninterpreted.
 %     opts: Optional structure with Strict (false), MaxDepth (16 files),...
 %         ...SupportedVersion (1), Base (resolved lower-precedence object)...
 %         ...and Overrides (direct arguments, highest precedence)....
@@ -117,6 +128,8 @@ for k = 1:numel(dictionary)
     end
 end
 warned_aliases = false(size(dictionary));
+native_rows = cellfun(@(r) option(r, 'native_json', false), dictionary);
+native_paths = paths(native_rows);
 warned_unknown = {};
 files = struct('file', {}, 'sha256', {}, 'config_version', {}, 'notes', {});
 records = struct('path', {}, 'old_value', {}, 'new_value', {}, 'source', {});
@@ -149,7 +162,29 @@ cfg.provenance = provenance;
             error('sootMosaic:CONFIG_READ:ExtendsDepth', ...
                 'The extends chain exceeds %d files.', max_depth);
         end
-        [value, notes] = read_json(name);
+        if isempty(native_paths)
+            [value, notes] = read_json(name);
+        else
+            [value, notes, decoded] = read_json(name);
+            if iscell(value) && isscalar(value) && ...
+                    isstruct(decoded) && isscalar(decoded)
+                value = value{1};
+            end
+            for native_index = 1:numel(native_paths)
+                parts = strsplit(native_paths{native_index}, '.');
+                [item, found] = get_path(decoded, parts);
+                if found, value = set_path(value, parts, item); end
+            end
+            if isstruct(decoded) && isscalar(decoded)
+                native_names = fieldnames(decoded);
+                for native_name_index = 1:numel(native_names)
+                    native_key = native_names{native_name_index};
+                    if ~isfield(schema.children, native_key)
+                        value.(native_key) = decoded.(native_key);
+                    end
+                end
+            end
+        end
         require_object(value, name);
         v = option(value, 'config_version', 1);
         check_version(v);
@@ -213,7 +248,8 @@ cfg.provenance = provenance;
     function unknowns(value, tree, prefix)
         if ~isstruct(value) || ~isscalar(value), return; end
         if isempty(fieldnames(tree.children)) && ...
-                strcmp(option(tree.row, 'type', ''), 'object') && ...
+                any(strcmp(option(tree.row, 'type', ''), ...
+                {'object', 'any'})) && ...
                 isequal(option(tree.row, 'open', false), true)
             return
         end
@@ -317,6 +353,26 @@ type = lower(strtrim(row.type));
 is_null = isequal(value, @null_marker);
 is_array = isa(value, 'function_handle') && ~is_null;
 if is_array, value = value(); end
+if option(row, 'empty_default', false) && (is_null || isempty(value))
+    value = clean_nulls(row.default);
+    is_null = false;
+    is_array = false;
+end
+coerce = option(row, 'coerce', '');
+if is_null && ~isempty(coerce), value = []; end
+if strcmp(coerce, 'double')
+    value = double(value);
+    is_array = false;
+elseif strcmp(coerce, 'char')
+    value = char(value);
+elseif ~isempty(coerce)
+    error('sootMosaic:CONFIG_READ:InvalidDictionary', ...
+        'Unknown conversion %s for %s.', coerce, path);
+end
+if option(row, 'row_vector', false), value = reshape(value, 1, []); end
+if option(row, 'normalize_text', false)
+    value = lower(strtrim(value));
+end
 if strcmp(type, 'number or none')
     if is_null || (ischar(value) && strcmp(value, 'none'))
         meaning = option(row, 'none_value', 'Inf');
@@ -333,6 +389,10 @@ if strcmp(type, 'number or none')
     type = 'number';
 elseif strcmp(type, 'text or none')
     if is_null || (isnumeric(value) && isempty(value))
+        if option(row, 'preserve_empty', false)
+            value = [];
+            return
+        end
         value = '';
         return
     end
@@ -350,6 +410,9 @@ if ~isempty(n)
     type = 'vector';
 end
 switch type
+    case 'any'
+        value = clean_nulls(value);
+        return
     case {'number', 'integer'}
         ok = ~is_array && isnumeric(value) && isscalar(value) && isreal(value);
     case {'vector', 'numbers', 'integers'}
@@ -474,6 +537,7 @@ for k = 1:numel(names)
     key = names{k};
     child = tree.children.(key);
     if ~isempty(option(child.row, 'alias_of', '')), continue; end
+    if option(child.row, 'defer_defaults', false), continue; end
     if isfield(child.row, 'default')
         value.(key) = child.row.default;
     elseif ~child.array
@@ -653,7 +717,8 @@ for k = 1:numel(paths)
 end
 end
 
-function [value, notes] = read_json(file)
+function [value, notes, native_value] = read_json(file)
+native_value = [];
 if ~isfile(file)
     error('sootMosaic:CONFIG_READ:MissingFile', ...
         'Configuration file does not exist: %s', file);
@@ -687,6 +752,7 @@ if index <= numel(tokens)
     error('sootMosaic:CONFIG_READ:InvalidJSON', ...
         'Unexpected content after the JSON value.');
 end
+if nargout > 2, native_value = jsondecode(text); end
 
     function item = parse()
         if index > numel(tokens), invalid_json(); end

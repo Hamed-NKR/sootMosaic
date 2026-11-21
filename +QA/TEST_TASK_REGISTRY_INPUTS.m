@@ -255,6 +255,12 @@ end
             if i < 5
                 registry_cfg.dataset = rmfield( ...
                     registry_cfg.dataset, 'source_id');
+                if i == 1
+                    registry_cfg.si.dataset = rmfield( ...
+                        registry_cfg.si.dataset, 'source_id');
+                    inline_cfg = rmfield(inline_cfg, 'provenance');
+                    registry_cfg = rmfield(registry_cfg, 'provenance');
+                end
             else
                 for j = 1:numel(source_names)
                     name = source_names{j};

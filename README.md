@@ -72,6 +72,7 @@ Main scripts clear workspace variables and figures, so save them before running.
 ### 3. Local configuration
 
 Copy the examples once to ignored local JSON files, then edit the copies.
+Use `extends` for local overrides in Scale and INV task configurations.
 
 ```matlab
 tasks = {'main_ld1', 'main_scale', 'main_scatter', ...
@@ -114,7 +115,7 @@ For each row below, `SOOTMOSAIC_` takes precedence over `PFAL_`. Use the
 | --- | --- | --- |
 | LD1 | `SOOTMOSAIC_MAIN_LD1_CONFIG`, `PFAL_MAIN_LD1_CONFIG` | `main_ld1/main_ld1_config.local.json` |
 | LD2 | `SOOTMOSAIC_MAIN_LD2_CONFIG`, `PFAL_MAIN_LD2_CONFIG` | Select `main_ld2/main_ld2_from_main_scatter_config.local.json` or the `main_scale` branch |
-| Scale | None | `main_scale/main_scale_config.local.json` |
+| Scale | `SOOTMOSAIC_MAIN_SCALE_CONFIG`, `PFAL_MAIN_SCALE_CONFIG` | `main_scale/main_scale_config.local.json` |
 | Scatter | None | `main_scatter/main_scatter_config.local.json` |
 | TEM | `SOOTMOSAIC_MAIN_TEM_ANALYSIS_CONFIG`, `PFAL_MAIN_TEM_ANALYSIS_CONFIG` | `main_tem_analysis/main_tem_analysis_config.local.json` |
 | Validation | `SOOTMOSAIC_MAIN_VALID_CONFIG`, `PFAL_MAIN_VALID_CONFIG` | `main_valid/main_valid_config.local.json` |
@@ -284,14 +285,14 @@ compatible repeat summaries. Select charge models with `opts.Model`.
 
 ### 6. Checking the install
 
-Run all 26 QA functions. A pass prints one `PASS TEST_...`
+Run all 27 QA functions. A pass prints one `PASS TEST_...`
 line per file, with all returned `pass` flags true. These checks use synthetic
 inputs or source inspection. Expected-warning cases can print warnings.
 
 ```matlab
 warning('on', 'all')
 checks = dir(fullfile('+QA', 'TEST_*.m'));
-assert(numel(checks) == 26)
+assert(numel(checks) == 27)
 for k = 1:numel(checks)
     [~, name] = fileparts(checks(k).name);
     report = feval(['QA.' name]);
@@ -370,6 +371,7 @@ primary size, giving the hybrid the appearance of a mosaic.
 | [`config/profiles/profile.keys.json`](config/profiles/profile.keys.json) | Model choices, constants, stage sections, units, and aliases |
 | [`config/sources/sources.keys.json`](config/sources/sources.keys.json) | Registered dataset fields and local `where` selection |
 | [`config/main_inv/main_inv.keys.json`](config/main_inv/main_inv.keys.json) | INV defaults, units, and input reading rules |
+| [`config/main_scale/main_scale.keys.json`](config/main_scale/main_scale.keys.json) | Scale inputs, units, and reading rules |
 | [`config/instruments/instruments.keys.json`](config/instruments/instruments.keys.json) | Instrument and charging registry fields |
 
 Task examples and `UTILS.LOAD_MAIN_*_CONFIG` define the task settings. TEM
@@ -557,6 +559,7 @@ kinetic energy 4 kT / pi. The `current` profile uses `maxwell_boltzmann` and
 | `config/main_ld1/` | LD1 example configuration |
 | `config/main_ld2/` | Scale and scatter branch examples for LD2 |
 | `config/main_scale/` | Correlation-based calibration example |
+| `config/main_scale/main_scale.keys.json` | Scale settings and reading rules |
 | `config/main_scatter/` | Distribution-based calibration example |
 | `config/main_tem_analysis/` | TEM inputs, analysis, and figure settings |
 | `config/main_valid/` | Validation inputs, condition mappings, and exports |
